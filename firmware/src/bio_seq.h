@@ -21,7 +21,7 @@
 #define SEQ_MAXLEN 64u
 #define SEQ_NSCENE 4u
 #define SEQ_BAR (16u * SEQ_TPS)
-#define SEQ_MAGIC 0x32464F42u                   /* "BOF2": the scene's format (2: the mix's PUMP) */
+#define SEQ_MAGIC 0x33464F42u                   /* "BOF3": the scene's format (2: the mix's PUMP; 3: 24 parameters) */
 #define SEQ_NUNDO 16u
 #define SEQ_NREDO 8u
 
@@ -70,6 +70,9 @@ typedef struct {
     uint8_t off_note[BIO_NORG];
     uint32_t rat_t[BIO_NORG], rat_left[BIO_NORG], rat_dt[BIO_NORG];   /* a ratchet's next pulse */
     uint8_t rat_note[BIO_NORG], rat_vel[BIO_NORG];
+    uint32_t rat_seed[BIO_NORG];                /* a noise organ's ratchet repeats its hit's noise: a stutter */
+    uint32_t nseed[BIO_NORG][SEQ_MAXLEN];       /* the noise core's locked noise, a seed each step (0: not yet) */
+    uint32_t nrng;                              /* (its slips' own draws) */
     uint32_t ghosts_step, ghost_tick[32];
     uint8_t ghost_org[32], nghost, nghost_last;
     uint32_t ghost_last_tick[32];
@@ -146,6 +149,23 @@ static void seq_del(seq_track_t *t, uint32_t i)
     if (t->n) t->n--;
 }
 
+/* a noise organ's step: its locked noise (D20). LOOP at LOCK keeps it, pass after pass (rhythm made of noise); lower,
+   a step's noise slips now and then (as often as a bit of the register would flip); DOUBLE LOCK swaps it for its
+   inverse each pass. Its own draws, so the register itself runs as it would without it */
+static void seq_noise_clear(seq_t *s)
+{
+    uint32_t o, k;
+    for (o = 0; o < BIO_NORG; o++) for (k = 0; k < SEQ_MAXLEN; k++) s->nseed[o][k] = 0;
+}
+static uint32_t seq_noise_seed(seq_t *s, const seq_scene_t *sc, uint32_t trk, uint32_t step)
+{
+    uint32_t *n = &s->nseed[trk][step % SEQ_MAXLEN], p = bio_tur_pflip(sc->tur.loop);
+    if (!*n) *n = bio_hash(sc->seed ^ (trk * 0x01000193u), 0x4E00u + step % SEQ_MAXLEN);
+    else if (p >= 65536u) *n = ~*n ? ~*n : 1u;
+    else if (p && (bio_rnd(&s->nrng) >> 16) < p) *n = bio_hash(*n, s->ticks | 1u);
+    return *n;
+}
+
 /* a note of a track starts (ISR): the chance, the ratchet, the Turing's WAIL, the organ */
 static void seq_fire(seq_t *s, uint32_t trk, const seq_ev_t *ev, uint32_t step)
 {
@@ -160,6 +180,8 @@ static void seq_fire(seq_t *s, uint32_t trk, const seq_ev_t *ev, uint32_t step)
     if ((sc->tur.wail & 1u && trk == O_SPASM) || (sc->tur.wail & 2u && trk == O_VOICE))
         note = bio_tur_wail(&s->tur, &sc->tur, note);
     len = (uint32_t)(ev->len ? ev->len : SEQ_TPS) * (s->e->spb_q8 >> 8) / 384u;   /* in samples */
+    if (bio_is_perc(trk, sc->p[trk])) seed = seq_noise_seed(s, sc, trk, step);
+    s->rat_seed[trk] = seed;
     bio_trigger(s->e, trk, trk < 4u ? note - 60 : note, vel, len, lk, seed);
     if (trk >= 4u) {
         s->off_t[trk] = s->ticks + (ev->len ? ev->len : SEQ_TPS) + 1u;
@@ -228,6 +250,7 @@ static void seq_tick(bio_t *e, void *ctx)
         for (o = 0; o < BIO_NORG; o++) bio_release(s->e, o, 255u);
         s->cur = s->next;
         for (o = 0; o < BIO_NORG; o++) s->ver_seen[o] = ~0u;
+        seq_noise_clear(s);                     /* (another scene, its own noise) */
         seq_tempo(s);
         seq_sound(s);
     }
@@ -323,7 +346,8 @@ static void seq_tick(bio_t *e, void *ctx)
             s->rat_left[trk]--;
             s->rat_t[trk] += s->rat_dt[trk];
             bio_trigger(s->e, trk, trk < 4u ? (int32_t)s->rat_note[trk] - 60 : s->rat_note[trk], s->rat_vel[trk],
-                        BIO_MS(40), sc->tr[trk].lock[(t0 / SEQ_TPS) % SEQ_MAXLEN], bio_hash(sc->seed, t1 + trk));
+                        BIO_MS(40), sc->tr[trk].lock[(t0 / SEQ_TPS) % SEQ_MAXLEN],
+                        bio_is_perc(trk, sc->p[trk]) ? s->rat_seed[trk] : bio_hash(sc->seed, t1 + trk));
         }
     }
     s->ticks = t1;
@@ -379,6 +403,8 @@ static void seq_play(seq_t *s)
     s->bar = 0;
     s->nghost = 0;
     for (k = 0; k < BIO_NORG; k++) { s->cursor[k] = 0; s->ver_seen[k] = ~0u; s->off_t[k] = 0; s->rat_left[k] = 0; }
+    seq_noise_clear(s);                         /* (the same start, the same noise) */
+    s->nrng = bio_hash(s->sc[s->cur].seed, 0x2A2Au);
     bio_tur_reset(&s->tur, &s->sc[s->cur].tur);
     for (k = 0; k < 4u; k++) {                  /* the same start, the same sound */
         s->e->tone[k].rnd = bio_hash(s->sc[s->cur].seed, k);

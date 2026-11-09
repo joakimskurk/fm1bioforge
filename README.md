@@ -37,10 +37,14 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   - **TEETH** is a ratchet of metal teeth. The lower keys play it closed, the upper keys open.
   - **CLAW** is a gesture dragged through ribs, as long as you hold the key.
   - A shared **rib** resonator ties the four together.
-- **Noise as percussion.** NOISE is a percussion voice, and any drum organ can become one (its MODEL, or the SOUND
-  knob). A source (WHITE, PINK, DIGI and METAL shift-register noise, CRACKLE), grain, a resonant filter that morphs
-  low-pass, band-pass and high-pass and pings at high resonance, a sweep (a zap down, a rise up), bursts (a clap), a
-  click, an envelope that strikes or is held while the key is, drive, a crusher and stereo width.
+- **Rhythm made of noise.** NOISE is a noise voice, and any drum organ can become one (its MODEL, or the SOUND
+  knob). The sequencer locks each step's noise, so the same noise comes back pass after pass and is the groove; the
+  Turing's LOOP lets it slip, step by step. **SCATTER** gives every step its own slice of it (band, length, shape,
+  place), **TONE** puts the band on the note (riffs of hiss, a second band a fifth up), **DRIFT** moves the band over
+  four bars, and a noise step's ratchet repeats its own noise: a stutter (SYN, SHIFT).
+  - **The voice**: a source (WHITE, PINK, DIGI and METAL shift-register noise, CRACKLE), grain, a resonant filter
+    that morphs low-pass, band-pass and high-pass and pings at high resonance, a sweep (a zap down, a rise up), bursts
+    (a clap), a click, an envelope that strikes or is held while the key is, drive, a crusher and stereo width.
   - **Sixteen sounds to start from**: TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING,
     THUMP, WASH, FLAM SNR, BIT HAT and LASER. SOUND (ENV, SHIFT, KNOB 1 on a drum) gives one to an organ; TISSUE gives
     a drum its own body back.
@@ -67,11 +71,12 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   FREEZE) and MARROW CRUSH (a parallel drive, sample-rate and bit crusher). Each channel has its own sends.
 - **Four scenes in RAM**, each its own world at first:
   - RITUAL 00 THE AWAKENING, the idea document's start scene;
-  - 01 STATIC CULT, 132 BPM, noise as percussion, with PUMP;
-  - 02 SPLICE, 100 BPM, broken and glitched, ratchets and chances, a 12-step hat against 32 steps;
-  - 03 VOID, 70 BPM, slow and wide, held noise washes, crackle and a long reverb.
+  - 01 FROZEN, slices of noise locked by the register into a groove;
+  - 02 STREAM, one noise that never stops, cut by a gate;
+  - 03 WALL, a riff of pitched noise, in 16ths, triplets and 32nds.
   - PRESETS switches between them on the next bar. **SHIFT + PRESETS loads a factory ritual** into the scene that
-    plays (those four, INFECTION, EMPTY BODY); the one in flash stays until you SAVE.
+    plays: those four, DATA (clicks, bursts, digital noise, stutters), STATIC CULT (noise as percussion, with PUMP),
+    SPLICE (broken, glitched), VOID (slow and wide), INFECTION and EMPTY BODY. The one in flash stays until you SAVE.
   - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
 ## Using it
@@ -85,7 +90,7 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 | **KNOB 1..4** | The page's four parameters (SHIFT: the second four). |
 | **HOME** | MIX: the six channels' levels; again: the focused channel's sends. **Held:** white keys 1–6 mute the channels. |
 | **SEQ** | SEQ: the grid. **Held:** the white keys are the focused track's 16 steps: tap to set or clear; hold one and turn a knob for a p-lock; OCT± for the next 16. |
-| **EDIT** | SYN: BODY TEXTURE MOTION DECAY; again: the organ's own depth. |
+| **EDIT** | SYN: BODY TEXTURE MOTION DECAY (a noise organ, SHIFT: SCATTER TONE DRIFT); again: the organ's own depth. |
 | **ENV** | The organ's envelope (drums: the gesture, tune, level, pan; SHIFT: SOUND, and a noise sound's GATE, WIDTH, RELEASE). |
 | **LFO** | MUT: the spine. **Held:** white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK. |
 | **FX** | Delay, reverb, crush; again: their times and colours. |
@@ -117,7 +122,7 @@ D5–G5. The middle key of each zone, which glows, plays the organ as it is set;
 
 **Try it without an FM-1:** *Play it here* on [the page](https://joakimskurk.github.io/fm1bioforge/#play), in any
 recent browser, phones too: the firmware itself compiled to WebAssembly, its sound, its screen and its keys' lights.
-The page also has eight demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
+The page also has nine demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
 
 **Install it from the browser:** [the page's installer](https://joakimskurk.github.io/fm1bioforge/#install), in Chrome
 or Edge on a computer, the FM-1 on USB. It always offers the latest build of `main` that passed its tests.

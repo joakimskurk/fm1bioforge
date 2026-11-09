@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* BIOFORGE's noise as percussion: one voice, struck and choked, that the NOISE organ always is and any drum organ
- * can become (its MODEL). A source (WHITE, PINK, DIGI: a long shift-register noise clocked at the note, METAL: the
+/* BIOFORGE's noise core: one voice, struck and choked, that the NOISE organ always is and any drum organ can become
+ * (its MODEL). Rhythm made of noise (D20): the sequencer locks each step's noise (its seed) and the Turing's LOOP lets
+ * it slip; SCATTER gives every step its own slice of it (band, length, shape, level, place); TONE puts the band on the
+ * note (a riff of hiss, a second band a fifth up); DRIFT moves the band over four bars. A source (WHITE, PINK, DIGI: a long shift-register noise clocked at the note, METAL: the
  * short one, tonal; CRACKLE: sparse impulses), grain (sample and hold), a resonant state-variable filter that morphs
  * low-pass, band-pass, high-pass and pings at high resonance, a sweep on its own envelope (a zap down, a rise up),
  * bursts (a clap), a click, an envelope that strikes or gates (held while the key is), drive, a crusher, and a
@@ -33,12 +35,16 @@ typedef struct {
     bio_op_t hp2;
     bio_dc_t dc;
     int32_t mk_lp, mk_bp, mk;                   /* the make-up (octaves, Q16): a low-pass's, a band-pass's; its gain now (Q12) */
+    bio_svf_t f2;                               /* TONE: the second band, a fifth up */
+    int32_t tone2;                              /* its level (Q10; 0: off) */
+    int32_t drift, lfm;                         /* DRIFT: its depth (lf, Q16, at a full breath); the band's offset now */
+    int32_t pan_s;                              /* SCATTER's place for this hit: its share sent to the side (Q15) */
     int32_t fade, peak, lvl;                    /* lvl: the last block's envelope (the screen) */
 } bio_perc_t;
 
 /* the parameters (0..100) a perc voice reads: the four macros, its depth, its envelope */
 typedef struct { uint8_t body, texture, motion, decay, source, reso, mode, bursts, click, drive, crush;
-                 uint8_t attack, gate, width, release; int8_t tune; } bio_perc_p_t;
+                 uint8_t attack, gate, width, release; int8_t tune; uint8_t scatter, tone, drift; } bio_perc_p_t;
 
 static uint32_t bio_perc_ms(uint32_t v, uint32_t lo, uint32_t mid, uint32_t hi)   /* (as bio_map_ms) */
 {
@@ -54,8 +60,9 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
                          uint32_t seed)
 {
     int32_t a, b, m, pitch = (int32_t)p->tune * BIO_SEMI + (int32_t)(((int64_t)note_q8 * BIO_SEMI) >> 8);
-    int32_t velq = (int32_t)(vel > 127u ? 127u : vel) * 258;
-    uint32_t dms, i;
+    int32_t velq = (int32_t)(vel > 127u ? 127u : vel) * 258, sc = p->scatter > 100u ? 100 : p->scatter;
+    uint32_t dms, i, reso = p->reso, shape = 0;  /* shape: 0 as set, 1 a chop (held, cut), 2 struck, 3 a swell */
+    uint32_t r1 = bio_hash(seed, 0x5CA7u), r2 = bio_hash(seed, 0x5A9Eu);   /* SCATTER's draws: this step's own */
     v->awake = 1;
     v->t = 0;
     v->rnd = bio_hash(seed, 0x51A7u);
@@ -64,12 +71,30 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
     v->gate_n = len;
     v->fade = 32767;
     v->amp = bio_mul15(velq, lvl);
+    v->pan_s = 0;
+    if (sc) {                                   /* SCATTER: this step's slice, from its (locked) seed */
+        reso = (uint32_t)bio_clamp((int32_t)reso + ((int32_t)(r1 >> 16 & 255u) - 128) * sc / 300, 0, 100);
+        if ((r2 & 1023u) < (uint32_t)sc * 10u) shape = 1u + (r2 >> 10) % 3u;
+        if (len && len != 0xFFFFFFFFu)          /* (a key held stays held) */
+            len -= (uint32_t)(((uint64_t)len * (uint32_t)((r2 >> 12) & 255u) * (uint32_t)sc * 3u) >> 18) / 100u;   /* down to 1/4 */
+        v->amp = bio_mul15(v->amp, 32767 - (int32_t)((r2 >> 20) & 255u) * sc * 64 / 100);   /* down to -6 dB */
+        v->pan_s = ((int32_t)(r1 >> 24) - 128) * sc * 181 / 100;   /* (to 0.707: hard left or right) */
+        v->gate_n = len;
+    }
     v->src = p->source < 20u ? PS_WHITE : p->source < 40u ? PS_PINK : p->source < 60u ? PS_DIGI : p->source < 80u ? PS_METAL : PS_CRACKLE;
     /* the cutoff: BODY, the note, a little brighter for a harder hit */
     a = bio_lf_hz(120); m = bio_lf_hz(2400); b = bio_lf_hz(14000);
-    v->lf0 = (p->body <= 50u ? a + (m - a) * (int32_t)p->body / 50 : m + (b - m) * ((int32_t)p->body - 50) / 50) + pitch +
-             ((int32_t)vel - 100) * 300;
-    v->k = (int32_t)bio_q_k(5u + (uint32_t)p->reso * (uint32_t)p->reso / 50u);   /* Q 0.5 .. 20 (it pings) */
+    if (p->tone) {                              /* TONE: the band on the note (C4 at 262 Hz), BODY its octave (-2 .. +3) */
+        v->lf0 = bio_lf_hz(262) + pitch + (((int32_t)p->body * 5 + 50) / 100 - 2) * 65536;
+        v->tone2 = (int32_t)(p->tone > 100u ? 100u : p->tone) * 717 / 100;   /* the fifth: up to 0.7 */
+    } else {
+        v->lf0 = (p->body <= 50u ? a + (m - a) * (int32_t)p->body / 50 : m + (b - m) * ((int32_t)p->body - 50) / 50) + pitch +
+                 ((int32_t)vel - 100) * 1200;   /* (an accent opens it: +30 is half an octave) */
+        v->tone2 = 0;
+    }
+    if (sc) v->lf0 += ((int32_t)(r1 & 0xFFFFu) - 32768) * 6 * sc / 100;   /* SCATTER: the band, +-3 octaves */
+    v->drift = (int32_t)(p->drift > 100u ? 100u : p->drift) * 983;          /* DRIFT: to +-1.5 octaves */
+    v->k = (int32_t)bio_q_k(5u + reso * reso / 50u);   /* Q 0.5 .. 20 (it pings) */
     v->mode = p->mode > 100u ? 100 : p->mode;
     v->wlo = v->mode <= 50 ? v->mode * 1024 / 50 : 1024;
     v->whi = v->mode > 50 ? (v->mode - 50) * 1024 / 50 : 0;
@@ -83,6 +108,17 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
     v->stage = p->attack ? 0u : 1u;
     v->sus = (int32_t)((uint32_t)p->gate * 10737418u);     /* held at GATE % while the key is down */
     v->rel = bio_decay(1, bio_tau40(bio_perc_ms(p->release, 5, 150, 2000)));
+    if (shape == 1u || (shape == 3u && len)) {   /* a chop: open while the note is, then cut (5 ms); a swell: rising to its end */
+        v->sus = 1 << 30;
+        v->rel = bio_decay(1, bio_tau40(5));
+        v->stage = shape == 3u ? 0u : 1u;
+        v->env = shape == 3u ? 0 : 1 << 30;
+        v->att_inc = shape == 3u ? (int32_t)((1u << 30) / (len + 1u)) : 1 << 30;
+    } else if (shape == 2u) {                   /* struck: its decay, the key let go at once */
+        v->sus = 0;
+        v->env = 1 << 30;
+        v->stage = 1;
+    }
     v->bursts = p->bursts < 25u ? 0u : p->bursts < 50u ? 1u : p->bursts < 75u ? 2u : 3u;   /* 1..4 strikes: a clap */
     v->bgap = BIO_MS(7u + (seed & 7u));
     v->bdec = bio_decay(1, BIO_MS(15) / 10u);   /* a burst: 1.5 ms an e-fold */
@@ -105,6 +141,7 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
         uint32_t per_s = (uint32_t)(bio_exp2(bio_lf_hz(60) + (int32_t)p->texture * (bio_lf_hz(9000) - bio_lf_hz(60)) / 100 - (14 << 16)) >> 2);
         v->crk = per_s * 97391u;                /* (2^32 / 44100 a sample) */
         v->sh_n = p->texture <= 50u ? 1u : 1u + ((uint32_t)p->texture - 50u) * ((uint32_t)p->texture - 50u) / 80u;
+        if (sc && (r2 >> 28) * 100u < (uint32_t)sc * 5u) v->sh_n = 2u + (r1 >> 8 & 7u);   /* SCATTER: a slice in grains */
         v->sh_c = 0;
     }
     /* the make-up: a filtered noise keeps its loudness wherever BODY and RESO put the filter. A low-pass passes power
@@ -114,6 +151,7 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
     v->mk_lp = v->src == PS_DIGI || v->src == PS_METAL ? 0 : v->src == PS_PINK ? bio_lf_hz(3000) : bio_lf_hz(22050);
     v->mk_bp = (bio_log2((uint32_t)v->k) - (16 << 16)) / 2;
     bio_svf_set(&v->f, v->lf0 + bio_mul30(v->sweep, v->fenv), (uint32_t)v->k);
+    if (v->tone2) bio_svf_set(&v->f2, v->lf0 + bio_mul30(v->sweep, v->fenv) + 7 * BIO_SEMI, (uint32_t)v->k);
     bio_op_set(&v->hp2, bio_lf_hz(3000));
 }
 
@@ -144,8 +182,9 @@ static void bio_perc_render(bio_perc_t *v, int32_t *out, int32_t *side, uint32_t
     if (!v->awake) return;
     /* the sweep: once a sub-block */
     v->fenv = bio_mul30(v->fenv, v->fdec);
-    lf = v->lf0 + bio_mul30(v->sweep, v->fenv);
+    lf = v->lf0 + bio_mul30(v->sweep, v->fenv) + v->lfm;
     bio_svf_set(&v->f, lf, (uint32_t)v->k);
+    if (v->tone2) bio_svf_set(&v->f2, lf + 7 * BIO_SEMI, (uint32_t)v->k);
     {   /* the make-up for this cutoff: the low-pass's (up to x8: full down to 345 Hz), then across MODE */
         int32_t elp = v->mk_lp ? bio_clamp((v->mk_lp - lf) / 2, 0, 3 << 16) : 0, ebp = elp + v->mk_bp, e;
         e = v->mode <= 50 ? elp + (int32_t)(((int64_t)(ebp - elp) * v->wlo) >> 10) : ebp - (int32_t)(((int64_t)ebp * v->whi) >> 10);
@@ -191,6 +230,7 @@ static void bio_perc_render(bio_perc_t *v, int32_t *out, int32_t *side, uint32_t
         /* the filter: low-pass at 0, band-pass at 50, high-pass at 100; the make-up */
         x >>= 1;
         lp = bio_svf(&v->f, x, &bp);
+        if (v->tone2) { int32_t bp2; (void)bio_svf(&v->f2, x, &bp2); bp += (bp2 * v->tone2) >> 10; }   /* TONE's fifth */
         y = (int32_t)(((int64_t)lp * ca + (int64_t)bp * cb + (int64_t)x * cx) >> 12);
         /* the envelope: attack, then a decay (to the gate's level while held), the release; the bursts */
         if (v->bursts && v->t >= v->bnext) {    /* a clap: struck again */
@@ -221,6 +261,7 @@ static void bio_perc_render(bio_perc_t *v, int32_t *out, int32_t *side, uint32_t
         y = bio_mul15(y, bio_mul15(v->amp, v->fade));
         out[k] += y;
         if (gs) side[k] += bio_mul15(bio_mul15(bio_op_hp(&v->hp2, bio_noise(&v->rnd2)), v->env >> 15), gs) >> 2;
+        if (v->pan_s && side) side[k] += bio_mul15(y, v->pan_s);   /* SCATTER's place: + left, - right */
         if (v->fade < 32767) v->fade = v->fade > 600 ? v->fade - 600 : 0;
         if (bio_abs(y) > pk) pk = bio_abs(y);
         v->t++;
@@ -229,7 +270,7 @@ static void bio_perc_render(bio_perc_t *v, int32_t *out, int32_t *side, uint32_t
     v->lvl = v->env >> 15;
     if (!v->fade || (v->stage >= 1u && !(v->gate && v->sus) && v->env < (1 << 15) && !v->bursts)) {
         v->awake = 0;
-        v->f.ic1 = v->f.ic2 = 0;
+        v->f.ic1 = v->f.ic2 = v->f2.ic1 = v->f2.ic2 = 0;
         v->dc.x1 = v->dc.y1 = 0;
     }
 }

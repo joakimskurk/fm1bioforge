@@ -42,29 +42,32 @@ APP = {"build/web/bioforge.wasm": "bioforge.wasm", "web/app/worklet.js": "workle
 SCREENS = ("seq", "syn", "mut", "mix", "fx", "voice", "perc")
 DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each)
     ("1_awakening", "RITUAL 00 · THE AWAKENING",
-     "The start scene, sixteen bars: HEART on the four, BONE on two and four, TEETH and CLAW between, the BASS "
-     "sparingly in D Phrygian, the DRONE breathing under it all, SPASM's two nerve impulses, the VOICE held back."),
-    ("2_static", "RITUAL 01 · STATIC CULT",
-     "132 BPM, noise as percussion: a flam snare of noise, ticking sixteenths, metal off the beat, an open hiss, over "
-     "a tight HEART and a rolling bass. PUMP ducks the rest under the kick; for the last eight bars it goes to 90 %."),
-    ("3_splice", "RITUAL 02 · SPLICE",
-     "100 BPM, broken and glitched: a 32-step body, a crushed snare, grains and zaps in ratchets and chances, a bit-hat "
-     "on 12 steps against it, the bass gliding, the throat in stabs. After six bars LOOP goes to LOCK: it keeps what it "
-     "plays."),
-    ("4_void", "RITUAL 03 · VOID",
-     "70 BPM and wide: a huge HEART twice a bar with the drone breathing under it, noise washes held for bars, crackle "
-     "in the dark, the throat singing long notes, a long reverb."),
-    ("5_kit", "THE NOISE KIT, SOUND BY SOUND",
+     "The idea document's start scene, sixteen bars: HEART on the four, BONE on two and four, TEETH and CLAW between, "
+     "the BASS sparingly in D Phrygian, the DRONE breathing under it all, SPASM's two nerve impulses."),
+    ("2_frozen", "RITUAL 01 · FROZEN",
+     "Rhythm made of noise. Each 16th a slice of noise with its own band, length, shape and place; the register locks "
+     "them, so the same noise comes back every bar and is the groove. LOOP down: slice after slice slips to new noise; "
+     "back to LOCK: what it has become stays."),
+    ("3_stream", "RITUAL 02 · STREAM",
+     "One noise that never stops, cut by a gate: the rhythm is where it is open. Accents open its band, every other bar "
+     "ends in a stutter of the same noise, its band drifts; a low noise breathes under it with a beat you do not hear."),
+    ("4_wall", "RITUAL 03 · WALL",
+     "A wall of noise through a band that sits on the note: a riff of hiss in D Phrygian, struck each step, in 16ths, "
+     "then triplets, then 32nds; a wind of noise over it."),
+    ("5_data", "DATA",
+     "Clinical and digital: clicks with a high ping, white bursts of a few milliseconds scattered left and right, "
+     "shift-register noise at four clocks, stutters, and silence."),
+    ("6_static", "STATIC CULT",
+     "Noise as percussion, 132 BPM: a flam snare of noise, ticking sixteenths, metal off the beat, an open hiss over a "
+     "tight HEART and a rolling bass. PUMP ducks the rest under the kick; for the last eight bars it goes to 90 %."),
+    ("7_kit", "THE NOISE KIT, SOUND BY SOUND",
      "STATIC CULT plays while TEETH's SOUND is turned one step a bar through the sixteen noise sounds: TICK, HISS, "
      "METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING, THUMP, WASH, FLAM SNR, BIT HAT, LASER; then its "
      "own body (TISSUE) again."),
-    ("6_body", "THE BODY, ORGAN BY ORGAN",
+    ("8_body", "THE BODY, ORGAN BY ORGAN",
      "Played on the keys. The kit: HEART at three tunings, BONE, TEETH closed then open, CLAW short and dragged. "
      "Then BASS, a DRONE held, SPASM, the VOICE's throat, NOISE breathing."),
-    ("7_infection", "SLOW INFECTION, THEN UNWIND",
-     "On MUT the LOOP is turned down from LOCK a little at a time and RATTLE comes in: the texture changes, the "
-     "rhythm's anchors stay. Then RATTLE out and LOOP back to LOCK: a machine calming down."),
-    ("8_build", "FROM NOTHING TO A LOOP",
+    ("9_build", "FROM NOTHING TO A LOOP",
      "An empty body. PLAY, REC: HEART and BONE played in, TEETH on the off-beats; then BONE becomes a CLAP and TEETH a "
      "TICK, the same notes in noise; a bass line in one bar; then the nerve moves the texture, and is locked again."),
 ]

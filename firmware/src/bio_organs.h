@@ -21,7 +21,9 @@ enum {
     P_BODY, P_TEXTURE, P_MOTION, P_DECAY,       /* the four macros */
     P_D1, P_D2, P_D3, P_D4, P_D5, P_D6, P_D7, P_D8,   /* its own depth (SYN 2) */
     P_A, P_D, P_S, P_R,                         /* its envelope (tonal); drums: P_A = the gesture's attack */
-    P_TUNE, P_LEVEL, P_PAN, P_SPARE, BIO_NP
+    P_TUNE, P_LEVEL, P_PAN, P_SPARE,
+    P_E1, P_E2, P_E3, P_E4,                     /* the noise core's (D20): SCATTER, TONE, DRIFT, - */
+    BIO_NP
 };
 #define BIO_NOLOCK 0xFFu
 
@@ -74,15 +76,15 @@ static const bio_drum_def_t BIO_DRUM_DEF[4] = {
 /* the default parameters of every organ (the four macros, the depth at 50 = the document's INIT, the envelope, tune,
    level, pan) */
 static const uint8_t BIO_P_INIT[BIO_NORG][BIO_NP] = {
-    {76, 48, 18, 46,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 90, 50, 0},   /* HEART (D8: MODEL, TISSUE) */
-    {48, 74, 26, 42,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 86, 44, 0},   /* BONE */
-    {31, 69, 39, 29,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 96, 60, 0},   /* TEETH */
-    {61, 82, 52, 58,  50, 50, 50, 50, 50, 50, 50, 0,  50, 0, 0, 0,  24, 80, 38, 0},   /* CLAW */
-    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  12, 50, 62, 40,  24, 86, 50, 0},   /* BASS */
-    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  70, 50, 100, 75,  24, 84, 50, 0},  /* DRONE */
-    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  0, 50, 0, 30,  24, 76, 58, 0},   /* SPASM */
-    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  60, 50, 80, 65,  24, 80, 46, 0},   /* VOICE */
-    {42, 15, 50, 60,  30, 19, 50, 0, 0, 0, 0, 50,  63, 100, 40, 96,  24, 72, 50, 0},  /* NOISE (the perc voice: a breath) */
+    {76, 48, 18, 46,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 90, 50, 0,  0, 0, 0, 0},   /* HEART (D8: MODEL, TISSUE) */
+    {48, 74, 26, 42,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 86, 44, 0,  0, 0, 0, 0},   /* BONE */
+    {31, 69, 39, 29,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 96, 60, 0,  0, 0, 0, 0},   /* TEETH */
+    {61, 82, 52, 58,  50, 50, 50, 50, 50, 50, 50, 0,  50, 0, 0, 0,  24, 80, 38, 0,  0, 0, 0, 0},   /* CLAW */
+    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  12, 50, 62, 40,  24, 86, 50, 0,  0, 0, 0, 0},   /* BASS */
+    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  70, 50, 100, 75,  24, 84, 50, 0,  0, 0, 0, 0},  /* DRONE */
+    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  0, 50, 0, 30,  24, 76, 58, 0,  0, 0, 0, 0},   /* SPASM */
+    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  60, 50, 80, 65,  24, 80, 46, 0,  0, 0, 0, 0},   /* VOICE */
+    {42, 15, 50, 60,  30, 19, 50, 0, 0, 0, 0, 50,  63, 100, 40, 96,  24, 72, 50, 0,  0, 0, 0, 0},  /* NOISE (the perc voice: a breath) */
 };
 
 /* LEVEL 0..100 as a fader: the square (80: -3.9 dB, 50: -12 dB), Q15 */
@@ -156,6 +158,7 @@ static void bio_perc_params(const uint8_t *p, bio_perc_p_t *pp)
     pp->drive = p[P_D6]; pp->crush = p[P_D7];
     pp->attack = p[P_A]; pp->gate = p[P_D]; pp->width = p[P_S]; pp->release = p[P_R];
     pp->tune = (int8_t)((int32_t)p[P_TUNE] - 24);
+    pp->scatter = p[P_E1]; pp->tone = p[P_E2]; pp->drift = p[P_E3];
 }
 static inline uint32_t bio_is_perc(uint32_t org, const uint8_t *p) { return org == 8u || (org < 4u && p[P_D8] >= 50u); }
 

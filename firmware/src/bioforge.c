@@ -98,6 +98,7 @@ static const char *const DEEP[5][8] = {
     {"SOURCE", "RESO", "MODE", "BURSTS", "CLICK", "DRIVE", "CRUSH", "BREATH"},  /* NOISE: the perc voice */
 };
 static const char *const MACRO[4] = {"BODY", "TEXTURE", "MOTION", "DECAY"};
+static const char *const CORE[4] = {"SCATTER", "TONE", "DRIFT", ""};   /* the noise core's (D20), SYN SHIFT */
 
 static uint32_t org_perc(uint32_t o) { return bio_is_perc(o, SC()->p[o]); }
 static const char *deep_name(uint32_t o, uint32_t i)
@@ -136,8 +137,8 @@ static knob_t knob_for(uint32_t k)
     case PG_SYN:
         if (ui.sub == 0u) {
             n.type = KT_P;
-            n.idx = (uint8_t)(sh ? P_D1 + k : P_BODY + k);
-            n.name = sh ? deep_name(o, k) : MACRO[k];
+            n.idx = (uint8_t)(sh ? (org_perc(o) ? P_E1 + k : P_D1 + k) : P_BODY + k);
+            n.name = sh ? (org_perc(o) ? CORE[k] : deep_name(o, k)) : MACRO[k];
         } else if (ui.sub == 1u) {
             n.type = KT_P;
             n.idx = (uint8_t)(sh ? P_D5 + k : P_D1 + k);
@@ -344,6 +345,14 @@ static void knob_turn(knob_t n, int32_t d)
     ui.dirty_draw |= D_KNOBS | D_MAIN;
 }
 
+static uint32_t kit_same(uint32_t o, uint32_t v)   /* the organ is the kit's sound v (1..) as it is, but its PAN */
+{
+    uint32_t i;
+    if (!v || v > BIO_NPERC_KIT) return 0;
+    for (i = 0; i < BIO_NP; i++)
+        if (i != P_PAN && (i != P_D8 || o != O_NOISE) && SC()->p[o][i] != BIO_PERC_KIT[v - 1u].p[i]) return 0;
+    return 1;
+}
 static void knob_text(knob_t n, char *s)
 {
     int32_t lo, hi, v = knob_get(n, &lo, &hi);
@@ -359,18 +368,15 @@ static void knob_text(knob_t n, char *s)
             if (n.idx == P_D3) { str_cat(p, v <= 8 ? "LOW" : v >= 92 ? "HIGH" : v >= 42 && v <= 58 ? "BAND" : v < 50 ? "LO>BD" : "BD>HI"); return; }
             if (n.idx == P_D4) { u2s(p, v < 25 ? 1u : v < 50 ? 2u : v < 75 ? 3u : 4u); return; }
             if (n.idx == P_D && !v) { str_cat(p, "HIT"); return; }
+            if ((n.idx == P_E1 || n.idx == P_E2 || n.idx == P_E3) && !v) { str_cat(p, "OFF"); return; }
         }
         if (n.idx == P_D8 && cur_org() < 4u) { str_cat(p, v >= 50 ? "NOISE" : "TISSUE"); return; }
         break;
-    case KT_KIT: {
-        uint32_t o = cur_org(), i, same = 1;
+    case KT_KIT:
         if (!v) { str_cat(p, "TISSUE"); return; }
-        for (i = 0; i < BIO_NP; i++)            /* turned since: marked */
-            if (i != P_PAN && (i != P_D8 || o != O_NOISE) && SC()->p[o][i] != BIO_PERC_KIT[v - 1].p[i]) same = 0;
         p = str_cat(p, BIO_PERC_KIT[v - 1].name);
-        if (!same) str_cat(p, "*");
+        if (!kit_same(cur_org(), (uint32_t)v)) str_cat(p, "*");   /* turned since (or never it): marked */
         return;
-    }
     case KT_TLEN: u2s(s, BIO_TUR_LEN[v & 7]); return;
     case KT_TCLK: str_cat(s, BIO_TUR_CLK_NAME[v & 3]); return;
     case KT_TWAIL: { static const char *const W[4] = {"OFF", "SPASM", "VOICE", "BOTH"}; str_cat(s, W[v & 3]); return; }
@@ -810,7 +816,8 @@ static void draw_syn(void)
     if (o < 4u || o == O_NOISE) {               /* what it is: a drum (and its SOUND, if noise), or NOISE's SOUND */
         int32_t x = 8 + t5w(ORG_NAME[o], 2) + 8;
         if (o < 4u) { cv_t5(x, 11, "DRUM", COL_BONE_D, 1); x += t5w("DRUM", 1) + 6; }
-        if (org_perc(o)) cv_t5(x, 11, ui.kit[o] ? BIO_PERC_KIT[ui.kit[o] - 1u].name : "NOISE", COL_FLESH, 1);
+        if (org_perc(o) && kit_same(o, ui.kit[o])) cv_t5(x, 11, BIO_PERC_KIT[ui.kit[o] - 1u].name, COL_FLESH, 1);
+        else if (o < 4u && org_perc(o)) cv_t5(x, 11, "NOISE", COL_FLESH, 1);
     }
     if (ui.sub) cv_t5(200, 11, ui.sub == 1u ? "DEEP" : "ENV", COL_FLESH, 1);
     {                                           /* the scope: the organ's own output, now */
@@ -832,6 +839,7 @@ static void draw_syn(void)
         int32_t mode = pp[P_D3], lo = bio_lf_hz(40), hi = bio_lf_hz(18000);
         static const char *const L[4] = {"SOURCE", "MODE", "CUTOFF", "DECAY"};
         lf = pp[P_BODY] <= 50u ? a + (m - a) * (int32_t)pp[P_BODY] / 50 : m + (b - m) * ((int32_t)pp[P_BODY] - 50) / 50;
+        if (pp[P_E2]) lf = bio_lf_hz(262) + (((int32_t)pp[P_BODY] * 5 + 50) / 100 - 2) * 65536;   /* TONE: on the note (C4 shown) */
         lf += ((int32_t)pp[P_TUNE] - 24) * BIO_SEMI;
         q10 = 5 + (int32_t)pp[P_D2] * (int32_t)pp[P_D2] / 50;   /* (as bio_perc_hit) */
         for (i = 0; i < 4u; i++) {
@@ -840,7 +848,11 @@ static void draw_syn(void)
             p = s;
             if (i == 0u) str_cat(p, BIO_PS_NAME[pp[P_D1] < 20u ? 0 : pp[P_D1] < 40u ? 1 : pp[P_D1] < 60u ? 2 : pp[P_D1] < 80u ? 3 : 4]);
             if (i == 1u) str_cat(p, mode <= 8 ? "LOW" : mode >= 92 ? "HIGH" : mode >= 42 && mode <= 58 ? "BAND" : mode < 50 ? "LO>BD" : "BD>HI");
-            if (i == 2u) {
+            if (i == 2u && pp[P_E2]) {        /* TONE: the note, an octave or two over it */
+                int32_t oc = ((int32_t)pp[P_BODY] * 5 + 50) / 100 - 2;
+                p = str_cat(p, "NOTE");
+                if (oc) { *p++ = oc > 0 ? '+' : '-'; u2s(p, (uint32_t)bio_abs(oc)); }
+            } else if (i == 2u) {
                 hz = bio_exp2(lf - (14 << 16)) >> 2;
                 if (hz >= 1000u) { p = u2s(p, hz / 1000u); *p++ = '.'; p = u2s(p, hz % 1000u / 100u); str_cat(p, "K"); }
                 else u2s(p, hz);

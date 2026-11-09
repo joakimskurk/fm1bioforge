@@ -1,0 +1,8 @@
+# Demo: DATA (SEL held, PRESETS turned: a factory ritual): clinical and digital. Clicks with a high ping, white bursts
+# of a few ms scattered left and right, shift-register noise at four clocks, stutters, and silence
+100 btndown 3
+200 enc 6 4
+300 btnup 3
+400 btn 12
+22900 btn 12
+24900 end

@@ -358,6 +358,60 @@ static void test_perc(void)
     check(eng.duck > 26000, "PUMP 100: a HEART hit cuts the rest by more than 14 dB");
     run(&eng, 86, 0);                           /* a beat at 120 BPM */
     check(eng.duck < 1500, "and they are back within the beat (under 0.4 dB)");
+    /* the noise core (D20). LOCK: a noise step's seed the same pass after pass; LOOP lower: some slip; the ratchet
+       repeats its hit's noise; SCATTER: each step its own slice; TONE: the band on the note */
+    {
+        static uint32_t first[SEQ_MAXLEN];
+        uint32_t k, same = 1, slipped = 0, nz = 0, loop;
+        for (loop = 100u; loop >= 60u; loop -= 40u) {
+            setup(&eng, &sq, scn, und, red);
+            BIO_RITUAL[1](&scn[0]);             /* FROZEN */
+            scn[0].tur.loop = (uint8_t)loop;
+            sq.tur_reset = 1;
+            seq_play(&sq);
+            run(&eng, 323, 0);                  /* a bar at 128 BPM */
+            for (k = 0; k < SEQ_MAXLEN; k++) first[k] = sq.nseed[O_NOISE][k];
+            run(&eng, 323 * 3, 0);              /* three more */
+            for (k = 0; k < SEQ_MAXLEN; k++) {
+                if (!first[k]) continue;        /* (a chance step not yet played) */
+                if (loop == 100u) nz++;
+                if (loop == 100u && first[k] != sq.nseed[O_NOISE][k]) same = 0;
+                if (loop == 60u && first[k] != sq.nseed[O_NOISE][k]) slipped++;
+            }
+        }
+        check(nz >= 6u && same, "FROZEN at LOCK: every noise step's seed the same four bars later (rhythm made of noise)");
+        check(slipped >= 2u, "and at LOOP 60 %: some of its steps' noise has slipped");
+    }
+    {
+        static const uint8_t T[BIO_NP] = NC(50, 10, 50, 40,  10, 90, 50, 0, 0, 0, 0,  0, 0, 0, 0,  24, 100, 50,  0, 60, 0);
+        static const uint8_t S[BIO_NP] = NC(40, 10, 50, 40,  10, 30, 50, 0, 0, 0, 0,  0, 100, 0, 0,  24, 100, 50,  100, 0, 0);
+        static bio_perc_t v1, v2;
+        bio_perc_p_t pp;
+        int32_t want = bio_lf_hz(880), d;
+        uint32_t k, differ = 0;
+        bio_perc_params(T, &pp);
+        bio_perc_hit(&v1, &pp, 9 * 256, 100, 32767, 0, 5u);   /* A4, BODY 50: an octave up */
+        d = v1.lf0 - want;
+        check(bio_abs(d) < 200 && v1.tone2 > 0, "TONE: the band on the note (A4 at BODY 50: 880 Hz, within 0.3 %), a fifth over it");
+        bio_perc_params(S, &pp);
+        for (k = 0; k < 8u; k++) {
+            bio_perc_hit(&v1, &pp, 0, 100, 32767, 4000, bio_hash(9u, k));
+            bio_perc_hit(&v2, &pp, 0, 100, 32767, 4000, bio_hash(9u, k + 100u));
+            if (v1.lf0 != v2.lf0 && v1.gate_n != v2.gate_n) differ++;
+        }
+        bio_perc_hit(&v2, &pp, 0, 100, 32767, 4000, bio_hash(9u, 7u));
+        check(differ >= 7u && v1.lf0 == v2.lf0 && v1.pan_s == v2.pan_s && v1.gate_n == v2.gate_n,
+              "SCATTER: each seed its own slice (band, length, place); the same seed the same slice");
+    }
+    {
+        seq_ev_t ev = {0, 96, 60, 100, 1u << EV_RAT_SH, 0};
+        setup(&eng, &sq, scn, und, red);
+        BIO_RITUAL[1](&scn[0]);
+        seq_play(&sq);
+        seq_fire(&sq, O_NOISE, &ev, 3);
+        check(sq.rat_left[O_NOISE] == 1u && sq.rat_seed[O_NOISE] == sq.nseed[O_NOISE][3],
+              "a noise step's ratchet repeats its own noise (a stutter)");
+    }
     /* the factory rituals: each plays, in range, and each is its own */
     for (i = 0; i < BIO_NRITUAL; i++) {
         double r;

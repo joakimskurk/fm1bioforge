@@ -1,0 +1,10 @@
+# Demo: RITUAL 01, FROZEN (PRESETS once): rhythm made of noise. Each 16th a slice of noise with its own band, length,
+# shape and place; the register locks them, so the same noise comes back every bar and is the groove (128 BPM). After
+# eight bars ALGORITHM turns LOOP down to about 70 %: slice after slice slips to new noise; four bars before the end
+# LOOP goes back up to LOCK, and what it has become stays
+200 enc 6 1
+400 btn 12
+15400 enc 1 -7
+30400 enc 1 15
+37900 btn 12
+40400 end

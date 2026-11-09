@@ -1,8 +1,0 @@
-# Demo: RITUAL 02, SPLICE (PRESETS twice): 100 BPM, broken and glitched. A 32-step body, a crushed snare, grains and
-# zaps with ratchets and chances, a bit-hat on 12 steps against it all, the bass gliding, the VOICE in short stabs; the
-# nerve slips (LOOP 62 %, WAIL on both). After six bars ALGORITHM turns LOOP up to LOCK: what it plays now, it keeps
-200 enc 6 2
-400 btn 12
-14800 enc 1 15
-29400 btn 12
-32000 end

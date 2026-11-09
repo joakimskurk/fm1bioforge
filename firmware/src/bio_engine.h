@@ -234,7 +234,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
     }
     for (off = 0; off + BIO_SB <= n; off += BIO_SB) {
         int32_t dryl[BIO_SB], dryr[BIO_SB], sa[BIO_SB], sb[BIO_SB], sc[BIO_SB];
-        int32_t chg[BIO_NCH], ga[BIO_NCH], gb[BIO_NCH], gc[BIO_NCH], peak = 0, tg, gstep;
+        int32_t chg[BIO_NCH], ga[BIO_NCH], gb[BIO_NCH], gc[BIO_NCH], peak = 0, tg, gstep, br4;
         bio_life_t life;
         uint8_t pe[BIO_NP];
         if (e->tick) e->tick(e, e->tick_ctx);
@@ -255,9 +255,11 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         for (k = 0; k < BIO_SB; k++) e->rib_in[k] = 0;
         for (o = 0; o < BIO_NORG; o++)
             for (k = 0; k < BIO_SB; k++) e->ob[o][k] = e->os[o][k] = 0;
-        /* the drums */
+        /* the drums (a noise one's DRIFT: its band over four bars) */
+        br4 = bio_sin(e->beat_q16 * (16384u / 4u));
         for (o = 0; o < 4u; o++) {
             uint32_t nm = e->drum[o].nm;
+            if (e->drum[o].perc) e->drum[o].np.lfm = bio_mul15(br4, e->drum[o].np.drift);
             bio_drum_ctl(&e->drum[o], o, e->drift, o == O_CLAW ? e->nerve_scrape : o == O_TEETH ? e->nerve_metal : 0);
             if (e->shed && o != e->focus && nm > 2u) e->drum[o].nm = 2;   /* (the transients stay; the ring thins) */
             bio_drum_render(&e->drum[o], o, e->ob[o], e->os[o], e->rib_in, BIO_SB);
@@ -265,7 +267,8 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         }
         /* the tonal organs: their parameters with the note's locks and the nerve's ROT on TEXTURE */
         if (e->noise.awake) {                   /* NOISE: the perc voice; BREATH (D8) lifts and lowers a long one */
-            int32_t br = bio_sin(e->beat_q16 * (16384u / 4u)), depth = (int32_t)e->p[O_NOISE][P_D8] * 160, g;   /* (4 bars) */
+            int32_t br = br4, depth = (int32_t)e->p[O_NOISE][P_D8] * 160, g;   /* (4 bars) */
+            e->noise.lfm = bio_mul15(br, e->noise.drift);
             bio_perc_render(&e->noise, e->ob[O_NOISE], e->os[O_NOISE], BIO_SB);
             g = bio_clamp(32767 - bio_mul15(depth, (32767 - br) / 2), 0, 32767);
             if (depth) for (k = 0; k < BIO_SB; k++) { e->ob[O_NOISE][k] = bio_mul15(e->ob[O_NOISE][k], g); e->os[O_NOISE][k] = bio_mul15(e->os[O_NOISE][k], g); }

@@ -36,7 +36,7 @@ screen. One AC791N core, no FPU: integers only; the audio interrupt gets 256 fra
 | **SELECT** | the focus: DRUM (the kit), HEART, BONE, TEETH, CLAW, BASS, DRONE, SPASM, VOICE, NOISE |
 | **SEL** (SELECT pushed) | SHIFT, held; a tap keeps the knobs' second row |
 | **ALGORITHM** | the Turing's LOOP, on every page: the one big knob from chaos to lock |
-| **PRESETS** | the scene, RITUAL 00..03 (playing: from the next bar); SHIFT: a factory ritual into it (D19) |
+| **PRESETS** | the scene, RITUAL 00..03: THE AWAKENING, FROZEN, STREAM, WALL (playing: from the next bar); SHIFT: a factory ritual into it (D19, D20) |
 | **KNOB 1..4** | the page's four parameters (SHIFT: the second row) |
 | **HOME** | MIX: the six channels (again: the focused channel's sends) |
 | **SEQ** | SEQ: the grid. **Held:** the white keys are the 16 steps of the focused track |
@@ -118,6 +118,11 @@ step. The same scene, the same start, the same knobs: the same sound, sample for
 Each has the same four macros, mapped to what they mean for it (BODY: mass, sub, drive; TEXTURE: PM, growl, breath,
 roughness; MOTION: the filter's movement, the Turing's depth on it; DECAY: its envelope). On the perc voice BODY is the
 cutoff (120 Hz .. 2.4 kHz at 50 .. 14 kHz), TEXTURE the grain (CRACKLE's density), MOTION the sweep, DECAY the strike's.
+
+**Rhythm made of noise (D20).** The sequencer locks each noise step's seed (LOOP: LOCK keeps it, lower lets it slip,
+DOUBLE LOCK inverts it each pass); SCATTER (E1) gives each step its own slice from it (band, resonance, length, shape,
+level, place, grain); TONE (E2) puts the band on the note with a second a fifth up, BODY its octave; DRIFT (E3) moves
+the band over four bars; a noise step's ratchet repeats its own noise (a stutter). On SYN with SHIFT.
 
 **MODEL NOISE.** A drum organ's D8 (MODEL) over 50 makes it a perc voice with the same parameters; its SOUND knob
 (ENV, SHIFT, KNOB 1) loads one of sixteen noise sounds (`bio_kits.h`: TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE,

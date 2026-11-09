@@ -1,0 +1,7 @@
+# Demo: RITUAL 03, WALL (PRESETS three times): a wall of noise through a band that sits on the note, a fifth over it:
+# a riff of hiss in D Phrygian, struck each step and held low between; two bars of 16ths, one of triplets, one of
+# 32nds; a wind of noise over it in 8ths
+200 enc 6 3
+400 btn 12
+22900 btn 12
+25400 end

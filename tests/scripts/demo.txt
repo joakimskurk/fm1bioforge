@@ -1,5 +1,5 @@
-# A demo for the ears: THE AWAKENING for eight bars, then STATIC CULT (PRESETS, on the bar: noise as percussion,
-# 132 BPM), then SPLICE (broken, glitched, 100 BPM), with LOOP turned down and up again on the way
+# A demo for the ears: THE AWAKENING for eight bars, then FROZEN (PRESETS, on the bar: rhythm made of noise, the
+# register locking it), then STREAM (a gated noise that never stops), with LOOP turned down and up again on the way
 300 btn 12
 16000 enc 6 1
 24000 enc 1 -10

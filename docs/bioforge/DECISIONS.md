@@ -87,7 +87,7 @@ in the noise: noise as percussion, and a much more versatile expression, with so
 - The old NOISE (breath, scrape, steam) is gone: the perc voice held with BREATH does what it did.
 - The scene's format is "BOF2" (the mix's PUMP): scenes saved by an earlier build are not read; the factory ones load.
 
-**D19 (2026-11-09) Four scenes, four worlds; factory rituals on SHIFT + PRESETS.** INFECTION and MARROW were the
+**D19 (2026-11-09, the start scenes changed by D20) Four scenes, four worlds; factory rituals on SHIFT + PRESETS.** INFECTION and MARROW were the
 awakening with other knobs, which is why everything sounded the same. The four scenes at the start are now RITUAL 00
 THE AWAKENING (the document's), 01 STATIC CULT (132 BPM, noise as percussion, PUMP), 02 SPLICE (100 BPM, broken: 32
 steps, ratchets, chances, a 12-step hat against it, crushed, WAIL on both), 03 VOID (70 BPM, slow and wide: held
@@ -95,3 +95,24 @@ washes, crackle, the drone under a huge HEART, a long reverb). `bio_rituals.h` b
 PRESETS loads any of six (those, INFECTION, EMPTY BODY) into the scene that plays, the one in flash kept until SAVE.
 The demos follow: one each for the four, one turning TEETH's SOUND through the kit, the organ tour, SLOW INFECTION,
 and FROM NOTHING TO A LOOP, now with BONE turned into a CLAP and TEETH a TICK on the way.
+
+**D20 (2026-11-09) Rhythm made of noise: the noise core.** The user, on D18's sounds: they had imagined rhythmic noise,
+not distorted drums. Four sketches were made to choose by ear (outside the firmware, in floating point, with nothing
+an FM-1 could not do): A slices of noise locked into a groove, B one noise cut by a gate, C a wall of noise through a
+band on the note, D clicks, bursts, digital noise and stutters. The user: much closer to what they had in mind, and it
+should shape the synth; all four in the core, and everything BIOFORGE has kept, the noise added to it (TISSUE and the
+tonal organs stay). So the perc voice became the noise core:
+- **Locked noise.** The sequencer gives each step of a noise organ its own seed and keeps it: at LOCK the same noise
+  comes back pass after pass and is the groove (A). LOOP lets a step's noise slip as often as a bit of the register
+  would flip; DOUBLE LOCK swaps it for its inverse each pass. Its own draws, so the register runs as it did. The same
+  start, the same noise (cleared at PLAY and at a new scene).
+- **SCATTER** (E1): each step its own slice, from its locked seed: the band (+-3 octaves), resonance, length (down to a
+  quarter), shape (a chop, a strike, a swell), level, place (to hard left or right), now and then grain.
+- **TONE** (E2): the band on the note (BODY its octave), a second band a fifth over it (C).
+- **DRIFT** (E3): the band over four bars, with the breath (B).
+- A noise step's ratchet repeats its own noise: a stutter, with no buffer (D). Velocity opens the band (an accent half
+  an octave).
+- Parameters 20 -> 24 (E1..E4), the scene format "BOF3". On SYN, SHIFT shows SCATTER TONE DRIFT on a noise organ.
+- The four scenes at the start are now RITUAL 00 THE AWAKENING (the document's), 01 FROZEN (A), 02 STREAM (B), 03 WALL
+  (C); DATA (D), STATIC CULT, SPLICE, VOID, INFECTION and EMPTY BODY are on SHIFT + PRESETS. FROZEN, STREAM, WALL and
+  DATA are the sketches rebuilt in the engine; each costs under 1 500 instructions a frame (the awakening 2 566).

@@ -12,7 +12,7 @@
 typedef struct { const char *name; uint8_t p[BIO_NP]; } bio_preset_t;
 
 #define PK(b, t, m, d, src, res, mode, bur, clk, drv, cr, a, g, w, r, tn, lvl) \
-    {b, t, m, d, src, res, mode, bur, clk, drv, cr, 100, a, g, w, r, tn, lvl, 50, 0}
+    {b, t, m, d, src, res, mode, bur, clk, drv, cr, 100, a, g, w, r, tn, lvl, 50, 0, 0, 0, 0, 0}
 /* (BODY 38: 1.2 kHz, 55: 2.9 kHz, 70: 4.8 kHz, 85: 8.2 kHz; DECAY 25: 22 ms to -40 dB, 40: 60 ms, 50: 120 ms,
     60: 230 ms, 80: 0.8 s; RESO 20: Q 1.3, 50: Q 5.5, 80: Q 13, 95: Q 19) */
 static const bio_preset_t BIO_PERC_KIT[] = {
