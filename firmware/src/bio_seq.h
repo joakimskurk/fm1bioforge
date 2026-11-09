@@ -21,7 +21,7 @@
 #define SEQ_MAXLEN 64u
 #define SEQ_NSCENE 4u
 #define SEQ_BAR (16u * SEQ_TPS)
-#define SEQ_MAGIC 0x33464F42u                   /* "BOF3": the scene's format (2: the mix's PUMP; 3: 24 parameters) */
+#define SEQ_MAGIC 0x34464F42u                   /* "BOF4": the scene's format (2: PUMP; 3: 24 parameters; 4: SPACE) */
 #define SEQ_NUNDO 16u
 #define SEQ_NREDO 8u
 

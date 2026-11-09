@@ -6,7 +6,8 @@
   to the FM-1 and to what is possible.
 - The idea document's pictures are inspiration only (D16): keep their mood and colour rules, not their layout.
 - The code: `firmware/src/bio_engine.h` (the organs, the rib, the FX: no platform, shared with the host tools),
-  `bio_perc.h` (noise as percussion: NOISE, and a drum in MODEL NOISE), `bio_kits.h` (its sixteen sounds),
+  `bio_perc.h` (the noise core: NOISE, and a drum in MODEL NOISE), `bio_kits.h` (its sounds), `bio_land.h` (the
+  synths' landscape MODELs),
   `bio_turing.h` (the register), `bio_seq.h` (scenes, tracks, events, recording, undo), `bio_rituals.h` (the factory
   scenes, from step strings), `bio_ui.h` (the screens),
   `bioforge.c` (the app: the panel, MIDI, saving). `firmware/gen/bio_art.h` is made by `tools/gen_art.py`: never edit

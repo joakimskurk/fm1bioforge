@@ -412,6 +412,42 @@ static void test_perc(void)
         check(sq.rat_left[O_NOISE] == 1u && sq.rat_seed[O_NOISE] == sq.nseed[O_NOISE][3],
               "a noise step's ratchet repeats its own noise (a stutter)");
     }
+    /* the landscapes (D21): every model on every synth heard, not clipped, asleep after its release */
+    {
+        uint32_t m, o, ok_h = 1, ok_c = 1, ok_s = 1;
+        for (m = 1; m < BIO_NLAND; m++)
+            for (o = O_BASS; o < O_NOISE; o++) {
+                setup(&eng, &sq, scn, und, red);
+                seq_sound(&sq);
+                eng.tick = 0;
+                eng.fx.d_mix = eng.fx.r_mix = eng.fx.c_mix = 0;
+                eng.mix.lvl[BIO_ORG_CH[o]] = 100;
+                eng.p[o][P_E1] = BIO_LAND(m);
+                eng.p[o][P_A] = 10;
+                peak = 0; clipped = 0;
+                bio_trigger(&eng, o, o == O_BASS ? 33 : 57, 110, BIO_MS(800), 0, 0x99u + m);
+                run(&eng, 140, 0);
+                bio_release(&eng, o, 255u);
+                run(&eng, 2000, 0);
+                if (peak < 1000) { ok_h = 0; printf("     %s on %s: peak %d\n", BIO_LAND_NAME[m], o == 4u ? "BASS" : o == 5u ? "DRONE" : o == 6u ? "SPASM" : "VOICE", (int)peak); }
+                if (clipped) ok_c = 0;
+                if (eng.tone[o - 4u].awake) ok_s = 0;
+            }
+        check(ok_h, "the landscapes: each of nine models heard on each of the four synths (over -30 dBFS)");
+        check(ok_c && ok_s, "and none clips, and each is asleep 12 s after its release (no CPU)");
+    }
+    /* SPACE: the reverb's rooms are other rooms (ROOM's lines shorter, METAL's the shortest, VAST's the longest) */
+    {
+        uint32_t L[BIO_NSPACE], sp;
+        for (sp = 0; sp < BIO_NSPACE; sp++) {
+            setup(&eng, &sq, scn, und, red);
+            eng.tick = 0;
+            eng.fx.r_space = (uint8_t)sp;
+            run(&eng, 1, 0);
+            L[sp] = eng.rlen[0];
+        }
+        check(L[3] < L[1] && L[1] < L[0] && L[0] < L[2] && L[2] <= L[4], "SPACE: METAL < ROOM < HALL < CAVE <= VAST, the reverb's lines");
+    }
     /* the factory rituals: each plays, in range, and each is its own */
     for (i = 0; i < BIO_NRITUAL; i++) {
         double r;

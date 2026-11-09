@@ -1,0 +1,9 @@
+# Demo: FOUNDRY (a factory ritual): industry, 112 BPM. A piston running (BASS as PISTON), the mains' hum with its sparks
+# (DRONE as HUM), bowed steel (VOICE as STEEL), an anvil off the beat (SPASM as BELL), steam and metal slices locked
+# into a groove, a hinge, a deep HEART; the reverb a room of METAL
+100 btndown 3
+200 enc 6 6
+300 btnup 3
+400 btn 12
+26114 btn 12
+29614 end

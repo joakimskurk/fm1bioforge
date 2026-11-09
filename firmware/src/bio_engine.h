@@ -22,7 +22,10 @@ typedef struct {
     uint8_t d_time, d_fb, d_tone, d_ping, d_mix, d_rev;   /* BLOOD DELAY: time (a division), feedback, tone, ping-pong, return, to the reverb */
     uint8_t r_size, r_decay, r_damp, r_pre, r_mix;        /* BILE REVERB */
     uint8_t c_drive, c_rate, c_bits, c_fold, c_mix;       /* MARROW CRUSH */
+    uint8_t r_space;                                      /* the reverb's SPACE (D21): HALL ROOM CAVE METAL VAST */
 } bio_fxp_t;
+#define BIO_NSPACE 5u
+static const char *const BIO_SPACE_NAME[BIO_NSPACE] = {"HALL", "ROOM", "CAVE", "METAL", "VAST"};
 
 /* the delay's divisions, in 1/96 of a beat (a 16th is 24): 1/32 1/16 3/32 1/8 3/16 1/4 3/8 1/2 3/4 1 bar */
 static const uint16_t BIO_DIV[10] = {12, 24, 36, 48, 72, 96, 144, 192, 288, 384};
@@ -90,7 +93,7 @@ struct bio_s {
 
 static const bio_mix_t BIO_MIX_INIT = {{80, 70, 58, 62, 56, 46}, {0, 0, 0, 0, 0, 0}, {12, 8, 0, 18, 10, 0},
                                        {18, 6, 30, 28, 34, 30}, {0, 10, 0, 20, 0, 12}, 75, 50, 0};
-static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 40};
+static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 40,   0};
 
 static void bio_fx_coefs(bio_t *e);
 
@@ -180,12 +183,18 @@ static int bio_busy(const bio_t *e)             /* anything sounding at all */
 static void bio_fx_coefs(bio_t *e)
 {
     static const uint16_t RL[4] = {1109, 1361, 1621, 1871};
+    /* SPACE: the lines' lengths and the decay (x/256), the damping (lf), more pre-delay. ROOM small and short; CAVE
+       big, dark, late; METAL lines so short their echoes are a pitch: a ringing tank; VAST the biggest, long, open */
+    static const uint16_t SL[BIO_NSPACE] = {256, 115, 333, 46, 420}, ST[BIO_NSPACE] = {256, 128, 410, 300, 563};
+    static const int32_t SD[BIO_NSPACE] = {0, 0, -98304, 131072, 32768};
+    static const uint16_t SP[BIO_NSPACE] = {0, 0, 1100, 0, 400};
     const bio_fxp_t *f = &e->fx;
-    uint32_t k, t60;
+    uint32_t k, t60, sp = f->r_space < BIO_NSPACE ? f->r_space : 0u;
     /* the reverb's decay: 0.25..12 s, 2.8 s at 23 (INIT) */
     t60 = f->r_decay <= 23u ? 250u + (uint32_t)f->r_decay * 2550u / 23u : 2800u + ((uint32_t)f->r_decay - 23u) * 9200u / 77u;
+    t60 = t60 * ST[sp] / 256u;
     for (k = 0; k < 4u; k++) {
-        uint32_t len = RL[k] * (50u + (uint32_t)f->r_size * 130u / 100u) / 100u, num, den, ex;
+        uint32_t len = RL[k] * (50u + (uint32_t)f->r_size * 130u / 100u) / 100u * SL[sp] / 256u, num, den, ex;
         if (len > BIO_REV_L - 16u) len = BIO_REV_L - 16u;
         if (len < 64u) len = 64u;
         e->rlen[k] = len;
@@ -193,9 +202,9 @@ static void bio_fx_coefs(bio_t *e)
         den = t60 * 2205u / 100u;
         ex = num / (den ? den : 1u);
         e->rg[k] = (int32_t)(bio_exp2(-(int32_t)(ex > (15u << 16) ? 15u << 16 : ex)) >> 1);   /* Q15 */
-        bio_op_set(&e->rdamp[k], bio_map_lf(f->r_damp, 500, 4200, 12000) + 65536);   /* (half rate: one octave up) */
+        bio_op_set(&e->rdamp[k], bio_clamp(bio_map_lf(f->r_damp, 500, 4200, 12000) + 65536 + SD[sp], bio_lf_hz(300), bio_lf_hz(20000)));   /* (half rate: one octave up) */
     }
-    e->rpre = (uint32_t)f->r_pre * 2646u / 100u;
+    e->rpre = (uint32_t)f->r_pre * 2646u / 100u + SP[sp];
     if (e->rpre >= BIO_PRE_N) e->rpre = BIO_PRE_N - 1u;
     bio_op_set(&e->rhp_l, bio_lf_hz(150));
     e->rhp_r = e->rhp_l;
@@ -227,7 +236,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
     uint32_t off, o, k;
     int32_t meter[BIO_NCH] = {0, 0, 0, 0, 0, 0};
     uint32_t fxs = (uint32_t)e->fx.r_size | (uint32_t)e->fx.r_decay << 7 | (uint32_t)e->fx.r_damp << 14 |
-                   (uint32_t)e->fx.r_pre << 21 | (uint32_t)e->fx.d_tone << 25;
+                   (uint32_t)e->fx.r_pre << 21 | ((uint32_t)e->fx.d_tone << 25 ^ (uint32_t)e->fx.r_space << 29);
     if (fxs != e->fx_seen) {
         e->fx_seen = fxs;
         bio_fx_coefs(e);
@@ -252,6 +261,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         life.heart = e->heart;
         life.drift = e->drift;
         life.cv = e->nerve_cv;
+        life.beat = e->beat_q16;
         for (k = 0; k < BIO_SB; k++) e->rib_in[k] = 0;
         for (o = 0; o < BIO_NORG; o++)
             for (k = 0; k < BIO_SB; k++) e->ob[o][k] = e->os[o][k] = 0;

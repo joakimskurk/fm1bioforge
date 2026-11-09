@@ -119,6 +119,12 @@ Each has the same four macros, mapped to what they mean for it (BODY: mass, sub,
 roughness; MOTION: the filter's movement, the Turing's depth on it; DECAY: its envelope). On the perc voice BODY is the
 cutoff (120 Hz .. 2.4 kHz at 50 .. 14 kHz), TEXTURE the grain (CRACKLE's density), MOTION the sweep, DECAY the strike's.
 
+**Crackle (D21).** The noise core's sources are eight: WHITE PINK DIGI METAL and the crackles DUST, FIRE (clustered
+pops over a smoulder), FRY (a dense sizzle), CREAK (gliding stick-slip); TEXTURE their density.
+
+**Landscapes (D21).** A synth's MODEL (E1) makes it one of nine voices (`bio_land.h`): HUM STEEL PISTON (industry),
+GLASS BELL CHOIR (cosmic), BLOOD BUBBLE SLIME (the body). The reverb's SPACE: HALL ROOM CAVE METAL VAST.
+
 **Rhythm made of noise (D20).** The sequencer locks each noise step's seed (LOOP: LOCK keeps it, lower lets it slip,
 DOUBLE LOCK inverts it each pass); SCATTER (E1) gives each step its own slice from it (band, resonance, length, shape,
 level, place, grain); TONE (E2) puts the band on the note with a second a fifth up, BODY its octave; DRIFT (E3) moves

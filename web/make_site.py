@@ -39,7 +39,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 BLOCKS, BLK, KEEP = 20, 0x30, 0x2F
 APP = {"build/web/bioforge.wasm": "bioforge.wasm", "web/app/worklet.js": "worklet.js", "web/app/play.js": "play.js"}
-SCREENS = ("seq", "syn", "mut", "mix", "fx", "voice", "perc")
+SCREENS = ("seq", "syn", "mut", "mix", "fx", "voice", "perc", "land")
 DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each)
     ("1_awakening", "RITUAL 00 · THE AWAKENING",
      "The idea document's start scene, sixteen bars: HEART on the four, BONE on two and four, TEETH and CLAW between, "
@@ -57,17 +57,22 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
     ("5_data", "DATA",
      "Clinical and digital: clicks with a high ping, white bursts of a few milliseconds scattered left and right, "
      "shift-register noise at four clocks, stutters, and silence."),
-    ("6_static", "STATIC CULT",
-     "Noise as percussion, 132 BPM: a flam snare of noise, ticking sixteenths, metal off the beat, an open hiss over a "
-     "tight HEART and a rolling bass. PUMP ducks the rest under the kick; for the last eight bars it goes to 90 %."),
-    ("7_kit", "THE NOISE KIT, SOUND BY SOUND",
-     "STATIC CULT plays while TEETH's SOUND is turned one step a bar through the sixteen noise sounds: TICK, HISS, "
-     "METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING, THUMP, WASH, FLAM SNR, BIT HAT, LASER; then its "
-     "own body (TISSUE) again."),
-    ("8_body", "THE BODY, ORGAN BY ORGAN",
-     "Played on the keys. The kit: HEART at three tunings, BONE, TEETH closed then open, CLAW short and dragged. "
-     "Then BASS, a DRONE held, SPASM, the VOICE's throat, NOISE breathing."),
-    ("9_build", "FROM NOTHING TO A LOOP",
+    ("6_embers", "EMBERS",
+     "Organic crackle: a fire held under it all, sparks locked into a groove (each its own), grease on two and four, a "
+     "creak of wood that comes and goes, a low HEART, the drone in the dark."),
+    ("7_foundry", "FOUNDRY",
+     "Industry: a piston running (BASS as PISTON), the hum of the mains with its sparks (DRONE as HUM), bowed steel "
+     "(VOICE as STEEL), an anvil off the beat, steam and metal slices locked into a groove; the reverb a room of METAL."),
+    ("8_orbit", "ORBIT",
+     "Cosmic: glass beating slowly (DRONE as GLASS), a choir moving through vowels (VOICE as CHOIR), bells far apart, ice "
+     "crackling and creaking, a wind drifting; the reverb VAST."),
+    ("9_innards", "INNARDS",
+     "The body from inside: blood pulsing with the beat (DRONE as BLOOD), a wet squelching bass (BASS as SLIME), "
+     "bubbles rising (VOICE as BUBBLE), a heartbeat, grease and sizzling flesh, a breath gated in and out; in a CAVE."),
+    ("10_kit", "THE NOISE KIT, SOUND BY SOUND",
+     "STATIC CULT plays while TEETH's SOUND is turned one step a bar through the noise sounds, from TICK to LASER; then "
+     "its own body (TISSUE) again."),
+    ("11_build", "FROM NOTHING TO A LOOP",
      "An empty body. PLAY, REC: HEART and BONE played in, TEETH on the off-beats; then BONE becomes a CLAP and TEETH a "
      "TICK, the same notes in noise; a bass line in one bar; then the nerve moves the texture, and is locked again."),
 ]

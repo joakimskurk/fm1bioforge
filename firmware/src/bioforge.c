@@ -137,8 +137,9 @@ static knob_t knob_for(uint32_t k)
     case PG_SYN:
         if (ui.sub == 0u) {
             n.type = KT_P;
-            n.idx = (uint8_t)(sh ? (org_perc(o) ? P_E1 + k : P_D1 + k) : P_BODY + k);
-            n.name = sh ? (org_perc(o) ? CORE[k] : deep_name(o, k)) : MACRO[k];
+            n.idx = (uint8_t)(sh ? (org_perc(o) ? P_E1 + k : o >= 4u && k == 0u ? P_E1 : P_D1 + k) : P_BODY + k);
+            n.name = sh ? (org_perc(o) ? CORE[k] : o >= 4u && k == 0u ? "MODEL" :
+                           o >= 4u && bio_land_of(SC()->p[o][P_E1]) ? "" : deep_name(o, k)) : MACRO[k];   /* (a synth: its MODEL, D21) */
         } else if (ui.sub == 1u) {
             n.type = KT_P;
             n.idx = (uint8_t)(sh ? P_D5 + k : P_D1 + k);
@@ -179,7 +180,8 @@ static knob_t knob_for(uint32_t k)
         static const uint8_t IA0[4] = {4, 10, 15, 5}, IB0[4] = {0, 1, 7, 6}, IA1[4] = {2, 3, 8, 9}, IB1[4] = {11, 12, 13, 14};
         n.type = KT_FX;
         if (ui.sub == 0u) { n.idx = sh ? IB0[k] : IA0[k]; n.name = sh ? B0[k] : A0[k]; }
-        else { n.idx = sh ? IB1[k] : IA1[k]; n.name = sh ? B1[k] : A1[k]; }
+        else if (ui.sub == 1u) { n.idx = sh ? IB1[k] : IA1[k]; n.name = sh ? B1[k] : A1[k]; }
+        else { n.idx = 16; n.name = k == 0u ? "SPACE" : ""; if (!n.name[0]) n.type = KT_NONE; }   /* FX again: the room */
         break;
     }
     default: {                                  /* GLO */
@@ -224,6 +226,7 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
         if (n.idx == 3u) *hi = 1;
         if (n.idx == 1u) *hi = 85;
         if (n.idx == 5u) *hi = 35;
+        if (n.idx == 16u) *hi = (int32_t)BIO_NSPACE - 1;
         return fx[n.idx];
     case KT_BPM: *lo = 400; *hi = 2400; return sc->bpm10;
     case KT_SWING: return sc->swing;
@@ -364,13 +367,18 @@ static void knob_text(knob_t n, char *s)
         if (n.idx == P_TUNE) { if (v > 24) *p++ = '+'; i2s(p, v - 24); return; }
         if (n.idx == P_PAN) { if (v == 50) str_cat(p, "C"); else { *p++ = v < 50 ? 'L' : 'R'; u2s(p, (uint32_t)bio_abs(v - 50) * 2u); } return; }
         if (org_perc(cur_org())) {              /* the perc voice's switches */
-            if (n.idx == P_D1) { str_cat(p, BIO_PS_NAME[v < 20 ? 0 : v < 40 ? 1 : v < 60 ? 2 : v < 80 ? 3 : 4]); return; }
+            if (n.idx == P_D1) { str_cat(p, BIO_PS_NAME[bio_ps_of((uint32_t)v)]); return; }
             if (n.idx == P_D3) { str_cat(p, v <= 8 ? "LOW" : v >= 92 ? "HIGH" : v >= 42 && v <= 58 ? "BAND" : v < 50 ? "LO>BD" : "BD>HI"); return; }
             if (n.idx == P_D4) { u2s(p, v < 25 ? 1u : v < 50 ? 2u : v < 75 ? 3u : 4u); return; }
             if (n.idx == P_D && !v) { str_cat(p, "HIT"); return; }
             if ((n.idx == P_E1 || n.idx == P_E2 || n.idx == P_E3) && !v) { str_cat(p, "OFF"); return; }
         }
         if (n.idx == P_D8 && cur_org() < 4u) { str_cat(p, v >= 50 ? "NOISE" : "TISSUE"); return; }
+        if (n.idx == P_E1 && cur_org() >= 4u && cur_org() < O_NOISE) {   /* a synth's MODEL: its own, or a landscape */
+            uint32_t m = bio_land_of((uint32_t)v);
+            str_cat(p, m ? BIO_LAND_NAME[m] : BIO_OWN_NAME[cur_org() - 4u]);
+            return;
+        }
         break;
     case KT_KIT:
         if (!v) { str_cat(p, "TISSUE"); return; }
@@ -384,6 +392,7 @@ static void knob_text(knob_t n, char *s)
     case KT_FX:
         if (n.idx == 0u) { str_cat(s, BIO_DIV_NAME[v < 10 ? v : 4]); return; }
         if (n.idx == 3u) { str_cat(s, v ? "ON" : "OFF"); return; }
+        if (n.idx == 16u) { str_cat(s, BIO_SPACE_NAME[v < (int32_t)BIO_NSPACE ? v : 0]); return; }
         break;
     case KT_BPM: p = u2s(p, (uint32_t)v / 10u); *p++ = '.'; u2s(p, (uint32_t)v % 10u); return;
     case KT_QUANT: str_cat(s, SEQ_QNAME[v < 5 ? v : 0]); return;
@@ -846,7 +855,7 @@ static void draw_syn(void)
             uint32_t hz;
             cv_t5(10 + (int32_t)i * 57, 82, L[i], COL_BONE_D, 1);
             p = s;
-            if (i == 0u) str_cat(p, BIO_PS_NAME[pp[P_D1] < 20u ? 0 : pp[P_D1] < 40u ? 1 : pp[P_D1] < 60u ? 2 : pp[P_D1] < 80u ? 3 : 4]);
+            if (i == 0u) str_cat(p, BIO_PS_NAME[bio_ps_of(pp[P_D1])]);
             if (i == 1u) str_cat(p, mode <= 8 ? "LOW" : mode >= 92 ? "HIGH" : mode >= 42 && mode <= 58 ? "BAND" : mode < 50 ? "LO>BD" : "BD>HI");
             if (i == 2u && pp[P_E2]) {        /* TONE: the note, an octave or two over it */
                 int32_t oc = ((int32_t)pp[P_BODY] * 5 + 50) / 100 - 2;
@@ -895,8 +904,10 @@ static void draw_syn(void)
             cv_t5(10 + (int32_t)i * 57, 82, C[i], COL_BONE_D, 1);
             cv_rect(10 + (int32_t)i * 57, 91, (int32_t)v * 44 / 100, 2, COL_FLESH);
         }
-    } else if (o < O_NOISE) {                   /* a tonal organ: its envelope now, its note */
+    } else if (o < O_NOISE) {                   /* a tonal organ: its envelope now, its note; its MODEL */
         bio_tone_t *v = &eng.tone[o - 4u];
+        uint32_t md = bio_land_of(SC()->p[o][P_E1]);
+        cv_t5(8 + t5w(ORG_NAME[o], 2) + 8, 11, md ? BIO_LAND_NAME[md] : BIO_OWN_NAME[o - 4u], md ? COL_FLESH : COL_BONE_D, 1);
         int32_t e = v->awake ? (v->env.v >> 24) : 0;
         cv_t5(10, 86, "ENV", COL_BONE_D, 1);
         cv_rect(34, 87, 2 + e * 120 / 64, 5, v->gate ? COL_GREEN : COL_FLESH);
@@ -969,6 +980,7 @@ static void draw_fx(void)
     cv_t5(10, 24, s, COL_BONE, 1);
     cv_rect(10, 34, sc->fx.d_mix * 2, 3, COL_RED_D);
     cv_t5(10, 46, "BILE REVERB", sc->fx.r_mix ? COL_GREEN : COL_DIM, 2);
+    cv_t5(150, 52, BIO_SPACE_NAME[sc->fx.r_space < BIO_NSPACE ? sc->fx.r_space : 0u], COL_FLESH, 1);
     p = str_cat(s, "DECAY "); p = u2s(p, t60 / 1000u); p = str_cat(p, "."); p = u2s(p, t60 / 100u % 10u);
     p = str_cat(p, "S  SIZE "); p = u2s(p, 50u + sc->fx.r_size * 130u / 100u);
     p = str_cat(p, "%  DAMP "); p = u2s(p, sc->fx.r_damp);
@@ -1065,7 +1077,7 @@ static void leds(void)
 static void page_to(uint32_t pg)
 {
     if (ui.page == pg) {                        /* again: the page under it */
-        uint32_t nsub = pg == PG_GLO || pg == PG_SEQ ? 1u : 2u;
+        uint32_t nsub = pg == PG_GLO || pg == PG_SEQ ? 1u : pg == PG_FX ? 3u : 2u;
         ui.sub = (ui.sub + 1u) % nsub;
     } else {
         ui.page = pg;

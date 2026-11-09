@@ -1,0 +1,273 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* BIOFORGE's landscapes (D21): models any tonal organ (BASS, DRONE, SPASM, VOICE) can be instead of its own voice,
+ * its MODEL (E1). The user chose three worlds: INDUSTRY (HUM, an electric hum with sparks; STEEL, bowed metal; PISTON,
+ * a machine that runs while the key is held), COSMIC (GLASS, inharmonic partials beating; BELL, FM; CHOIR, three
+ * throats through formants) and BODY (BLOOD, a pulse with the beat; BUBBLE, rising drops; SLIME, a wet squelch). The
+ * organ keeps its own envelope, note and role; the four macros mean what each model says below. Integers only, mono,
+ * the same seed the same sound. */
+#ifndef BIO_LAND_H
+#define BIO_LAND_H
+#include "bio_dsp.h"
+
+enum { L_OWN, L_HUM, L_STEEL, L_PISTON, L_GLASS, L_BELL, L_CHOIR, L_BLOOD, L_BUBBLE, L_SLIME, BIO_NLAND };
+static const char *const BIO_LAND_NAME[BIO_NLAND] = {"OWN", "HUM", "STEEL", "PISTON", "GLASS", "BELL", "CHOIR", "BLOOD",
+                                                     "BUBBLE", "SLIME"};
+static const char *const BIO_OWN_NAME[4] = {"MUSCLE", "WOMB", "NERVE", "THROAT"};   /* BASS DRONE SPASM VOICE as they are */
+#define BIO_LAND(i) ((uint8_t)((i) * 10u + 5u))   /* a model as MODEL's value */
+static inline uint32_t bio_land_of(uint32_t v) { v = v * BIO_NLAND / 101u; return v < BIO_NLAND ? v : BIO_NLAND - 1u; }
+
+/* a note starts: the model's own state (the organ's envelope is set already) */
+static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_t seed)
+{
+    uint32_t k;
+    for (k = 0; k < 8u; k++) v->lx[k] = 0;
+    for (k = 0; k < 4u; k++) v->lu[k] = 0;
+    v->pa = v->pb = v->pc = v->pd = 0;
+    v->rnd = bio_hash(seed, 0x1A2Du);
+    v->f1.ic1 = v->f1.ic2 = v->f2.ic1 = v->f2.ic2 = v->f3.ic1 = v->f3.ic2 = v->f4.ic1 = v->f4.ic2 = 0;
+    switch (model) {
+    case L_HUM: bio_op_set(&v->o1, bio_lf_hz(6000)); break;
+    case L_PISTON: bio_op_set(&v->o1, bio_lf_hz(3000)); v->lu[0] = ~0u; break;
+    case L_BELL: {                              /* the index: BODY to 5 rad, falling over DECAY's time */
+        v->lx[0] = (int32_t)p[P_BODY] * 327;
+        v->lx[1] = bio_decay(BIO_SB, bio_tau(bio_map_ms(p[P_DECAY], 40, 400, 4000) / 2u + 1u));
+        break;
+    }
+    case L_CHOIR: bio_op_set(&v->o1, bio_lf_hz(5000)); break;
+    case L_BLOOD: bio_op_set(&v->o1, bio_map_lf(p[P_BODY], 80, 300, 1500)); break;
+    case L_SLIME: v->lx[1] = 32767; break;      /* a squelch at the start */
+    default: break;
+    }
+}
+
+/* the steel's modes (a plate's), the glass's partials, the bell's ratios: their log2 (Q16) */
+static const int32_t BIO_STEEL_LF[4] = {0, 44018, 71711, 92144};       /* 1, 1.593, 2.135, 2.65 */
+static const int32_t BIO_GLASS_LF[4] = {0, 79568, 136806, 178848};     /* 1, 2.32, 4.25, 6.63 */
+static const int32_t BIO_BELL_LF[6] = {0, 32756, 65536, 95830, 118446, 159483};   /* 1, 1.414, 2, 2.756, 3.5, 5.404 */
+static const uint8_t BIO_PISTON_RATE[6] = {1, 2, 3, 4, 6, 8};          /* strokes a beat */
+
+/* n samples of a landscape: e0 the envelope at the start, step its slope, a the level; added to out[] */
+static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, const bio_life_t *life, int32_t e0,
+                            int32_t step, int32_t a, int32_t *out, uint32_t n)
+{
+    uint32_t k, inc = bio_inc(v->lf + bio_mul15(life->drift, 600));
+    int32_t pk = v->peak, y, tex = p[P_TEXTURE], body = p[P_BODY], mot = p[P_MOTION];
+    switch (model) {
+    case L_HUM: {   /* a pulse (TEXTURE narrows it) and its octave, smoothed; a resonant band (BODY) that flutters
+                       (MOTION); now and then a spark (TEXTURE) */
+        uint32_t w = 2147483648u - (uint32_t)tex * 17179869u;   /* 0.5 .. 0.1 */
+        int32_t spk = tex * tex * 970;           /* (sparks: 9 a second at 30, 100 at 100) */
+        if (++v->lu[1] >= 40u) { v->lu[1] = 0; v->lx[1] = bio_noise(&v->rnd); }   /* the flutter's aim, 34 a second */
+        v->lx[0] += (v->lx[1] - v->lx[0]) >> 2;
+        bio_svf_set(&v->f1, bio_map_lf((uint32_t)body, 150, 900, 5000) + bio_mul15(v->lx[0], mot * 600), bio_q_k(25));
+        for (k = 0; k < n; k++) {
+            int32_t x, bp;
+            v->pa += inc;
+            x = (v->pa < w ? 16384 : 0) - (int32_t)(w >> 18) + bio_mul15(bio_sin(v->pa * 2u), 6000);
+            x = bio_op_lp(&v->o1, x);
+            (void)bio_svf(&v->f1, x, &bp);
+            y = (x >> 1) + bp;
+            if ((bio_rnd(&v->rnd) >> 8) < (uint32_t)spk >> 8) y += (v->rnd & 1u) ? 14000 : -14000;
+            y = bio_mul15(y, 32767 - bio_abs(bio_mul15(v->lx[0], mot * 200)));
+            e0 += step;
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_STEEL: {   /* bowed metal: noise (a bow, MOTION its jitter) into a plate's four modes; TEXTURE how long they
+                         ring (Q 8 .. 200), BODY an octave down or up */
+        uint32_t q10 = 80u + (uint32_t)(tex * tex) * 192u / 1000u, j;
+        int32_t lf = v->lf + 2 * 65536 + (body - 50) * 1311, g = (int32_t)(bio_exp2((bio_log2(bio_q_k(q10)) - (16 << 16)) / 2 + 3 * 65536) >> 4);
+        for (j = 0; j < 4u; j++) bio_svf_set(j == 0u ? &v->f1 : j == 1u ? &v->f2 : j == 2u ? &v->f3 : &v->f4, lf + BIO_STEEL_LF[j], bio_q_k(q10));
+        if (++v->lu[1] >= 8u) { v->lu[1] = 0; v->lx[1] = bio_noise(&v->rnd) / 2 + 16384; }   /* the bow's pressure */
+        v->lx[0] += (v->lx[1] - v->lx[0]) >> 3;
+        for (k = 0; k < n; k++) {
+            int32_t x = bio_mul15(bio_noise(&v->rnd) >> 3, 32767 - bio_mul15(mot * 327, 32767 - v->lx[0])), b1, b2, b3, b4;
+            (void)bio_svf(&v->f1, x, &b1); (void)bio_svf(&v->f2, x, &b2);
+            (void)bio_svf(&v->f3, x, &b3); (void)bio_svf(&v->f4, x, &b4);
+            y = (int32_t)(((int64_t)(b1 + ((b2 * 23) >> 5) + (b3 >> 1) + ((b4 * 11) >> 5)) * g) >> 12);
+            y = bio_clamp(y, -60000, 60000);
+            e0 += step;
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_PISTON: {   /* a machine, running while the key is held: strokes on the beat (TEXTURE: 1 .. 8 a beat), each
+                          a thump down the note and a clank of metal (BODY its brightness), steam between (MOTION) */
+        uint32_t rate = BIO_PISTON_RATE[(uint32_t)tex * 6u / 101u], cyc = (uint32_t)(((uint64_t)life->beat * rate) >> 16);
+        uint32_t frac = (life->beat * rate) & 0xFFFFu;
+        int32_t imp = 0;
+        if (cyc != v->lu[0]) { v->lu[0] = cyc; v->lx[0] = 32767; v->lx[1] = 32767; v->lu[1] = 0; imp = 24000; }
+        if (frac > 0x8000u && !v->lu[1]) { v->lu[1] = 1; v->lx[2] = mot * 327; }   /* the steam, half a stroke on */
+        bio_svf_set(&v->f1, v->lf + 2 * 65536 + (body - 50) * 1311, bio_q_k(400));
+        bio_svf_set(&v->f2, v->lf + 2 * 65536 + 159483 + (body - 50) * 1311, bio_q_k(300));
+        for (k = 0; k < n; k++) {
+            int32_t th, cl, st, b1, b2, hp, w = bio_noise(&v->rnd);
+            v->pa += inc + (uint32_t)(((uint64_t)inc * (uint32_t)v->lx[1]) >> 15);   /* the thump falls an octave */
+            th = bio_mul15(bio_sin(v->pa), v->lx[1]);
+            cl = imp + bio_mul15(w, v->lx[0]) / 4;
+            imp = 0;
+            (void)bio_svf(&v->f1, cl, &b1); (void)bio_svf(&v->f2, cl, &b2);
+            hp = w - bio_op_lp(&v->o1, w);
+            st = bio_mul15(hp, v->lx[2]) >> 2;
+            v->lx[0] = bio_mul15(v->lx[0], 32440);   /* (the clank's noise: 3 ms) */
+            v->lx[1] = bio_mul15(v->lx[1], 32742);   /* (the thump: 30 ms) */
+            v->lx[2] = bio_mul15(v->lx[2], 32750);   /* (the steam: 45 ms) */
+            y = th + ((b1 + b2) >> 1) + st;
+            e0 += step;
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_GLASS: {   /* four inharmonic partials of glass, each beating on its own (MOTION); TEXTURE the upper ones'
+                         level, BODY a sub-octave under them */
+        uint32_t inc2, inc3, inc4, inc0;
+        int32_t l1 = 16000 + tex * 80, l2 = tex * 130, l3 = tex * 80, sub = body * 160;
+        if (++v->lu[1] >= 300u) {               /* new aims for the beating, 4 a second */
+            v->lu[1] = 0;
+            v->lx[4] = bio_noise(&v->rnd); v->lx[5] = bio_noise(&v->rnd); v->lx[6] = bio_noise(&v->rnd);
+        }
+        v->lx[1] += (v->lx[4] - v->lx[1]) >> 7; v->lx[2] += (v->lx[5] - v->lx[2]) >> 7; v->lx[3] += (v->lx[6] - v->lx[3]) >> 7;
+        inc = bio_inc(v->lf + 2 * 65536 + bio_mul15(life->drift, 600));   /* (glass two octaves up; BODY's sub under it) */
+        inc2 = bio_inc(v->lf + 2 * 65536 + BIO_GLASS_LF[1] + bio_mul15(v->lx[1], mot * 6));
+        inc3 = bio_inc(v->lf + 2 * 65536 + BIO_GLASS_LF[2] + bio_mul15(v->lx[2], mot * 8));
+        inc4 = bio_inc(v->lf + 2 * 65536 + BIO_GLASS_LF[3] + bio_mul15(v->lx[3], mot * 10));
+        inc0 = inc / 4u;
+        for (k = 0; k < n; k++) {
+            v->pa += inc; v->pb += inc2; v->pc += inc3; v->pd += inc4; v->lu[2] += inc0;
+            y = (bio_sin(v->pa) >> 1) + bio_mul15(bio_sin(v->pb), l1) / 2 + bio_mul15(bio_sin(v->pc), l2) / 2 +
+                bio_mul15(bio_sin(v->pd), l3) / 2 + bio_mul15(bio_sin(v->lu[2]), sub) / 2;
+            e0 += step;
+            y = bio_mul15(bio_mul15(y, e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_BELL: {   /* FM: a carrier and a modulator at a ratio (TEXTURE: 1, 1.41, 2, 2.76, 3.5, 5.4), the index from
+                        BODY falling with DECAY; MOTION a slow vibrato */
+        uint32_t im = bio_inc(v->lf + BIO_BELL_LF[(uint32_t)tex * 6u / 101u]);
+        int32_t idx;
+        v->lx[0] = bio_mul30(v->lx[0], v->lx[1]);
+        idx = (int32_t)(((int64_t)v->lx[0] * 104305) >> 15);   /* (5 rad at full: phase units for a Q15 sine's 1) */
+        v->pc += bio_inc(bio_lf_hz(5)) * n;
+        inc = bio_inc(v->lf + bio_mul15(bio_sin(v->pc), mot * 20));
+        for (k = 0; k < n; k++) {
+            int32_t m;
+            v->pa += inc; v->pb += im;
+            m = bio_sin(v->pb);
+            y = bio_sin(v->pa + (uint32_t)((int64_t)m * idx)) >> 1;
+            e0 += step;
+            y = bio_mul15(bio_mul15(y, e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_CHOIR: {   /* three throats a little apart (MOTION) through three formants: BODY the vowel (U O A E I),
+                         TEXTURE their breath */
+        int32_t m = bio_clamp(body * 41 + bio_mul15(life->breath, 300), 0, 4 * 1024 - 1), f[3], d = mot * 7;
+        uint32_t vi = (uint32_t)m >> 10, j, i2 = bio_inc(v->lf + d), i3 = bio_inc(v->lf - d);
+        int32_t fr = m & 1023;
+        for (j = 0; j < 3u; j++) {
+            int32_t a0 = bio_lf_hz(BIO_VOWEL[vi][j]), a1 = bio_lf_hz(BIO_VOWEL[vi < 4u ? vi + 1u : 4u][j]);
+            f[j] = a0 + (int32_t)(((int64_t)(a1 - a0) * fr) >> 10);
+        }
+        bio_svf_set(&v->f1, f[0], bio_q_k(60));
+        bio_svf_set(&v->f2, f[1], bio_q_k(80));
+        bio_svf_set(&v->f3, f[2], bio_q_k(100));
+        for (k = 0; k < n; k++) {
+            int32_t o;
+            v->pa += inc; v->pb += i2; v->pc += i3;
+            o = ((int32_t)(v->pa >> 16) + (int32_t)(v->pb >> 16) + (int32_t)(v->pc >> 16) - 3 * 32768) / 4;
+            o = bio_op_lp(&v->o1, o) + bio_mul15(bio_noise(&v->rnd), tex * 90);
+            y = bio_svf_bp(&v->f1, o) + (bio_svf_bp(&v->f2, o) >> 1) + (bio_svf_bp(&v->f3, o) >> 2);
+            e0 += step;
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_BLOOD: {   /* a pulse on the beat, lub and dub (MOTION how deep): a sine under the note and its octave, the
+                         rush of blood (TEXTURE) through a low band (BODY) */
+        uint32_t b = life->beat & 0xFFFFu, b2 = (b - 19661u) & 0xFFFFu;   /* (the dub 0.3 of a beat on) */
+        int32_t lub = (int32_t)(bio_exp2(-(int32_t)(b * 12u)) >> 1), dub = (int32_t)(bio_exp2(-(int32_t)(b2 * 14u)) >> 1);
+        int32_t pulse = bio_clamp(lub + bio_mul15(dub, 20000), 0, 32767), dep = mot * 327, am;
+        am = 32767 - dep + bio_mul15(dep, pulse);
+        for (k = 0; k < n; k++) {
+            int32_t r;
+            v->pa += inc; v->pb += inc * 2u;
+            r = bio_op_lp(&v->o1, bio_noise(&v->rnd));
+            y = (bio_sin(v->pa) >> 1) + (bio_sin(v->pb) >> 3) + bio_mul15(r, tex * 600) / 8;
+            y = bio_mul15(y, am);
+            e0 += step;
+            y = bio_mul15(bio_mul15(y, e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_BUBBLE: {   /* drops rising (2 at a time): TEXTURE how many (2 .. 80 a second), MOTION how far from the
+                          note they scatter, BODY their size (bigger: lower, longer) */
+        uint32_t per = (uint32_t)(bio_exp2(bio_lf_hz(2) + tex * (bio_lf_hz(80) - bio_lf_hz(2)) / 100 - (14 << 16)) >> 2) * 97391u;
+        for (k = 0; k < n; k++) {
+            uint32_t r = bio_rnd(&v->rnd);
+            if (r < per) {                      /* a new drop, in the older slot */
+                uint32_t s = v->lu[3] ^= 1u, sz = (uint32_t)body;
+                int32_t lf = v->lf + 3 * 65536 - (body - 50) * 1311 + bio_mul15(bio_noise(&v->rnd), mot * 655);   /* (3 octaves up) */
+                v->lu[s] = bio_inc(lf);
+                v->lx[s] = 22000 + (int32_t)(r >> 21);
+                v->lx[2 + s] = bio_decay(1, BIO_MS(6u + sz * sz / 200u));   /* (6 .. 56 ms) */
+                if (s) v->pb = 0; else v->pa = 0;
+            }
+            v->pa += v->lu[0]; v->pb += v->lu[1];
+            v->lu[0] += v->lu[0] >> 12; v->lu[1] += v->lu[1] >> 12;   /* rising: an octave in 64 ms */
+            if (v->lu[0] > (1u << 29)) v->lx[0] = 0;
+            if (v->lu[1] > (1u << 29)) v->lx[1] = 0;
+            y = bio_mul15(bio_sin(v->pa), v->lx[0]) + bio_mul15(bio_sin(v->pb), v->lx[1]);
+            v->lx[0] = bio_mul30(v->lx[0], v->lx[2]); v->lx[1] = bio_mul30(v->lx[1], v->lx[3]);
+            e0 += step;
+            y = bio_mul15(bio_mul15(y, e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_SLIME: {   /* a saw and a square under it (BODY) through a wet resonant low-pass: a squelch at the note and
+                         at random (MOTION: to 8 a second), its cutoff gurgling (TEXTURE) */
+        uint32_t q10 = 40u + (uint32_t)tex * 80u / 100u, psq = (uint32_t)mot * 4u;   /* (a sub-block's chance, of 2^16) */
+        int32_t lfc;
+        if ((bio_rnd(&v->rnd) >> 16) < psq) v->lx[1] = 26000 + (int32_t)(v->rnd >> 26) * 100;
+        v->lx[1] = bio_mul15(v->lx[1], 32000);  /* (the squelch: 40 ms) */
+        if (++v->lu[1] >= 20u) { v->lu[1] = 0; v->lx[2] = bio_noise(&v->rnd); }
+        v->lx[0] += (v->lx[2] - v->lx[0]) >> 3;
+        lfc = v->lf + 65536 + bio_mul15(v->lx[1], 3 * 65536) + bio_mul15(v->lx[0], tex * 900);
+        bio_svf_set(&v->f1, lfc, bio_q_k(q10));
+        for (k = 0; k < n; k++) {
+            int32_t o;
+            v->pa += inc; v->pb += inc / 2u;
+            o = ((int32_t)(v->pa >> 16) - 32768) / 2 + bio_mul15(v->pb < (1u << 31) ? 12000 : -12000, body * 327);
+            {
+                int32_t bp;
+                y = bio_svf(&v->f1, o, &bp);
+            }
+            y = bio_clamp(y, -50000, 50000);
+            e0 += step;
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    default: break;
+    }
+    v->peak = pk;
+}
+#endif

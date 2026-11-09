@@ -84,7 +84,7 @@ static const uint8_t BIO_P_INIT[BIO_NORG][BIO_NP] = {
     {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  70, 50, 100, 75,  24, 84, 50, 0,  0, 0, 0, 0},  /* DRONE */
     {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  0, 50, 0, 30,  24, 76, 58, 0,  0, 0, 0, 0},   /* SPASM */
     {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  60, 50, 80, 65,  24, 80, 46, 0,  0, 0, 0, 0},   /* VOICE */
-    {42, 15, 50, 60,  30, 19, 50, 0, 0, 0, 0, 50,  63, 100, 40, 96,  24, 72, 50, 0,  0, 0, 0, 0},  /* NOISE (the perc voice: a breath) */
+    {42, 15, 50, 60,  18, 19, 50, 0, 0, 0, 0, 50,  63, 100, 40, 96,  24, 72, 50, 0,  0, 0, 0, 0},  /* NOISE (the perc voice: a breath) */
 };
 
 /* LEVEL 0..100 as a fader: the square (80: -3.9 dB, 50: -12 dB), Q15 */
@@ -477,7 +477,11 @@ typedef struct {
     uint32_t rnd, ratchet, rt_n, rt_len, rt_t;  /* SPASM's ratchet: pulses left, their spacing */
     int32_t mouth, vel, fade, grain, gt;
     int32_t peak, last;
+    int32_t lx[8];                              /* a landscape's state (bio_land.h) */
+    uint32_t lu[4];
 } bio_tone_t;
+static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_t seed);
+static inline uint32_t bio_land_of(uint32_t v);
 
 static void bio_tone_on(bio_tone_t *v, uint32_t org, uint32_t note, uint32_t vel, uint32_t len, const uint8_t *p, uint32_t seed)
 {
@@ -525,6 +529,7 @@ static void bio_tone_on(bio_tone_t *v, uint32_t org, uint32_t note, uint32_t vel
     default: break;
     }
     v->env.st = 1;
+    if (bio_land_of(p[P_E1])) bio_land_on(v, bio_land_of(p[P_E1]), p, seed);   /* MODEL: a landscape (D21) */
 }
 static void bio_tone_off(bio_tone_t *v, uint32_t note)
 {
@@ -538,7 +543,8 @@ static void bio_tone_off(bio_tone_t *v, uint32_t note)
 static const uint16_t BIO_VOWEL[5][3] = {{350, 900, 2300}, {500, 1050, 2600}, {800, 1200, 2900}, {500, 1900, 2600}, {300, 2200, 3000}};
 
 /* life signals and modulation that the tonal organs take, once a sub-block */
-typedef struct { int32_t heart, breath, drift, cv; } bio_life_t;   /* Q15, Q15 (-1..1), Q15 (-1..1), Q15 (0..1) */
+typedef struct { int32_t heart, breath, drift, cv; uint32_t beat; } bio_life_t;   /* Q15, Q15 (-1..1), Q15 (-1..1), Q15 (0..1); beats Q16 */
+#include "bio_land.h"
 
 /* n samples of a tonal organ, added to out[] (mono) */
 static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const bio_life_t *life, int32_t *out, uint32_t n)
@@ -558,7 +564,10 @@ static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const
     if (org == O_VOICE)                         /* BREATH lifts and lowers it */
         a = bio_mul15(a, 26000 + bio_mul15(life->breath, 6700 * (int32_t)p[P_MOTION] / 50));
     step = (e1 - e0) / (int32_t)n;
-    switch (org) {
+    if (bio_land_of(p[P_E1])) {                 /* MODEL: a landscape */
+        bio_land_render(v, bio_land_of(p[P_E1]), p, life, e0, step, a, out, n);
+        pk = v->peak;
+    } else switch (org) {
     case O_BASS: {
         /* OSC A sine..triangle (MORPH), phase-modulated by OSC B at 2:1; an octave under; a 2-pole low-pass with its
            envelope; the asymmetric drive. TEXTURE: the PM and the growl; BODY: the sub and the drive */

@@ -116,3 +116,24 @@ tonal organs stay). So the perc voice became the noise core:
 - The four scenes at the start are now RITUAL 00 THE AWAKENING (the document's), 01 FROZEN (A), 02 STREAM (B), 03 WALL
   (C); DATA (D), STATIC CULT, SPLICE, VOID, INFECTION and EMPTY BODY are on SHIFT + PRESETS. FROZEN, STREAM, WALL and
   DATA are the sketches rebuilt in the engine; each costs under 1 500 instructions a frame (the awakening 2 566).
+
+**D21 (2026-11-09) Organic crackle, and landscapes for the synths and the rooms.** The user: pretty good, but more
+versatility; some crackle, organic; and the synths and the whole sound need more sonic landscapes. Asked which: the
+crackle of a fire, of frying, of wood creaking; the worlds of industry, the cosmic / ambient, the body and its fluids
+(not nature).
+- **Crackle** as noise-core sources, now eight (SOURCE in eighths): WHITE PINK DIGI METAL, then DUST (the old sparse
+  crackle), FIRE (pops whose chance rises with a wandering heat and after each pop, so they come in clusters; most
+  small, a few big, each a snap of noise; a smoulder under them), FRY (the same, dense and quick, over a sizzle), CREAK
+  (stick-slip: a train of slips whose rate glides and is never a clock, through the voice's filter as a body; it creaks,
+  then rests). TEXTURE is their density. Six sounds in the kit: EMBERS, SPARKS, SIZZLE, GREASE, CREAK, HINGE. As any
+  noise step, crackle locks: the same sparks every bar.
+- **Landscapes** (`bio_land.h`): a synth's MODEL (E1; SYN, SHIFT, KNOB 1) makes BASS, DRONE, SPASM or VOICE one of
+  nine voices instead of its own: HUM (a pulse and its octave through a fluttering band, sparks), STEEL (a bowed plate,
+  four modes), PISTON (a machine that strokes on the beat while the key is held: a thump, a clank, steam), GLASS
+  (inharmonic partials beating), BELL (FM, its index falling), CHOIR (three throats through formants), BLOOD (a pulse
+  on the beat, lub and dub, and the rush), BUBBLE (rising drops), SLIME (a wet squelching low-pass). The organ keeps its
+  envelope and role; the four macros mean what each model says. Any synth any model: 36 voices from four organs.
+- **SPACE** (FX, a third page): the reverb as HALL (as it was), ROOM, CAVE (bigger, darker, later), METAL (lines so
+  short their echoes are a pitch: a tank) or VAST (the biggest, longest, open).
+- Rituals EMBERS (crackle), FOUNDRY (industry), ORBIT (cosmic), INNARDS (the body), on SHIFT + PRESETS; demos of each.
+  Scene format "BOF4". The awakening costs 2 647 instructions a frame (2 566 before), the landscapes 1 700 .. 2 000.

@@ -84,6 +84,41 @@ int main(int argc, char **argv)
         seq_play(&sq);
         return render(argv[3], bars * 4u * (uint32_t)(44100u * 60u / (scenes[0].bpm10 / 10u)) + 88200u);
     }
+    if (!strcmp(argv[1], "lands") && argc > 2) {   /* the landscapes (bio_land.h), each 3 s on an organ it suits */
+        static const uint8_t ORG[BIO_NLAND] = {0, O_DRONE, O_DRONE, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_BASS, O_VOICE, O_BASS};
+        static const uint8_t PH[4][4] = {{26, 29, 26, 33}, {38, 38, 38, 38}, {62, 67, 69, 74}, {50, 50, 50, 50}};
+        static int32_t buf[512];
+        int16_t pcm[512];
+        uint32_t m, done = 0, frames = (BIO_NLAND - 1u) * 132300u;
+        FILE *f = fopen(argv[2], "wb");
+        if (!f) { perror(argv[2]); return 1; }
+        eng.tick = 0;
+        for (k = 0; k < BIO_NCH; k++) { eng.mix.lvl[k] = 100; eng.mix.sb[k] = 16; }
+        wav_hdr(f, frames);
+        for (m = 1; m < BIO_NLAND; m++) {
+            uint32_t o = ORG[m], t0, held = o == O_DRONE || o == O_VOICE, j;
+            for (j = 0; j < BIO_NP; j++) eng.p[o][j] = BIO_P_INIT[o][j];
+            eng.p[o][P_E1] = BIO_LAND(m);
+            if (o == O_DRONE) eng.p[o][P_A] = 40;
+            printf("%5.2f s  %s on %u\n", done / 44100.0, BIO_LAND_NAME[m], (unsigned)o);
+            for (t0 = 0; t0 < 132300u; t0 += 256u) {
+                uint32_t i;
+                for (i = 0; i < 4u; i++)
+                    if (t0 == (i * 26624u) && (!held || i == 0u))
+                        bio_trigger(&eng, o, PH[o - 4u][i], 108, held ? BIO_MS(2400) : BIO_MS(500), 0, 0x77u + m * 4u + i);
+                if (held && t0 == 105984u) bio_release(&eng, o, PH[o - 4u][0]);
+                if (!held && (t0 % 26624u) == 22528u) bio_release(&eng, o, 255u);
+                memset(buf, 0, sizeof buf);
+                bio_render(&eng, buf, 256);
+                for (i = 0; i < 512u; i++) pcm[i] = (int16_t)(buf[i] > 32767 ? 32767 : buf[i] < -32767 ? -32767 : buf[i]);
+                fwrite(pcm, 2, 512, f);
+                done += 256u;
+            }
+            bio_panic(&eng);
+        }
+        fclose(f);
+        return 0;
+    }
     if (!strcmp(argv[1], "palette") && argc > 2) {   /* the perc kit: each sound three times (its note, -5, +7) */
         static int32_t buf[512];
         int16_t pcm[512];

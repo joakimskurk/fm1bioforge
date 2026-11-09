@@ -11,8 +11,12 @@
 #define BIO_PERC_H
 #include "bio_dsp.h"
 
-enum { PS_WHITE, PS_PINK, PS_DIGI, PS_METAL, PS_CRACKLE };
-static const char *const BIO_PS_NAME[5] = {"WHITE", "PINK", "DIGI", "METAL", "CRACKLE"};
+/* the sources: SOURCE 0..100 in eight (bio_ps_of); the last four crackle, organic (D21): DUST a sparse crackle, FIRE
+   pops in clusters over a smoulder, FRY a dense sizzle, CREAK stick-slip, a gliding train of slips */
+enum { PS_WHITE, PS_PINK, PS_DIGI, PS_METAL, PS_DUST, PS_FIRE, PS_FRY, PS_CREAK, BIO_NPS };
+static const char *const BIO_PS_NAME[BIO_NPS] = {"WHITE", "PINK", "DIGI", "METAL", "DUST", "FIRE", "FRY", "CREAK"};
+#define BIO_PS(i) ((uint8_t)((i) * 25u / 2u + 6u))   /* a source as SOURCE's value (the middle of its eighth) */
+static inline uint32_t bio_ps_of(uint32_t v) { v = v * BIO_NPS / 101u; return v < BIO_NPS ? v : BIO_NPS - 1u; }
 
 typedef struct {
     uint32_t awake, t, rnd, rnd2, gate, stage;  /* stage: 0 attack, 1 decay / hold, 2 release */
@@ -20,7 +24,11 @@ typedef struct {
     uint32_t src;
     uint32_t lfsr, lph, linc;                   /* DIGI, METAL: the register and its clock */
     int32_t lout, pink, pk;                     /* the register's output; PINK's state and coefficient (Q15) */
-    uint32_t crk;                               /* CRACKLE: an impulse when the draw is under this */
+    uint32_t crk;                               /* the crackles: an impulse when the draw is under this */
+    int32_t heat, heat_to, pop, pop_d, rum;     /* FIRE, FRY: the fire's heat (Q15), a pop's level and its decay, the smoulder */
+    uint32_t boost, ctl;                        /* a pop makes the next likelier (clusters); the control's countdown */
+    uint32_t cph, cinc, cinc_to;                /* CREAK: the slips' phase, their rate and where it glides */
+    int32_t camp, camp_to;                      /* its level, gliding in and out (a creak, then still) */
     uint32_t sh_n, sh_c;
     int32_t sh_v;
     bio_svf_t f;
@@ -81,7 +89,7 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
         v->pan_s = ((int32_t)(r1 >> 24) - 128) * sc * 181 / 100;   /* (to 0.707: hard left or right) */
         v->gate_n = len;
     }
-    v->src = p->source < 20u ? PS_WHITE : p->source < 40u ? PS_PINK : p->source < 60u ? PS_DIGI : p->source < 80u ? PS_METAL : PS_CRACKLE;
+    v->src = bio_ps_of(p->source);
     /* the cutoff: BODY, the note, a little brighter for a harder hit */
     a = bio_lf_hz(120); m = bio_lf_hz(2400); b = bio_lf_hz(14000);
     if (p->tone) {                              /* TONE: the band on the note (C4 at 262 Hz), BODY its octave (-2 .. +3) */
@@ -137,10 +145,19 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
         v->linc = bio_inc(v->lf0 + (v->src == PS_METAL ? 2 * 65536 : 65536));   /* clocked at twice (METAL: 4x) the cutoff */
     }
     v->pk = 9000;
-    {   /* CRACKLE's density (TEXTURE): 60 .. 9000 impulses a second; the others' grain: TEXTURE above 50 holds */
-        uint32_t per_s = (uint32_t)(bio_exp2(bio_lf_hz(60) + (int32_t)p->texture * (bio_lf_hz(9000) - bio_lf_hz(60)) / 100 - (14 << 16)) >> 2);
+    {   /* a crackle's density (TEXTURE): DUST 60 .. 9000 a second, FIRE 4 .. 600, FRY 400 .. 20000, CREAK the slips'
+           range; the others' grain: TEXTURE above 50 holds */
+        static const uint16_t LO[4] = {60, 4, 400, 30}, HI[4] = {9000, 600, 20000, 600};
+        uint32_t c = v->src >= PS_DUST ? v->src - PS_DUST : 0u, per_s;
+        per_s = (uint32_t)(bio_exp2(bio_lf_hz(LO[c]) + (int32_t)p->texture * (bio_lf_hz(HI[c]) - bio_lf_hz(LO[c])) / 100 - (14 << 16)) >> 2);
         v->crk = per_s * 97391u;                /* (2^32 / 44100 a sample) */
-        v->sh_n = p->texture <= 50u ? 1u : 1u + ((uint32_t)p->texture - 50u) * ((uint32_t)p->texture - 50u) / 80u;
+        v->sh_n = p->texture <= 50u || v->src >= PS_DUST ? 1u : 1u + ((uint32_t)p->texture - 50u) * ((uint32_t)p->texture - 50u) / 80u;
+        v->heat = v->heat_to = 20000; v->boost = 0; v->pop = 0; v->pop_d = 0; v->ctl = 1; v->rum = 0;
+        v->cinc = v->cinc_to = (uint32_t)per_s * 97391u; v->cph = 0; v->camp = 0; v->camp_to = 0;
+        if (v->src == PS_CREAK) {               /* a creak starts with the hit (and runs 0.15 .. 0.5 s before it rests) */
+            v->camp = v->camp_to = 22000;
+            v->ctl = 200u + (seed & 511u);
+        }
         if (sc && (r2 >> 28) * 100u < (uint32_t)sc * 5u) v->sh_n = 2u + (r1 >> 8 & 7u);   /* SCATTER: a slice in grains */
         v->sh_c = 0;
     }
@@ -148,8 +165,8 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
      * in proportion to its cutoff, so it gains half an octave for every octave its cutoff is under the source's top
      * (WHITE, CRACKLE: 22 kHz; PINK: its corner); a band-pass's power grows with Q, so it loses half Q's octaves. DIGI
      * and METAL are clocked at the cutoff: their power is in the pass band already. */
-    v->mk_lp = v->src == PS_DIGI || v->src == PS_METAL ? 0 : v->src == PS_PINK ? bio_lf_hz(3000) : bio_lf_hz(22050);
-    v->mk_bp = (bio_log2((uint32_t)v->k) - (16 << 16)) / 2;
+    v->mk_lp = v->src == PS_DIGI || v->src == PS_METAL || v->src == PS_CREAK ? 0 : v->src == PS_PINK ? bio_lf_hz(3000) : bio_lf_hz(22050);
+    v->mk_bp = v->src == PS_CREAK ? 0 : (bio_log2((uint32_t)v->k) - (16 << 16)) / 2;   /* (CREAK: slips ring a body) */
     bio_svf_set(&v->f, v->lf0 + bio_mul30(v->sweep, v->fenv), (uint32_t)v->k);
     if (v->tone2) bio_svf_set(&v->f2, v->lf0 + bio_mul30(v->sweep, v->fenv) + 7 * BIO_SEMI, (uint32_t)v->k);
     bio_op_set(&v->hp2, bio_lf_hz(3000));
@@ -203,6 +220,22 @@ static void bio_perc_render(bio_perc_t *v, int32_t *out, int32_t *side, uint32_t
         cx = -ca;
     }
     gs = side && v->width ? bio_mul15(v->width, bio_mul15(v->amp, v->fade)) : 0;   /* the side's level */
+    if (v->src >= PS_FIRE && --v->ctl == 0u) {   /* the crackles' life: once in a while a new heat, a new creak */
+        uint32_t r = bio_rnd(&v->rnd2), u = r >> 17;   /* (0..32767) */
+        if (v->src == PS_CREAK) {               /* a creak (0.15 .. 0.8 s), or still (to 0.5 s); its rate wanders */
+            v->camp_to = v->camp_to ? 0 : 14000 + (int32_t)(u & 16383u);
+            v->ctl = v->camp_to ? 200u + (r & 1023u) : 60u + (r & 511u);
+            v->cinc_to = (uint32_t)(((uint64_t)v->crk * (uint32_t)(1434u + (r >> 4 & 4095u) * 5u / 4u)) >> 12);   /* 0.35 .. 1.6 x */
+        } else {                                /* FIRE: a new heat every 0.05 .. 0.4 s (FRY: faster), mostly low */
+            v->heat_to = 3000 + (int32_t)(((uint32_t)u * u) >> 15) * 29 / 32;
+            v->ctl = (v->src == PS_FRY ? 8u : 64u) + (r & (v->src == PS_FRY ? 63u : 511u));
+        }
+    }
+    if (v->src >= PS_FIRE) {                    /* (the crackles only) */
+        v->heat += (v->heat_to - v->heat) >> 4;
+        v->camp += (v->camp_to - v->camp) >> 5;
+        if (v->cinc != v->cinc_to) { int32_t d = (int32_t)(v->cinc - v->cinc_to); v->cinc = v->cinc_to + (uint32_t)(d - d / 16); }
+    }
     for (k = 0; k < n; k++) {
         int32_t w = bio_noise(&v->rnd), x, lp, bp, y;
         /* the source */
@@ -218,9 +251,41 @@ static void bio_perc_render(bio_perc_t *v, int32_t *out, int32_t *side, uint32_t
             }
             x = v->lout;
             break;
-        default: {                              /* CRACKLE: sparse impulses of random size and sign */
+        case PS_DUST: {                         /* sparse impulses of random size and sign */
             uint32_t r = bio_rnd(&v->rnd2);
             x = r < v->crk ? (int32_t)(int16_t)(r >> 8) * 2 : 0;
+            break;
+        }
+        case PS_FIRE: case PS_FRY: {            /* pops: likelier with the heat and after a pop (clusters); most small,
+                                                   a few big (the cube of a draw), each a snap of noise; under them the
+                                                   smoulder (FIRE) or a sizzle (FRY) */
+            uint32_t r = bio_rnd(&v->rnd2);
+            uint64_t p = (((uint64_t)v->crk * (uint32_t)v->heat) >> 14) + v->boost;
+            if (r < p) {
+                uint32_t u = r & 0xFFFFu, z = (u * u >> 16) * u >> 16;   /* 0 .. 65535, most small */
+                int32_t a = (int32_t)(z >> 1) + 600;
+                v->pop = a;
+                v->pop_d = v->src == PS_FRY ? 28000 : 30200 + (int32_t)(z >> 5);   /* FRY 0.15 ms; FIRE 0.3 .. 2 ms */
+                x = r & (1u << 16) ? a : -a;
+                if (v->boost < (v->crk > 0x15555555u ? 0x7FFFFFFFu : v->crk * 6u)) v->boost += v->crk >> (v->src == PS_FRY ? 2 : 0);
+            } else {
+                x = bio_mul15(w, v->pop);
+            }
+            v->pop = bio_mul15(v->pop, v->pop_d);
+            v->boost -= v->boost >> 9;          /* (12 ms) */
+            v->rum += (w - v->rum) >> 6;        /* (110 Hz) */
+            x += v->src == PS_FRY ? bio_mul15(w, v->heat) >> 6 : bio_mul15(v->rum, v->heat) >> 1;
+            break;
+        }
+        default: {                              /* CREAK: a train of slips, its rate gliding, now and then a slip missed */
+            v->cph += v->cinc;
+            x = 0;
+            if (v->cph < v->cinc) {             /* a slip; the next comes up to a third early (stick-slip is not a clock) */
+                uint32_t r = bio_rnd(&v->rnd2);
+                if ((r & 15u) != 0u) x = bio_mul15(v->camp, 20000 + (int32_t)(r >> 19)) * 12;   /* (a slip is one sample: loud) */
+                v->cph = (r >> 2) / 3u;
+            }
+            x += bio_mul15(w, v->camp) >> 5;    /* the grind between */
         }
         }
         if (v->sh_n > 1u) {                     /* grain */

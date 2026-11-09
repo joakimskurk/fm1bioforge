@@ -42,12 +42,18 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   Turing's LOOP lets it slip, step by step. **SCATTER** gives every step its own slice of it (band, length, shape,
   place), **TONE** puts the band on the note (riffs of hiss, a second band a fifth up), **DRIFT** moves the band over
   four bars, and a noise step's ratchet repeats its own noise: a stutter (SYN, SHIFT).
-  - **The voice**: a source (WHITE, PINK, DIGI and METAL shift-register noise, CRACKLE), grain, a resonant filter
+  - **The voice**: a source (WHITE, PINK, DIGI and METAL shift-register noise, and four organic crackles: DUST, FIRE
+    in clusters over a smoulder, FRY a sizzle, CREAK a gliding stick-slip), grain, a resonant filter
     that morphs low-pass, band-pass and high-pass and pings at high resonance, a sweep (a zap down, a rise up), bursts
     (a clap), a click, an envelope that strikes or is held while the key is, drive, a crusher and stereo width.
-  - **Sixteen sounds to start from**: TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING,
-    THUMP, WASH, FLAM SNR, BIT HAT and LASER. SOUND (ENV, SHIFT, KNOB 1 on a drum) gives one to an organ; TISSUE gives
+  - **Twenty-two sounds to start from**: TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING,
+    THUMP, WASH, FLAM SNR, BIT HAT, LASER, and the crackles EMBERS, SPARKS, SIZZLE, GREASE, CREAK, HINGE. SOUND (ENV, SHIFT, KNOB 1 on a drum) gives one to an organ; TISSUE gives
     a drum its own body back.
+- **Landscapes for the synths.** MODEL (SYN, SHIFT, KNOB 1) makes BASS, DRONE, SPASM or VOICE one of nine other
+  voices: **industry** HUM (the mains, with sparks), STEEL (bowed metal), PISTON (a machine stroking on the beat while
+  the key is held); **cosmic** GLASS (inharmonic partials beating), BELL (FM), CHOIR (three throats through vowels);
+  **the body** BLOOD (a pulse with the beat), BUBBLE (rising drops), SLIME (a wet squelch).
+- **Rooms.** The reverb's SPACE (FX, again, again): HALL, ROOM, CAVE, METAL (a ringing tank) or VAST.
 - **PUMP.** HEART ducks the other channels, a side-chain from the kick, back by the next eighth (MIX's sends,
   SHIFT, KNOB 2).
 - **Four macros an organ.** BODY, TEXTURE, MOTION and DECAY are on the first page. The depth is behind them.
@@ -75,7 +81,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   - 02 STREAM, one noise that never stops, cut by a gate;
   - 03 WALL, a riff of pitched noise, in 16ths, triplets and 32nds.
   - PRESETS switches between them on the next bar. **SHIFT + PRESETS loads a factory ritual** into the scene that
-    plays: those four, DATA (clicks, bursts, digital noise, stutters), STATIC CULT (noise as percussion, with PUMP),
+    plays: those four, DATA (clicks, bursts, digital noise, stutters), EMBERS (crackle), FOUNDRY (industry), ORBIT
+    (cosmic), INNARDS (the body), STATIC CULT (noise as percussion, with PUMP),
     SPLICE (broken, glitched), VOID (slow and wide), INFECTION and EMPTY BODY. The one in flash stays until you SAVE.
   - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
@@ -90,10 +97,10 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 | **KNOB 1..4** | The page's four parameters (SHIFT: the second four). |
 | **HOME** | MIX: the six channels' levels; again: the focused channel's sends. **Held:** white keys 1–6 mute the channels. |
 | **SEQ** | SEQ: the grid. **Held:** the white keys are the focused track's 16 steps: tap to set or clear; hold one and turn a knob for a p-lock; OCT± for the next 16. |
-| **EDIT** | SYN: BODY TEXTURE MOTION DECAY (a noise organ, SHIFT: SCATTER TONE DRIFT); again: the organ's own depth. |
+| **EDIT** | SYN: BODY TEXTURE MOTION DECAY (SHIFT: a noise organ's SCATTER TONE DRIFT, a synth's MODEL); again: the organ's own depth. |
 | **ENV** | The organ's envelope (drums: the gesture, tune, level, pan; SHIFT: SOUND, and a noise sound's GATE, WIDTH, RELEASE). |
 | **LFO** | MUT: the spine. **Held:** white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK. |
-| **FX** | Delay, reverb, crush; again: their times and colours. |
+| **FX** | Delay, reverb, crush; again: their times and colours; again: the reverb's SPACE. |
 | **GLO** | Tempo, swing, quantise and its strength; SHIFT: OVERDUB or REPLACE, the step length, the key LEDs, the MIDI channel. |
 | **ARP** | **Held:** BURST on the white keys: STUTTER, INVERT (the register), FREEZE (the reverb), SPASM (a nerve burst). |
 | **SAVE** | The scene to flash (playing: when it stops). SHIFT: every edited scene. Left alone, stopped and quiet, a scene saves itself. |
@@ -122,7 +129,7 @@ D5–G5. The middle key of each zone, which glows, plays the organ as it is set;
 
 **Try it without an FM-1:** *Play it here* on [the page](https://joakimskurk.github.io/fm1bioforge/#play), in any
 recent browser, phones too: the firmware itself compiled to WebAssembly, its sound, its screen and its keys' lights.
-The page also has nine demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
+The page also has eleven demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
 
 **Install it from the browser:** [the page's installer](https://joakimskurk.github.io/fm1bioforge/#install), in Chrome
 or Edge on a computer, the FM-1 on USB. It always offers the latest build of `main` that passed its tests.

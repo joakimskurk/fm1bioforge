@@ -1,0 +1,9 @@
+# Demo: EMBERS (SEL held, PRESETS turned: a factory ritual): organic crackle, 100 BPM. A fire held under it all, sparks
+# locked into a groove (each its own), grease on two and four, a creak of wood that comes and goes, a low HEART, the
+# drone in the dark
+100 btndown 3
+200 enc 6 5
+300 btnup 3
+400 btn 12
+24400 btn 12
+27900 end
