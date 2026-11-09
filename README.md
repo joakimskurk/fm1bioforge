@@ -1,116 +1,135 @@
-# FM-1 Clock for the M-VAVE FM-1
+# BIOFORGE for the M-VAVE FM-1
 
-Before we know it the FM-1 will be an almost forgotten treasure. So here is something that looks completely
-useless now, and may one day turn out to be its only useful function: a clock.
+**A biomechanical rhythm machine and synth that sounds like its own disturbing machinery.** Rhythm comes from
+pressure, fracture, friction and vents in resonant bodies. Tonal organs add mass, breath, nerve discharges and an
+artificial throat. You play the keys straight into the pattern memory. A Turing register works as a nervous system:
+it locks the sound and the rhythm in place, and changes them slowly.
 
-Not just any clock. Its bell is a real 31-day pendulum wall clock striking its coil gong, taken apart into 742
-ringing modes and rebuilt as an FM synthesiser of some four hundred operators, which keeps the whole chip busy every
-frame, all day long. Turn ALGORITHM and there is a **cuckoo clock**, carved in walnut, whose bird comes out on the
-hour and calls on two FM pipes over a wire gong, fitted to a real Black Forest clock. Both hang on the same panel
-wall.
-
-<p align="center"><img src="docs/screens/pendulum.gif" width="360" alt="The clock on the FM-1's screen, on a pine panel wall: the hands at ten past ten, the pendulum swinging from side to side behind the glass">
-<img src="docs/screens/cuckoo.gif" width="200" alt="The cuckoo clock at three o'clock on the same wall: a carved house in dark red walnut, leaves along its roof and a crest of leaves at the peak, vines round an ivory dial with serif numbers, turned columns, fretwork under its shelf; its bird comes out and calls, its leaf-shaped pendulum swings"></p>
+<p align="center">
+<img src="docs/screens/seq.png" width="240" alt="SEQ: nine tracks of sixteen membrane cells, HEART BONE TEETH CLAW BASS DRONE SPASM VOICE NOISE, the green lit cells the notes of the awakening, the playhead a green column; below it four eye-shaped knobs: STEP, LENGTH, VELO, CHANCE">
+<img src="docs/screens/syn.png" width="240" alt="SYN on HEART: the organ's own output as a green scope, its three modes at 93, 171 and 286 Hz as lines that ring, the excitation's four parts PRESS FRACT FRIC VENT; the knobs BODY 76, TEXTURE 48, MOTION 18, DECAY 46">
+<img src="docs/screens/mut.png" width="240" alt="MUT: the Turing register as a spine of sixteen vertebrae, their cores lit green for its 1 bits; LOOP 100 % LOCK in large figures; CLOCK 1/8, LENGTH 8, DEPTH 20 %, the CV8 bar; the routes SCRAPE METAL AIR ROT, RATTLE and WAIL off">
+</p>
 
 > [!CAUTION]
-> **Not yet tried on a real FM-1.** Version 0.1, in progress: built and tested on every change, in CI and in
-> fm1-emu (the FM-1 emulator), the sound tested against the recordings on a computer, but it has not been tried on
-> an actual device. Install it at your own risk.
+> **Not yet tried on a real FM-1.** Version 0.1, in progress. It is built and tested on every change: the host tests,
+> Dinghy's platform tests, the FM-1 and SMK-37 packages with the chip's own checks, and a run in fm1-emu (the FM-1
+> emulator) in CI. It has not been tried on an actual device yet. Install it at your own risk.
 
-A [Dinghy 0.5](https://github.com/zvenson/dinghy) app, from the family of
-[VaveHero](https://github.com/joakimskurk/fm1vavehero), [RoboSeq](https://github.com/joakimskurk/fm1roboseq) and
-[SkurkyMello](https://github.com/joakimskurk/fm1mello).
+This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an idea document,
+*BIOFORGE idédokument v3.0*, fitted to the FM-1: 27 keys, 14 buttons, 7 encoders, one core without an FPU and a
+240 x 240 screen. [docs/bioforge/PLAN.md](docs/bioforge/PLAN.md) says what was kept and how it was fitted.
+[DECISIONS.md](docs/bioforge/DECISIONS.md) says why.
 
 ## What it does
 
-- **Two clocks, one time**, kept by the FM-1's crystal. ALGORITHM switches; the FM-1 remembers which.
-- **The wall clock** ticks every half second (the tick from the left, the tock from the right), strikes the hours
-  on its gong and once at the half hour. Turn the minute hand past the hour and it strikes, as a real clock does.
-- **The cuckoo clock** calls the hours: the train warns, the door opens, the bird comes out, bows and calls, and
-  goes in again. Its pendulum beats faster, and its pine-cone weights sink on their chains through the day.
-- **Everything you hear is synthesised.** No sample of either recording is in the firmware.
-- **The keys' lights** follow the pendulum, or flash the hours (also with the strike off: a silent clock you can
-  read across the room). Playing the keys does nothing: this is a clock.
+- **Nine organs on six channels.** DRUM holds HEART, BONE, TEETH and CLAW. Then BASS, DRONE, SPASM, VOICE and NOISE.
+  Everything you hear is synthesised in integers: no samples.
+- **TISSUE drums.** A drum organ is not a kick, snare or hat with distortion. Each hit is an excitation: a PRESSURE
+  impulse, seeded FRACTURE clicks, coloured FRICTION noise and a VENT of air. It runs through damped modal resonators
+  at the idea document's frequencies, then an asymmetric flesh curve.
+  - **HEART** is a hydraulic piston in a wet body, with modes at 93, 171 and 286 Hz.
+  - **BONE** is a brittle fracture whose resonance bends after the blow.
+  - **TEETH** is a ratchet of metal teeth. The lower keys play it closed, the upper keys open.
+  - **CLAW** is a gesture dragged through ribs, as long as you hold the key.
+  - A shared **rib** resonator ties the four together.
+- **Four macros an organ.** BODY, TEXTURE, MOTION and DECAY are on the first page. The depth is behind them.
+- **The keys go into the memory.**
+  - **LIVE REC**: press PLAY, then REC, and play.
+  - **STEP REC**: stopped, press REC; each key writes a note at the cursor.
+  - **PARAM REC**: while recording, turning a macro writes a p-lock.
+  - Recording overdubs, or replaces (SHIFT + REC). Hold SHIFT on a key to erase that note.
+  - SHIFT + OCT−/OCT+ undo and redo, 16 levels.
+  - Quantise is non-destructive: a live note keeps the moment you played it, and the track's quantise places it
+    when it plays.
+- **The nervous system.** A 16-bit shift register, clocked from the transport. **ALGORITHM is its LOOP on every
+  page**:
+  - at 100 % it is locked: it repeats every LENGTH clocks;
+  - at 0 % it is double-locked: the pattern, then its inverse;
+  - between, it slips.
+  - It moves the texture, CLAW's scrape, TEETH's metal and HEART's air (ROT and the routes).
+  - It adds ghost hits on TEETH and CLAW (RATTLE) and can pick SPASM's and VOICE's notes from D Phrygian (WAIL).
+  - It never moves or deletes what you played. FUSE writes its ghosts into the pattern, if you ask for it.
+- **Effects.** BLOOD DELAY (synced, darker on each echo, ping-pong), BILE REVERB (four modulated delay lines, a
+  FREEZE) and MARROW CRUSH (a parallel drive, sample-rate and bit crusher). Each channel has its own sends.
+- **Four scenes in RAM.** RITUAL 00 THE AWAKENING (the idea document's start scene), 01 INFECTION, 02 MARROW and
+  03 EMPTY BODY. PRESETS switches between them on the next bar. Each scene is saved in two flash slots, so a save cut
+  off by a power cut leaves the last good one.
 
 ## Using it
 
 | Control | What it does |
 |---|---|
-| **ALGORITHM** | The wall clock or the cuckoo clock: a turn, either way, switches to the other. |
-| **SELECT** | The minute hand, a minute a detent. Turned forward past the hour, it strikes it when you stop. |
-| **PRESETS** | The hour hand, an hour a detent. |
-| **SEL** | Rounds the time to the nearest minute (press it at :00 seconds). |
-| **PLAY** | Strikes (or calls) the last hour again, even with the strike off. |
-| **FX** | The strike on or off (SILENT on the screen). The cuckoo's door stays shut. |
-| **ENV** | Winds the cuckoo clock, when you like. Left alone, it winds itself when a weight reaches the bottom (after about a day): it never stops. |
-| **GLO** | The keys' lights: SWING, HOURS or OFF. |
-| **HOME** | The time as digits beside the clock. |
-| **SEQ** | How many FM operators are running, and how much of the chip they take. |
-| **KNOB 1 / KNOB 2** | The ticks' and the strike's levels, 0–200 % of the recordings'. |
-| **MIDI in** | CC 20, 21, 22 set the hours, minutes and seconds, on any channel. |
+| **SELECT** | The focus: DRUM (the kit), or one organ (HEART … NOISE). The keys play it; REC writes to it. |
+| **SEL** (SELECT pushed) | SHIFT while held. A tap keeps the knobs' second row. |
+| **ALGORITHM** | The Turing's LOOP, from chaos to lock, on every page. |
+| **PRESETS** | The scene, RITUAL 00..03 (playing: on the next bar). |
+| **KNOB 1..4** | The page's four parameters (SHIFT: the second four). |
+| **HOME** | MIX: the six channels' levels; again: the focused channel's sends. **Held:** white keys 1–6 mute the channels. |
+| **SEQ** | SEQ: the grid. **Held:** the white keys are the focused track's 16 steps: tap to set or clear; hold one and turn a knob for a p-lock; OCT± for the next 16. |
+| **EDIT** | SYN: BODY TEXTURE MOTION DECAY; again: the organ's own depth. |
+| **ENV** | The organ's envelope (drums: the gesture, tune, level, pan). |
+| **LFO** | MUT: the spine. **Held:** white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK. |
+| **FX** | Delay, reverb, crush; again: their times and colours. |
+| **GLO** | Tempo, swing, quantise and its strength; SHIFT: OVERDUB or REPLACE, the step length, the key LEDs, the MIDI channel. |
+| **ARP** | **Held:** BURST on the white keys: STUTTER, INVERT (the register), FREEZE (the reverb), SPASM (a nerve burst). |
+| **SAVE** | The scene to flash (playing: when it stops). SHIFT: every edited scene. Left alone, stopped and quiet, a scene saves itself. |
+| **PLAY** | Start, stop. SHIFT + PLAY: PANIC (every voice silent, the memory kept). |
+| **REC** | Playing: LIVE REC on and off. Stopped: STEP REC. REC held + PLAY: record from the start. |
+| **OCT− / OCT+** | The keys' octave. SHIFT: UNDO, REDO. |
+| **MIDI in** | Notes on channel 1 go to the focus, channels 2–10 to HEART … NOISE; they record as the keys do. Start and stop follow. |
 
-<p align="center"><img src="docs/screens/overlays.png" width="360" alt="The clock with its margins in use: 10:10 in digits on the left, TICK 125% on the right while the first knob turns, SILENT at the bottom right"></p>
+**The kit** (focus DRUM): four zones of about seven keys each. HEART is F3–B3, BONE C4–F#4, TEETH G4–C#5 and CLAW
+D5–G5. The middle key of each zone, which glows, plays the organ as it is set; the others tune its body up or down.
 
-**Setting the time.** The FM-1 has no battery-backed clock, so it starts at 10:10 and forgets the time when switched
-off, as a pendulum clock stops when nobody winds it. Set it with SELECT and PRESETS, or from a computer:
-
-```sh
-pip3 install mido python-rtmidi
-python3 tools/settime.py            # finds the FM-1 ("Felucca" over USB); --list shows the ports
-```
-
-The settings (the clock, the levels, the strike, the lights, the digits) are kept in flash.
+<p align="center">
+<img src="docs/screens/mix.png" width="240" alt="MIX: six channel strips, DRUM BASS DRONE SPASM VOICE NOISE, each a green segment meter, a bone fader track with a red handle and a mute box; the knobs DRUM 80, BASS 70, DRONE 58, SPASM 62">
+<img src="docs/screens/fx.png" width="240" alt="FX: BLOOD DELAY 3/16 FDBK 28, BILE REVERB DECAY 2.8 S SIZE 115 %, MARROW CRUSH DRIVE 40 RATE 30 BITS 12, with their mix bars; the knobs DELAY, REVERB, CRUSH, D>REV">
+</p>
 
 ## Install and try
 
-**Install it from the browser:** [joakimskurk.github.io/fm1clock](https://joakimskurk.github.io/fm1clock/), in Chrome
-or Edge on a computer, the FM-1 on USB. One button; it always offers the latest build that passed its tests.
-
-**Try it without an FM-1:** *Try it here* on [the page](https://joakimskurk.github.io/fm1clock/#try), in any recent
-browser, phones too: the firmware itself compiled for the browser, its sound, its screen and its keys' lights, at
-your time. Or the package in [fm1-emu](https://joakimeriksson.github.io/fm1-emu/), the FM-1 emulator.
-
-**Or install it** from a computer with Python:
+**Install it** from a computer with Python, the FM-1 on USB:
 
 ```sh
-python3 tools/fm1_install.py build/fm1clock.fwsc     # asks before it writes, then restarts into the clock
+python3 tools/fm1_install.py build/bioforge.fwsc     # asks before it writes, then restarts into BIOFORGE
 ```
 
-If anything goes wrong, hold **OCT−** while switching the FM-1 on: it starts in the USB rescue, where an installer
+If anything goes wrong, hold **OCT−** while switching the FM-1 on. It starts in the USB rescue, where an installer
 always works. Installing firmware is at your own risk.
 
 **Build and test:**
 
 ```sh
-make test     # the clock's tests on a computer: no FM-1, no toolchain (Python 3 with numpy and Pillow)
-make fw       # the FM-1 package, build/fm1clock.fwsc (the JieLi toolchain and the AC79 SDK: docs/DINGHY_README.md)
-make emu      # the package in fm1-emu
-make host     # the app on a computer: build/host/fm1clock.wav and screenshots
-sh web/app/build.sh   # the clock for the browser: build/web/fm1clock.wasm (clang and lld)
-python3 web/make_site.py build/fm1clock.fwsc VERSION build/site   # the web page: its installer, the clock to try
+make test     # the engine's and the memory's tests (plain and ASan/UBSan), the renders: build/audio/*.wav and their spectrograms
+make host     # the app on a computer: a tour of its pages, build/host/bioforge.wav and screenshots
+make perf     # the engine's instructions a frame (callgrind): the awakening, and everything at once
+make fw       # the FM-1 and SMK-37 packages (the JieLi toolchain and the AC79 SDK: docs/DINGHY_README.md)
 ```
 
 ## How it is made
 
-- **[The sound, and the engine](docs/SOUND.md):** the wall clock's recording taken apart into 742 modes and rebuilt
-  as FM, its strike train, its tick and tock, the engine in integers and the governor that keeps the chip full.
-  Every third of an octave of a strike is within about 1–2 dB of the recording.
-- **[The cuckoo clock](docs/CUCKOO.md):** its own design on the panel wall, what moves, why its chains are not a counterweight, and its
-  sound: the wire gong, the two pipes, the train's warning and rattle, and clicks made of a crack and noise.
-- **[How it works](docs/HOW-IT-WORKS.md):** keeping time from the crystal, drawing the picture, the tests and CI,
-  the web page and its installer, making the tables again, and what is where.
-
-<p align="center"><img src="docs/screens/gong-spectrogram.png" width="820" alt="Two spectrograms side by side, the recording and FM-1 Clock, the first five seconds after a strike, 0 to 6 kHz: the same series of partials and the same decay; the recording also shows its ticks as vertical lines and the room's noise"></p>
+- **[The plan](docs/bioforge/PLAN.md)** covers the organs with the idea document's numbers, the sequencer and its
+  recording, the nervous system, the screens, what is cut or comes later, and the budget.
+- **The engine** is `firmware/src/bio_dsp.h`, `bio_organs.h` and `bio_engine.h`. It uses integers only, the
+  magic-circle modes, TPT filters, the effects at half rate where it can, and organs that fall asleep when they have
+  rung out. Every hit's noise comes from a seed, so the same start gives the same sound, sample for sample.
+- **The memory** is `bio_seq.h` (scenes, tracks, events, recording, undo) and `bio_turing.h` (the register).
+- **The screens** come from `bio_ui.h` and `firmware/gen/bio_art.h`. The art is drawn by `tools/gen_art.py` from
+  shapes and numbers: tissue, bone frames, eye knobs, membrane cells, vertebrae and a 5 x 7 font.
+- **Its cost on a computer** (`make perf`, built `-Os`) is about 2 400 instructions a frame for the awakening and
+  2 900 with every organ sounding and every effect on. Over 75 % of the audio interrupt, the drums out of focus ring
+  on two modes instead of four.
 
 ## Platform, licence and credits
 
-- **Platform.** Dinghy 0.5 (zvenson), imported as source and left alone but for names ([PLATFORM.md](PLATFORM.md)),
-  built on [Felucca](https://github.com/hugelton/Felucca) by Leo Kuroshita (Hügelton Instruments) and carried by
-  [SLOOP](https://github.com/isod89/sloop-fm1) (isod89). The package's identity is `FM-1_94N` (N the minor version).
-- **Licence.** GPL-3.0 ([LICENSE](LICENSE); who made what: [LICENSING.md](LICENSING.md)). The design
-  (`assets/design.png`) is the author's; the cuckoo clock's is this firmware's own.
-- **The recordings** the sound is fitted to are not ours and are not here: only measurements of them.
-- **Thanks** to joakimeriksson for [fm1-emu](https://github.com/joakimeriksson/fm1-emu).
-- **Trademarks.** "M-VAVE" and "FM-1" belong to their owners. This is a fan project, not an official M-VAVE product.
-
-<p align="center"><a href="https://buymeacoffee.com/skurk"><img alt="Buy Me a Coffee" src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-skurk-FFDD00?logo=buymeacoffee&logoColor=black"></a></p>
+- **Platform.** Dinghy 0.5 (zvenson), imported as source and left alone but for names ([PLATFORM.md](PLATFORM.md)).
+  It is built on [Felucca](https://github.com/hugelton/Felucca) by Leo Kuroshita (Hügelton Instruments) and carried
+  by [SLOOP](https://github.com/isod89/sloop-fm1) (isod89), with the SMK-37 layer by genkigenki. The package's
+  identity is `FM-1_908XY` (`90800` a dev build).
+- **The nervous system** follows the documented behaviour of the
+  [Turing Machine](https://www.musicthing.co.uk/Turing-Machine/) by Tom Whitwell (Music Thing Modular): its LOOP,
+  LENGTH, WRITE and the eight-bit output. No code of it is used.
+- **Licence.** GPL-3.0 ([LICENSE](LICENSE); who made what: [LICENSING.md](LICENSING.md)).
+- **Trademarks.** "M-VAVE", "FM-1" and "SMK-37" belong to their owners. This is a fan project, not an official M-VAVE
+  product.

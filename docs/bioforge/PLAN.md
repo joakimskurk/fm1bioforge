@@ -34,7 +34,7 @@ screen. One AC791N core, no FPU: integers only; the audio interrupt gets 256 fra
 | Control | BIOFORGE |
 | --- | --- |
 | **SELECT** | the focus: DRUM (the kit), HEART, BONE, TEETH, CLAW, BASS, DRONE, SPASM, VOICE, NOISE |
-| **SEL** (SELECT pushed) | SHIFT, held |
+| **SEL** (SELECT pushed) | SHIFT, held; a tap keeps the knobs' second row |
 | **ALGORITHM** | the Turing's LOOP, on every page: the one big knob from chaos to lock |
 | **PRESETS** | the scene, RITUAL 00..03 (playing: from the next bar) |
 | **KNOB 1..4** | the page's four parameters (SHIFT: the second row) |
@@ -110,7 +110,7 @@ step. The same scene, the same start, the same knobs: the same sound, sample for
 | Organ | Voice | INIT |
 | --- | --- | --- |
 | **BASS** muscle | OSC A sine↔triangle, OSC B at 2:1 phase-modulating A, an octave-under, 2-pole low-pass with its envelope, asymmetric drive, mono legato, glide | D1, morph 0.60, PM 0.55, 320 Hz, Q 0.8, A 4 ms D 210 ms S 62 % R 120 ms, glide 28 ms, drive 4 dB |
-| **DRONE** womb | OSC A triangle/saw, OSC B sine at 1.012 (beating), light PM, two resonant bands, low-pass breathing over an 8-bar BREATH, ducked by HEART | D2, morph 1.25, PM 0.18, 610 Hz, Q 1.5, duck −1.5 dB / 140 ms, A 1.4 s R 2.8 s |
+| **DRONE** womb | OSC A triangle/saw, OSC B sine at 1.012 (beating), light PM, a resonant band (the second waits for the budget), low-pass breathing over an 8-bar BREATH, ducked by HEART | D2, morph 1.25, PM 0.18, 610 Hz, Q 1.5, duck −1.5 dB / 140 ms, A 1.4 s R 2.8 s |
 | **SPASM** nerve discharge | OSC A sine, OSC B at 1.414, a PM strike that falls fast, a band-pass "nerve node", ratchet 1–4 | G3, PM 2.4 falling in 75 ms, amp 160 ms, 1.8 kHz, Q 3.2 |
 | **VOICE** artificial throat | a glottal pulse with a subharmonic, breath noise, three formants moving U O A E I (MOUTH) | A2, MOUTH 0.7, breath 18 %, shift −3 semitones, A 230 ms R 1.1 s |
 | **NOISE** breath, friction, leak | pink-ish and white noise; BREATH (band-pass), SCRAPE (narrow, grainy AM), STEAM (high-pass, short) | BREATH, 1.45 kHz, Q 1.2, rough 15 %, 4-bar breath, A 800 ms R 1.6 s |
@@ -208,7 +208,9 @@ All in `firmware/src/bio_turing.h`.
 240 x 240, drawn on a background made by `tools/gen_art.py` (bone ribs, tubes, membranes; generated, not copied from
 anyone's art), only what changed redrawn.
 
-- **Top (0–27):** BIOFORGE in bone, the page tabs (green the current one), the transport (▶ ■ ●), BPM, SAVED.
+- **Top (0–27):** BIOFORGE in bone, the page tabs MIX SEQ SYN MUT FX GLO (green the current one). SEQ is the first.
+- **Status (29–46):** the transport (▶ ■ ●), LIVE / STEP / REPL, the focus, the scene, BPM, SAVED or EDIT; for a
+  moment LOOP's value and word, or a message (UNDO, P-LOCK, SAVED).
 - **Middle (28–183):** the page.
 - **Bottom (184–239):** four eye knobs (a red iris, a green arc for the value), their names and values.
 
@@ -238,14 +240,23 @@ A red pulse runs along the top frame while notes are actually being written; gre
 
 ## 8. Budget
 
-The audio interrupt: 256 frames in 5.8 ms; the target is under half. Rough per-frame cost: a drum organ ~90
-instructions while it rings (4 modes), the rib 30, BASS 60, DRONE 70, SPASM 45, VOICE 70, NOISE 25, the FX 150
-(the reverb at half rate): ~900 a frame with everything sounding. Idle organs (below −90 dB) cost nothing. If the
-interrupt measures over 80 %, the ringing of the quietest drum organ is cut to two modes (the document's CPU rule:
-the transients, the clock and the recording are never cut).
+The audio interrupt: 256 frames in 5.8 ms; the target is under half.
 
-Memory: the canvas 240 x 124 (60 KB, the pool), the delay 2 x 32768 int16 (128 KB), the reverb ~24 KB, four scenes
-(~13 KB each), the undo 16 x 1.3 KB: ~290 KB of the pool's 336.
+**Measured on the host** (`make perf`: callgrind, the engine built `-Os` as the chip's build is): about **2 400
+instructions a frame** for the awakening, **2 900** with every organ sounding and every effect on. The chip's pi32v2
+does a 32 x 32 -> 64 multiply in one instruction, so the host's count is a fair proxy. Taking the whole interrupt as
+~5 300 of the chip's instructions a frame (ORBITRIX's count of the same chip), that is about 45 % and 55 %.
+**fm1-emu in CI measures it on the emulated chip** (tools/emu_check.sh: the interrupts' share, and the engine's own
+`isr_load`).
+
+What made it fit (from 3 140 a frame): a drum organ whose excitation is over runs a fast path, only its modes and its
+pitch body; organs sleep at -72 dB; the sends are summed per channel, not per organ; the rib sleeps; the reverb's
+modulation is computed once a sub-block. Over 75 % of the interrupt (its own measure, `isr_load`), the drums out of
+focus ring on two modes instead of four (the document's CPU rule: the transients, the clock and the recording are
+never cut).
+
+Memory, measured by the build: the image 172 KB of 568; RAM 17 KB of 96; the pool 297 KB of 336 (the canvas
+240 x 134, the delay 2 x 32768 int16, the reverb, four scenes of ~9.6 KB, the undo).
 
 ## 9. Order of work
 

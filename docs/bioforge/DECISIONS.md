@@ -41,3 +41,21 @@ and crush are in; PARASITE CHORUS and NECRO GATE wait for the measured budget on
 
 **D11 (2026-11-09) Package identity FM-1_908XY.** 908 was free in the Firmware Hub's catalogue on 2026-11-09 (as
 ORBITRIX and Star Distroyer use 967XY and 962XY); 90800 is a dev build.
+
+**D12 (2026-11-09) The drums ring cheaply.** Measured on the host the first engine took 3 140 instructions a frame
+for the awakening: too close to the chip's limit. Once a drum organ's excitation is over (the clicks played, the
+friction and the vent under -66 dB), only its modes and its pitch body run; it sleeps at -72 dB, not -90. With the
+sends summed per channel and the rib asleep when nothing strikes it: 2 400. Over 75 % of the interrupt, the drums out
+of focus ring on two modes (the document's rule: the transients and the clock stay).
+
+**D13 (2026-11-09) Four scenes from the document's situations.** RITUAL 00 THE AWAKENING is the document's start scene.
+01 INFECTION is its SLOW INFECTION (LOOP 80 %, DEPTH 30 %, RATTLE on). 02 MARROW is slower and swung, the bass and
+SPASM through the crusher, WAIL on SPASM. 03 EMPTY BODY is blank, for your own.
+
+**D14 (2026-11-09) The look at 240 x 240.** The art is drawn by `tools/gen_art.py` from shapes: dark tissue with veins,
+bone frames with vertebra notches, eye knobs (a slit pupil, a green arc for the value), membrane cells that light as a
+green star, a spine of vertebrae for the register. Labels are a 5 x 7 pixel font of its own (40 characters a line);
+values FONT_S and FONT_L. SEQ is the first page: the pattern is what tells most at a glance.
+
+**D15 (2026-11-09) No page in the browser yet.** The sister firmwares have one (the firmware compiled to WebAssembly,
+an installer); BIOFORGE's comes after the sound has been heard on an FM-1.

@@ -1,41 +1,35 @@
-# FM-1 Clock: the everyday commands. The firmware itself is built by ./build.sh (docs/DINGHY_README.md: the toolchain).
-#   make test       the clock's host tests: the sound against the reference, the time, the strike, the screen
-#   make host       the app on the host with Dinghy's default script: build/host/fm1clock.wav and its screens
-#   make tables     firmware/gen/clk_tables.h from tools/clk_model.json and tools/clk_cuckoo.json
-#   make art        firmware/gen/clk_art.h from assets/design.png, clk_art_cuckoo.h drawn by tools/gen_art_cuckoo.py
-#   make fit        tools/clk_model.json, tools/clk_cuckoo.json from the measurements (~1 min each)
-#   make analyze REF=recording.wav   the measurements from the wall clock's recording (numpy, scipy)
-#   make analyze-cuckoo REF=recording.wav   and from the cuckoo clock's
-#   make fw         the FM-1 package build/fm1clock.fwsc (JieLi toolchain in ~/.jieli, SDK in ~/fw-AC79_AIoT_SDK)
-#   make check      what CI runs after the package: the clock's tests, Dinghy's platform tests, fm1-emu
+# BIOFORGE: the everyday commands. The firmware itself is built by ./build.sh (docs/DINGHY_README.md: the toolchain).
+#   make test       the engine's and the memory's host tests (plain and ASan/UBSan), the renders: build/audio/
+#   make host       the app on the host, the tour of its pages: build/host/bioforge.wav and its screens
+#   make tables     firmware/gen/bio_tables.h from tools/gen_tables.py
+#   make art        firmware/gen/bio_art.h from tools/gen_art.py (and build/art/*.png to look at)
+#   make perf       the engine's instructions a frame (callgrind, -Os): the awakening and everything at once
+#   make fw         the FM-1 package build/bioforge.fwsc (JieLi toolchain in ~/.jieli, SDK in ~/fw-AC79_AIoT_SDK)
+#   make check      what CI runs after the packages: BIOFORGE's tests, Dinghy's platform tests, fm1-emu
 PY ?= python3
 
-.PHONY: test host tables art fit analyze analyze-cuckoo fw check emu clean
+.PHONY: test host tables art perf fw check emu clean
 test:
-	sh tests/run_clock.sh
+	sh tests/run_bio.sh
 host:
-	sh tests/run_host.sh
+	sh tests/run_host.sh tests/scripts/pages.txt
 tables:
 	$(PY) tools/gen_tables.py
 art:
 	$(PY) tools/gen_art.py
-	$(PY) tools/gen_art_cuckoo.py
-fit:
-	$(PY) -I tools/fit_model.py
-	$(PY) -I tools/fit_cuckoo.py
-	$(PY) tools/gen_tables.py
-analyze:
-	$(PY) -I tools/analyze_ref.py $(REF)
-analyze-cuckoo:
-	$(PY) -I tools/analyze_cuckoo.py $(REF)
+perf:
+	mkdir -p build && cc -Os -Wall -Wno-unused-function -Ifirmware/src -Ifirmware/gen -o build/bio_perf tools/bio_perf.c
+	for m in awaken worst; do valgrind --tool=callgrind --callgrind-out-file=build/cg.$$m.out build/bio_perf $$m 690 2>&1 | \
+	    sed -n 's/.*Collected : \([0-9]*\)/\1/p' | awk -v m=$$m '{ printf "%s: %d instructions a frame\n", m, $$1 / 176640 }'; done
 fw:
+	BOARD=smk37 PYTHON=$(PY) sh build.sh
 	PYTHON=$(PY) sh build.sh
-	sha256sum build/fm1clock.fwsc
+	sha256sum build/bioforge.fwsc
 emu:
-	sh tools/emu_check.sh build/fm1clock.fwsc
+	sh tools/emu_check.sh build/bioforge.fwsc
 check: fw
-	sh tests/run_clock.sh
+	sh tests/run_bio.sh
 	sh tests/run_tests.sh
 	sh tools/emu_ci.sh
 clean:
-	rm -rf build/host build/gen build/loader build/audio build/emu build/fm1clock* build/clk_*
+	rm -rf build/host build/gen build/loader build/audio build/emu build/art build/bioforge* build/bio_*

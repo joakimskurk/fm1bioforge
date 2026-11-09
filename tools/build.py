@@ -341,6 +341,7 @@ def main():
     errors += hal_err
     if not hal_err:
         notes.append("register access: hal/ only (src/, loader/ clean)")
+    (OUT / "bioforge.notes").write_text("".join(f"{n}\n" for n in notes))   # (CI shows them again after fm1-emu)
     for n in notes:
         print("  ok   ", n)
     for e in errors:

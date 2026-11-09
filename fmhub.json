@@ -1,0 +1,7 @@
+{
+  "what": "A biomechanical rhythm machine and synth: nine organs, the drums made of pressure, fracture, friction and vents through damped resonant bodies (no samples), a bass, a breathing drone, nerve discharges, an artificial throat and noise. The keys go straight into the pattern memory (live, step and parameter recording, overdub, replace, undo), and a Turing register works as a nervous system on the big knob: it locks the texture and the rhythm, or lets them slowly mutate. Four scenes, delay, reverb and crush, on six pages of bone and flesh.",
+  "author": "joakimskurk",
+  "kinds": ["drums", "synth", "sequencer"],
+  "image": "docs/screens/seq.png",
+  "color": "#8CFF2A"
+}
