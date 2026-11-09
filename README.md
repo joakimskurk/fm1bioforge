@@ -79,6 +79,14 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 | **OCT− / OCT+** | The keys' octave. SHIFT: UNDO, REDO. |
 | **MIDI in** | Notes on channel 1 go to the focus, channels 2–10 to HEART … NOISE; they record as the keys do. Start and stop follow. |
 
+**From nothing to a loop.** Turn SELECT to BASS. Press PLAY, then REC, and play four notes over a bar. Press REC
+again: the phrase loops. Turn SELECT to TEETH and play metal hits on the keys. Turn TEXTURE (EDIT, KNOB 2) and the
+LOOP (ALGORITHM) until the texture phrase is right, then turn LOOP fully up: LOCK. Press SAVE.
+
+**Correcting a step.** Press PLAY to stop, select BASS, press REC (STEP REC). Turn KNOB 1 to step 7 and play E♭1; it
+goes in with the step length and the cursor moves on. Turn KNOB 1 back to it: KNOB 2 sets its length. Press PLAY: it plays with
+the drums, and the live notes keep their timing, because quantise only places them.
+
 **The kit** (focus DRUM): four zones of about seven keys each. HEART is F3–B3, BONE C4–F#4, TEETH G4–C#5 and CLAW
 D5–G5. The middle key of each zone, which glows, plays the organ as it is set; the others tune its body up or down.
 
