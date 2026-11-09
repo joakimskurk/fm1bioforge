@@ -128,7 +128,7 @@ static void rit_splice(seq_scene_t *sc)
     sc->mix.pump = 30;
 }
 
-/* RITUAL: VOID. Slow (70 BPM) and wide: a huge HEART twice a bar, a bone far off, gated noise washes held for bars, the
+/* RITUAL: VOID. Slow (70 BPM) and wide: a huge HEART twice a bar, a bone far off, a fire held for bars, the
    drone in front, the throat singing long notes, crackle in the dark, a long reverb */
 static void rit_void(seq_scene_t *sc)
 {
@@ -137,7 +137,7 @@ static void rit_void(seq_scene_t *sc)
     sc->bpm10 = 700;
     sc->p[O_HEART][P_BODY] = 96; sc->p[O_HEART][P_DECAY] = 84; sc->p[O_HEART][P_TEXTURE] = 30;
     sc->p[O_BONE][P_DECAY] = 90; sc->p[O_BONE][P_BODY] = 80;
-    rit_perc(sc, O_CLAW, "WASH", 30);
+    rit_perc(sc, O_CLAW, "EMBERS", 30);
     rit_perc(sc, O_NOISE, "CRACKLE", 64);
     sc->p[O_NOISE][P_DECAY] = 90; sc->p[O_NOISE][P_D] = 100;
     sc->p[O_TEETH][P_DECAY] = 70;
@@ -196,7 +196,7 @@ static void rit_stream(seq_scene_t *sc)
 {
     static const uint8_t G[32] = {4, 0, 2, 2, 4, 1, 0, 3, 4, 0, 2, 0, 4, 1, 1, 1,   4, 0, 2, 2, 4, 1, 0, 3, 4, 2, 0, 2, 9, 9, 9, 9};
     static const uint8_t ACC[16] = {1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0};
-    static const uint8_t ST[BIO_NP] = NC(40, 66, 50, 70,  18, 34, 50, 0, 0, 35, 0,  0, 100, 30, 0,  24, 100, 46,  0, 0, 70);
+    static const uint8_t ST[BIO_NP] = NC(40, 66, 50, 70,  18, 34, 50, 0, 0, 35, 0,  0, 100, 30, 0,  24, 100, 46,  0, 0, 50);
     static const uint8_t LO[BIO_NP] = NC(2, 10, 50, 80,  6, 20, 0, 0, 0, 10, 0,  0, 100, 0, 40,  24, 100, 50,  0, 0, 0);
     static const uint8_t HI[BIO_NP] = NC(88, 10, 50, 40,  6, 10, 100, 0, 0, 0, 0,  0, 100, 40, 10,  24, 70, 75,  0, 0, 0);
     uint32_t i;
@@ -228,13 +228,13 @@ static void rit_stream(seq_scene_t *sc)
 }
 
 /* RITUAL: WALL. A wall of noise through a band that sits on the note (TONE, a fifth over it): a riff of hiss in D
-   Phrygian, struck each step and held low between. Two bars of 16ths, a bar of triplets, a bar of 32nds. A wind of
-   noise over it in 8ths, drifting. 128 BPM */
+   Phrygian, struck each step and held low between. Two bars of 16ths, a bar of triplets, a bar of 32nds. A machine's
+   noise over it in 8ths. 128 BPM */
 static void rit_wall(seq_scene_t *sc)
 {
     static const uint8_t RIFF[16] = {38, 38, 41, 38, 50, 39, 38, 45, 38, 38, 41, 43, 50, 46, 45, 39};
     static const uint8_t WA[BIO_NP] = NC(75, 10, 50, 48,  6, 92, 50, 0, 0, 30, 0,  0, 4, 40, 10,  24, 100, 40,  0, 70, 0);
-    static const uint8_t WI[BIO_NP] = NC(52, 10, 50, 60,  6, 8, 50, 0, 0, 0, 0,  0, 100, 60, 5,  24, 76, 70,  0, 0, 60);
+    static const uint8_t WI[BIO_NP] = NC(60, 10, 50, 60,  43, 30, 60, 0, 0, 0, 0,  0, 100, 20, 5,  24, 70, 70,  0, 0, 0);
     uint32_t i;
     seq_scene_blank(sc, 0x3A11Eu);
     rit_name(sc, "WALL");
@@ -370,11 +370,11 @@ static void rit_foundry(seq_scene_t *sc)
 }
 
 /* RITUAL: ORBIT. Cosmic, 76 BPM: glass beating slowly (DRONE), a choir of throats (VOICE) moving through vowels, bells
-   far apart (SPASM), ice crackling in the cold and creaking now and then, a wind drifting; in a vast space */
+   far apart (SPASM), ice crackling in the cold and creaking now and then; in a vast space */
 static void rit_orbit(seq_scene_t *sc)
 {
     static const uint8_t ICE[BIO_NP] = NC(80, 30, 50, 30,  56, 30, 70, 0, 0, 0, 0,  0, 0, 60, 30,  24, 100, 50,  60, 0, 0);
-    static const uint8_t WIND[BIO_NP] = NC(55, 10, 50, 80,  18, 20, 50, 0, 0, 0, 0,  40, 100, 90, 70,  24, 64, 50,  0, 0, 85);
+    static const uint8_t WIND[BIO_NP] = NC(80, 25, 50, 80,  56, 20, 80, 0, 0, 0, 0,  40, 100, 30, 70,  24, 72, 50,  0, 0, 0);   /* (ice, not wind: D24) */
     seq_scene_blank(sc, 0x0B17u);
     rit_name(sc, "ORBIT");
     sc->bpm10 = 760;
@@ -411,11 +411,11 @@ static void rit_orbit(seq_scene_t *sc)
 }
 
 /* RITUAL: INNARDS. The body from inside, 92 BPM: blood pulsing with the beat (DRONE), a wet squelching bass (SLIME),
-   bubbles rising (VOICE), a heartbeat (HEART, lub and dub), grease on two and four, a sizzle of flesh held low, a
-   breath gated in and out (NOISE); in a cave */
+   bubbles rising (VOICE), a heartbeat (HEART, lub and dub), grease on two and four, a sizzle of flesh held low, a wet
+   fry gated in and out (NOISE); in a cave */
 static void rit_innards(seq_scene_t *sc)
 {
-    static const uint8_t BR[BIO_NP] = NC(36, 30, 50, 60,  18, 30, 50, 0, 0, 10, 0,  10, 100, 60, 40,  24, 84, 50,  0, 0, 60);
+    static const uint8_t BR[BIO_NP] = NC(40, 40, 50, 60,  81, 30, 30, 0, 0, 10, 0,  10, 100, 20, 40,  24, 84, 50,  0, 0, 0);
     seq_scene_blank(sc, 0x1AA4D5u);
     rit_name(sc, "INNARDS");
     sc->bpm10 = 920;
@@ -472,7 +472,6 @@ static void rit_abyss(seq_scene_t *sc)
     sc->tr[O_CLAW].len = 32;
     rit_steps(sc, O_CLAW, ".......x.............x.....x....", 72, 90, 48);
     rit_perc(sc, O_NOISE, "EMBERS", 50);
-    sc->p[O_NOISE][P_E3] = 40;                  /* (its band drifting) */
     sc->tr[O_NOISE].len = 64;
     seq_put(sc, O_NOISE, 0, 64 * 96 - 6, 60, 96, 0);
     /* dub chords off the beat, two bars: D, D, C, B flat (a minor 7th) */
@@ -524,7 +523,6 @@ static void rit_ash(seq_scene_t *sc)
     sc->p[O_TEETH][P_E1] = 50; sc->p[O_TEETH][P_LEVEL] = 74;
     rit_steps(sc, O_TEETH, "..x...x?..x...x.", 72, 80, 40);
     rit_perc(sc, O_NOISE, "EMBERS", 50);
-    sc->p[O_NOISE][P_E3] = 50;
     sc->tr[O_NOISE].len = 64;
     seq_put(sc, O_NOISE, 0, 64 * 96 - 6, 60, 100, 0);
     rit_model(sc, O_SPASM, L_DUB, 26, 60, 70, 60);
@@ -558,13 +556,13 @@ static void rit_ash(seq_scene_t *sc)
 /* RITUAL: RUST. 108 BPM, D Phrygian. The body is a drone: a MASS on D1 (octaves, a fifth, grit) breathing under a
    low-pass, a CLUSTER of semitones above it that moves from D to E flat; under them a smouldering rumble of noise.
    A pulse: a deep kick on one and three and a push before one, its rumble; a bone breaking far off on two and four;
-   slices of dark noise locked in 16ths, low; a wash of noise in the middle. A melody: a hollow bell the register plays
+   slices of dark noise locked in 16ths, low; electricity frying in the middle. A melody: a hollow bell the register plays
    from the scale (WAIL), slipping slowly, into a dark delay. DARK rolls the top off */
 static void rit_rust(seq_scene_t *sc)
 {
     static const uint8_t SL[BIO_NP] = NC(26, 10, 50, 30,  6, 30, 10, 0, 0, 10, 0,  2, 100, 10, 10,  24, 70, 54,  35, 0, 0);
-    static const uint8_t MW[BIO_NP] = NC(40, 30, 50, 80,  18, 35, 50, 0, 0, 0, 0,  60, 100, 80, 70,  24, 64, 40,  0, 0, 80);
-    static const uint8_t RB[BIO_NP] = NC(22, 10, 50, 80,  68, 20, 10, 0, 0, 10, 0,  20, 100, 0, 60,  24, 100, 50,  0, 0, 70);
+    static const uint8_t MW[BIO_NP] = NC(52, 30, 50, 80,  81, 15, 30, 0, 0, 0, 0,  20, 100, 30, 60,  24, 58, 40,  0, 0, 0);
+    static const uint8_t RB[BIO_NP] = NC(22, 10, 50, 80,  68, 20, 10, 0, 0, 10, 0,  20, 100, 0, 60,  24, 100, 50,  0, 0, 0);
     seq_scene_blank(sc, 0x2057u);
     rit_name(sc, "RUST");
     sc->bpm10 = 1080;
@@ -591,7 +589,7 @@ static void rit_rust(seq_scene_t *sc)
     rit_steps(sc, O_BONE, "....x.......x...", 55, 92, 96);
     rit_core(sc, O_TEETH, SL);
     rit_steps(sc, O_TEETH, "x.xx.x.xx.x.x.xx", 60, 84, 72);
-    rit_core(sc, O_CLAW, MW);                   /* a wash of noise in the middle, held, drifting: the space's own air */
+    rit_core(sc, O_CLAW, MW);                   /* a fry of electricity in the middle, held (not air: D24) */
     sc->tr[O_CLAW].len = 64;
     seq_put(sc, O_CLAW, 0, 64 * 96 - 6, 60, 90, 0);
     /* the melody: the register picks the bell's notes (WAIL on SPASM) */

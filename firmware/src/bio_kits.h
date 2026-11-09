@@ -36,7 +36,7 @@ static const bio_preset_t BIO_PERC_KIT[] = {
     {"LASER",      PK(70, 10, 90, 22,  43, 45,  50,  0, 10, 20,  0,   0,   0, 10, 20, 24,  92)},   /* METAL, swept down */
     /* the organic crackles (D21): held, a bed; struck, a burst of it */
     {"EMBERS",     PK(62, 45, 50, 70,  68, 15,  40,  0,  0, 15,  0,  20, 100, 70, 60, 24, 100)},   /* a fire, held */
-    {"SPARKS",     PK(75, 80, 50, 40,  68, 20,  70,  0,  0, 10,  0,   0,   0, 50, 20, 24, 100)},
+    {"SPARKS",     PK(75, 88, 50, 44,  68, 20,  70,  0, 20, 10,  0,   0,   0, 50, 20, 24, 100)},
     {"SIZZLE",     PK(74, 30, 50, 70,  81, 10,  70,  0,  0,  0,  0,  10, 100, 80, 50, 24,  92)},   /* a pan of fat, held */
     {"GREASE",     PK(70, 70, 50, 35,  81, 20,  60,  0,  0, 20,  0,   0,   0, 40, 20, 24, 100)},
     {"CREAK",      PK(40, 40, 50, 75,  93, 70,  50,  0,  0, 20,  0,  10, 100, 30, 40, 24, 100)},   /* wood, held: it creaks, then is still */

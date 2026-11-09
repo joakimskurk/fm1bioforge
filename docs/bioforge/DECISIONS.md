@@ -174,3 +174,14 @@ layers fading in and out over minutes. Against it ABYSS had a hole from 100 Hz t
   dark noise slices locked in 16ths, and a bell the register plays from the scale (WAIL). Measured the same way it is
   within a few dB of the reference in every band to 5 kHz (centroid 150 Hz, side -10 dB), with the pulse and the melody
   the user asked for. The start scenes: THE AWAKENING, RUST, ABYSS, ASH. Scene format "BOF6".
+
+**D24 (2026-11-09) Noise, not wind.** The user: the noise must not sound like wind blowing, and it did a little. Three
+things made a wind: a band of noise drifting slowly (DRIFT, a sine over four bars), held resonant washes of noise, and
+WIDTH, which added a hiss of its own to the side. Now:
+- **WIDTH** widens the sound itself: its difference from itself half a millisecond back, to the side (no air of its
+  own; in mono it cancels).
+- **DRIFT** steps: the band moves to a new place each bar, four places, then again (a 6 ms glide: no click). A
+  machine shifting, locked to the bar, instead of a gust.
+- The washes are gone from the rituals: RUST's became electricity frying, ORBIT's wind ice crackling, INNARDS' breath
+  a wet fry, WALL's wind a machine's shift-register noise, VOID's washes embers; ABYSS's and ASH's fires stay put.
+- A medley of fourteen rituals (two minutes, from RUST to THE AWAKENING) went to the user as a survey of the range.

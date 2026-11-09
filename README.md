@@ -40,8 +40,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 - **Rhythm made of noise.** NOISE is a noise voice, and any drum organ can become one (its MODEL, or the SOUND
   knob). The sequencer locks each step's noise, so the same noise comes back pass after pass and is the groove; the
   Turing's LOOP lets it slip, step by step. **SCATTER** gives every step its own slice of it (band, length, shape,
-  place), **TONE** puts the band on the note (riffs of hiss, a second band a fifth up), **DRIFT** moves the band over
-  four bars, and a noise step's ratchet repeats its own noise: a stutter (SYN, SHIFT).
+  place), **TONE** puts the band on the note (riffs of hiss, a second band a fifth up), **DRIFT** steps the band bar
+  by bar, and a noise step's ratchet repeats its own noise: a stutter (SYN, SHIFT).
   - **The voice**: a source (WHITE, PINK, DIGI and METAL shift-register noise, and four organic crackles: DUST, FIRE
     in clusters over a smoulder, FRY a sizzle, CREAK a gliding stick-slip), grain, a resonant filter
     that morphs low-pass, band-pass and high-pass and pings at high resonance, a sweep (a zap down, a rise up), bursts

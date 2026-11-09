@@ -40,12 +40,14 @@ typedef struct {
     int32_t click, drive, bits, width;
     uint32_t crush_n, crush_c;
     int32_t crush_v, crush_s;
-    bio_op_t hp2;
+    int32_t hz[32];                             /* WIDTH: its own sound, half a millisecond back (D24: no air of its own) */
+    uint32_t hw;
     bio_dc_t dc;
     int32_t mk_lp, mk_bp, mk;                   /* the make-up (octaves, Q16): a low-pass's, a band-pass's; its gain now (Q12) */
     bio_svf_t f2;                               /* TONE: the second band, a fifth up */
     int32_t tone2;                              /* its level (Q10; 0: off) */
-    int32_t drift, lfm;                         /* DRIFT: its depth (lf, Q16, at a full breath); the band's offset now */
+    int32_t drift, lfm;                         /* DRIFT: its depth (lf, Q16); the band's offset now (the engine steps it
+                                                   bar by bar, D24) */
     int32_t pan_s;                              /* SCATTER's place for this hit: its share sent to the side (Q15) */
     int32_t fade, peak, lvl;                    /* lvl: the last block's envelope (the screen) */
 } bio_perc_t;
@@ -169,7 +171,6 @@ static void bio_perc_hit(bio_perc_t *v, const bio_perc_p_t *p, int32_t note_q8, 
     v->mk_bp = v->src == PS_CREAK ? 0 : (bio_log2((uint32_t)v->k) - (16 << 16)) / 2;   /* (CREAK: slips ring a body) */
     bio_svf_set(&v->f, v->lf0 + bio_mul30(v->sweep, v->fenv), (uint32_t)v->k);
     if (v->tone2) bio_svf_set(&v->f2, v->lf0 + bio_mul30(v->sweep, v->fenv) + 7 * BIO_SEMI, (uint32_t)v->k);
-    bio_op_set(&v->hp2, bio_lf_hz(3000));
 }
 
 static void bio_perc_release(bio_perc_t *v)
@@ -219,7 +220,7 @@ static void bio_perc_render(bio_perc_t *v, int32_t *out, int32_t *side, uint32_t
         cb = (int32_t)(((int64_t)(1024 - v->whi - wk) * v->mk) >> 10);
         cx = -ca;
     }
-    gs = side && v->width ? bio_mul15(v->width, bio_mul15(v->amp, v->fade)) : 0;   /* the side's level */
+    gs = side ? v->width : 0;                   /* the side's level */
     if (v->src >= PS_FIRE && --v->ctl == 0u) {   /* the crackles' life: once in a while a new heat, a new creak */
         uint32_t r = bio_rnd(&v->rnd2), u = r >> 17;   /* (0..32767) */
         if (v->src == PS_CREAK) {               /* a creak (0.15 .. 0.8 s), or still (to 0.5 s); its rate wanders */
@@ -325,7 +326,13 @@ static void bio_perc_render(bio_perc_t *v, int32_t *out, int32_t *side, uint32_t
         if (dc) y = bio_dc(&v->dc, y);         /* (a driven or crushed hit has DC; a clean one none) */
         y = bio_mul15(y, bio_mul15(v->amp, v->fade));
         out[k] += y;
-        if (gs) side[k] += bio_mul15(bio_mul15(bio_op_hp(&v->hp2, bio_noise(&v->rnd2)), v->env >> 15), gs) >> 2;
+        if (gs) {                               /* WIDTH: the sound less itself half a millisecond back, to the side (it
+                                                   widens what is there; a hiss of its own was a wind) */
+            int32_t yd = v->hz[(v->hw - 23u) & 31u];
+            v->hz[v->hw & 31u] = y;
+            v->hw++;
+            side[k] += bio_mul15(y - yd, gs) >> 1;
+        }
         if (v->pan_s && side) side[k] += bio_mul15(y, v->pan_s);   /* SCATTER's place: + left, - right */
         if (v->fade < 32767) v->fade = v->fade > 600 ? v->fade - 600 : 0;
         if (bio_abs(y) > pk) pk = bio_abs(y);

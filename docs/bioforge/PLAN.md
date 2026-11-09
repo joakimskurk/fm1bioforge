@@ -134,8 +134,9 @@ GLASS BELL CHOIR (cosmic), BLOOD BUBBLE SLIME (the body). The reverb's SPACE: HA
 
 **Rhythm made of noise (D20).** The sequencer locks each noise step's seed (LOOP: LOCK keeps it, lower lets it slip,
 DOUBLE LOCK inverts it each pass); SCATTER (E1) gives each step its own slice from it (band, resonance, length, shape,
-level, place, grain); TONE (E2) puts the band on the note with a second a fifth up, BODY its octave; DRIFT (E3) moves
-the band over four bars; a noise step's ratchet repeats its own noise (a stutter). On SYN with SHIFT.
+level, place, grain); TONE (E2) puts the band on the note with a second a fifth up, BODY its octave; DRIFT (E3) steps
+the band bar by bar through four places (D24: not a wind); a noise step's ratchet repeats its own noise (a stutter).
+On SYN with SHIFT. WIDTH widens the sound itself (a Haas difference to the side), no hiss of its own.
 
 **MODEL NOISE.** A drum organ's D8 (MODEL) over 50 makes it a perc voice with the same parameters; its SOUND knob
 (ENV, SHIFT, KNOB 1) loads one of sixteen noise sounds (`bio_kits.h`: TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE,
