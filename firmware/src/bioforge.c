@@ -420,7 +420,9 @@ static void note_up(uint32_t org, uint32_t note)
 #define K_MODE 0xFFFFu                          /* a key that is a page's button while held, not a note */
 static void keys_in(void)
 {
-    uint32_t keys = fm1_in.notes, down = keys & ~ui.keys_prev, up = ui.keys_prev & ~keys, k;
+    uint32_t keys = fm1_in.notes, taps = fm1_input_note_edges() & ~keys & ~ui.keys_prev, k;
+    uint32_t down = (keys & ~ui.keys_prev) | taps, up = (ui.keys_prev & ~keys) | taps;   /* (a tap shorter than a pass:
+                                                   down and up in this one) */
     uint32_t seqh = fm1_in.buttons >> BTN_SEQ & 1u, lfoh = fm1_in.buttons >> BTN_LFO & 1u;
     uint32_t arph = fm1_in.buttons >> BTN_ARP & 1u, homeh = fm1_in.buttons >> BTN_HOME & 1u;
     ui.keys_prev = keys;
