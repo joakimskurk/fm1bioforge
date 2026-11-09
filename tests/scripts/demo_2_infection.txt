@@ -1,0 +1,5 @@
+# Demo: RITUAL 01, INFECTION (PRESETS once): the awakening with a nerve that slips (LOOP 80 %) and rattles
+200 enc 6 1
+300 btn 12
+32500 btn 12
+36000 end

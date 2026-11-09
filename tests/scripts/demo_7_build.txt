@@ -1,0 +1,44 @@
+# Demo: FROM NOTHING TO A LOOP, the idea document's first workflow. RITUAL 03, EMPTY BODY (PRESETS back once), PLAY,
+# REC: the kit played in (HEART on the beats, BONE on two and four), then TEETH on the off-beats; REC off: it loops.
+# SELECT to BASS, REC, four notes over a bar; REC off. Then the nerve: LOOP down to 70 % and RATTLE up (MUT), so the
+# texture starts to move; LOOP back up: LOCK.
+200 enc 6 -1
+300 btn 12
+2200 btn 13
+2300 keys 0x8
+2380 keys 0
+2800 keys 0x408
+2880 keys 0
+3300 keys 0x8
+3380 keys 0
+3800 keys 0x408
+3880 keys 0
+4550 keys 0x20000
+4620 keys 0
+5050 keys 0x20000
+5120 keys 0
+5550 keys 0x20000
+5620 keys 0
+6050 keys 0x20000
+6120 keys 0
+6250 btn 13
+8000 enc 0 5
+10200 btn 13
+10300 keys 0x200
+10750 keys 0
+11050 keys 0x400
+11280 keys 0
+11300 keys 0x200
+11750 keys 0
+12050 keys 0x80
+12280 keys 0
+12300 btn 13
+16300 btn 5
+16400 enc 5 60
+16500 enc 1 -10
+17500 enc 1 -10
+18500 enc 1 -10
+24300 enc 1 30
+24400 enc 5 -60
+30300 btn 12
+33000 end

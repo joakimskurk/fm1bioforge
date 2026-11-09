@@ -1,0 +1,5 @@
+# Demo: RITUAL 02, MARROW (PRESETS twice): 96 BPM, swung, the bass and SPASM through the crusher, WAIL on SPASM
+200 enc 6 2
+300 btn 12
+30300 btn 12
+34000 end

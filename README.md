@@ -6,6 +6,10 @@ artificial throat. You play the keys straight into the pattern memory. A Turing 
 it locks the sound and the rhythm in place, and changes them slowly.
 
 <p align="center">
+  <a href="https://joakimskurk.github.io/fm1bioforge/"><b>The page: play BIOFORGE in the browser, hear the demos, install it from there →</b></a>
+</p>
+
+<p align="center">
 <img src="docs/screens/seq.png" width="240" alt="SEQ: nine tracks of sixteen membrane cells, HEART BONE TEETH CLAW BASS DRONE SPASM VOICE NOISE, the green lit cells the notes of the awakening, the playhead a green column; below it four eye-shaped knobs: STEP, LENGTH, VELO, CHANCE">
 <img src="docs/screens/syn.png" width="240" alt="SYN on HEART: the organ's own output as a green scope, its three modes at 93, 171 and 286 Hz as lines that ring, the excitation's four parts PRESS FRACT FRIC VENT; the knobs BODY 76, TEXTURE 48, MOTION 18, DECAY 46">
 <img src="docs/screens/mut.png" width="240" alt="MUT: the Turing register as a spine of sixteen vertebrae, their cores lit green for its 1 bits; LOOP 100 % LOCK in large figures; CLOCK 1/8, LENGTH 8, DEPTH 20 %, the CV8 bar; the routes SCRAPE METAL AIR ROT, RATTLE and WAIL off">
@@ -97,7 +101,14 @@ D5–G5. The middle key of each zone, which glows, plays the organ as it is set;
 
 ## Install and try
 
-**Install it** from a computer with Python, the FM-1 on USB:
+**Try it without an FM-1:** *Play it here* on [the page](https://joakimskurk.github.io/fm1bioforge/#play), in any
+recent browser, phones too: the firmware itself compiled to WebAssembly, its sound, its screen and its keys' lights.
+The page also has seven demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
+
+**Install it from the browser:** [the page's installer](https://joakimskurk.github.io/fm1bioforge/#install), in Chrome
+or Edge on a computer, the FM-1 on USB. It always offers the latest build of `main` that passed its tests.
+
+**Or install it** from a computer with Python, the FM-1 on USB:
 
 ```sh
 python3 tools/fm1_install.py build/bioforge.fwsc     # asks before it writes, then restarts into BIOFORGE
@@ -113,6 +124,7 @@ make test     # the engine's and the memory's tests (plain and ASan/UBSan), the 
 make host     # the app on a computer: a tour of its pages, build/host/bioforge.wav and screenshots
 make perf     # the engine's instructions a frame (callgrind): the awakening, and everything at once
 make fw       # the FM-1 and SMK-37 packages (the JieLi toolchain and the AC79 SDK: docs/DINGHY_README.md)
+make web      # the page: the demos, BIOFORGE for the browser (clang, lld), its check in Node, build/site/ (ffmpeg)
 ```
 
 ## How it is made

@@ -1,0 +1,60 @@
+# Demo: SLOW INFECTION, then UNWIND (the idea document's 5.9): the awakening; on MUT the LOOP is turned down from LOCK
+# to 75 % a little at a time and RATTLE comes in: the texture changes, the HEART stays where it is. Then RATTLE out and
+# LOOP back up to LOCK: a machine calming down, not a preset swapped
+300 btn 12
+2300 btn 5
+4300 enc 1 -1
+4620 enc 1 -1
+4940 enc 1 -1
+5260 enc 1 -1
+5580 enc 1 -1
+5900 enc 1 -1
+6220 enc 1 -1
+6540 enc 1 -1
+6860 enc 1 -1
+7180 enc 1 -1
+7500 enc 1 -1
+7820 enc 1 -1
+8000 enc 5 20
+8140 enc 1 -1
+8460 enc 1 -1
+8780 enc 1 -1
+9100 enc 1 -1
+9420 enc 1 -1
+9740 enc 1 -1
+10060 enc 1 -1
+10380 enc 1 -1
+10700 enc 1 -1
+11020 enc 1 -1
+11340 enc 1 -1
+11660 enc 1 -1
+11980 enc 1 -1
+12000 enc 5 20
+22300 enc 5 -40
+22500 enc 1 1
+22740 enc 1 1
+22980 enc 1 1
+23220 enc 1 1
+23460 enc 1 1
+23700 enc 1 1
+23940 enc 1 1
+24180 enc 1 1
+24420 enc 1 1
+24660 enc 1 1
+24900 enc 1 1
+25140 enc 1 1
+25380 enc 1 1
+25620 enc 1 1
+25860 enc 1 1
+26100 enc 1 1
+26340 enc 1 1
+26580 enc 1 1
+26820 enc 1 1
+27060 enc 1 1
+27300 enc 1 1
+27540 enc 1 1
+27780 enc 1 1
+28020 enc 1 1
+28260 enc 1 1
+34300 btn 12
+37000 end

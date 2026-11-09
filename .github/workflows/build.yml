@@ -1,7 +1,7 @@
 # Every push and pull request: BIOFORGE's host tests, Dinghy's platform tests and the real FM-1 and SMK-37 packages,
 # built and attested by the shared zvenson/fm1-build workflow (JieLi toolchain + AC79 SDK), as FM-1 Clock, VaveHero,
 # RoboSeq and SkurkyMello do. Then fm1-emu runs the FM-1 package and says how much of the chip BIOFORGE takes
-# (tools/emu_ci.sh). A tag vX.Y also publishes the release.
+# (tools/emu_ci.sh). A tag vX.Y also publishes the release. On the default branch the site job builds the page.
 name: build
 
 on:
@@ -25,3 +25,60 @@ jobs:
         ./build.sh $R
       test: python3 -m pip install -q numpy Pillow && sh tests/run_bio.sh && sh tests/run_tests.sh && sh tools/emu_ci.sh
       packages: build/bioforge*.fwsc
+
+  # The page (GitHub Pages, https://joakimskurk.github.io/fm1bioforge/): BIOFORGE to play in the browser (the
+  # firmware's own code, WebAssembly, checked in Node first), the demos (the firmware on the host, played by
+  # tests/scripts/demo_*.txt), and the installer with the package this run built and tested (web/make_site.py). From
+  # the default branch only. GitHub Pages has to be switched on once, by the repository's owner: Settings -> Pages ->
+  # Build and deployment -> Source: GitHub Actions. Until then this job says so and publishes nothing (the build stays
+  # green).
+  site:
+    needs: build
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+      - name: GitHub Pages switched on?
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/pages" >/dev/null 2>&1; then
+            echo "on=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=GitHub Pages is off::Settings -> Pages -> Build and deployment -> Source: GitHub Actions, then run the build again"
+            echo "on=0" >> "$GITHUB_OUTPUT"
+          fi
+      - name: ffmpeg and lld (the demos' audio, BIOFORGE for the browser); numpy and Pillow (the spectra)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg lld
+          python3 -m pip install -q numpy Pillow
+      - name: The demos (the firmware on the host, played by its scripts)
+        run: APP_VER="dev-${GITHUB_SHA::7}" sh tools/make_demos.sh
+      - name: BIOFORGE for the browser (WebAssembly), and its check in Node
+        run: |
+          APP_VER="dev-${GITHUB_SHA::7}" sh web/app/build.sh build/web/bioforge.wasm
+          node tests/web/app_test.mjs build/web/bioforge.wasm
+      - name: The site
+        run: python3 web/make_site.py build/bioforge.fwsc "dev-${GITHUB_SHA::7}" _site
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.pages.outputs.on == '1'
+        with:
+          path: _site
+      - id: deploy
+        if: steps.pages.outputs.on == '1'
+        uses: actions/deploy-pages@v4

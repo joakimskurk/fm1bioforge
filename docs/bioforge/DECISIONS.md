@@ -57,7 +57,7 @@ bone frames with vertebra notches, eye knobs (a slit pupil, a green arc for the 
 green star, a spine of vertebrae for the register. Labels are a 5 x 7 pixel font of its own (40 characters a line);
 values FONT_S and FONT_L. SEQ is the first page: the pattern is what tells most at a glance.
 
-**D15 (2026-11-09) No page in the browser yet.** The sister firmwares have one (the firmware compiled to WebAssembly,
+**D15 (2026-11-09, replaced by D17) No page in the browser yet.** The sister firmwares have one (the firmware compiled to WebAssembly,
 an installer); BIOFORGE's comes after the sound has been heard on an FM-1.
 
 **D16 (2026-11-09) The document's pictures are inspiration, not a design to match.** The user: the designs in the
@@ -65,3 +65,11 @@ pictures will not necessarily match what BIOFORGE ends up with; they are only th
 is the mood and the colour rules (§1 of the plan: almost black, bone, flesh, a little green; green is sound, red is
 recording). The layout, the controls on each page and how much is on a screen follow the FM-1 and what reads at
 240 x 240, and can change freely.
+
+**D17 (2026-11-09) The page: demos and the firmware to try.** The user asked for a page with demos and a firmware to
+test, like their other firmwares' pages. `web/` has BIOFORGE compiled to WebAssembly on a web FM-1 (after ORBITRIX's:
+the buttons can be held, so SEQ, LFO, ARP and HOME work as on the panel; the scenes' slots are kept in the browser),
+seven demos that are the firmware itself played by scripts (`tests/scripts/demo_*.txt`, rendered by
+`tools/make_demos.sh`, never edited after), each with its spectrum, and the Web MIDI installer with the package CI
+built and tested. CI's site job builds it on `main`, checks the WebAssembly in Node first, and publishes it once
+GitHub Pages is switched on.

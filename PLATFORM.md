@@ -21,11 +21,11 @@ Kept small, so a later Dinghy can be merged by diffing these files.
 | `tests/host.c` | `APP_NAME` and the output's name |
 | `tests/run_host.sh`, `tests/run_tests.sh`, `tests/install_test.py` | `bioforge.*` names; the SMK-37 packages' identities `_908XY` |
 | `README.md` | moved to `docs/DINGHY_README.md`; BIOFORGE's README in its place |
-| `.github/workflows/release.yml` | replaced by `build.yml` (zvenson/fm1-build, as FM-1 Clock, VaveHero, RoboSeq and SkurkyMello) |
+| `.github/workflows/release.yml` | replaced by `build.yml` (zvenson/fm1-build, as FM-1 Clock, VaveHero, RoboSeq and SkurkyMello), with a job for the site (GitHub Pages) |
+| `web/` (Dinghy has none) | the site: `fm1pkg.js` and `fm1ota.js` from SLOOP (`bac9c05`, unchanged: the update protocol over Web MIDI; Dinghy's `tests/install_test.py` checks `fm1pkg.js` against `tools/fm1pkg_make.py`), BIOFORGE's page, `make_site.py`, and `web/app/` (the firmware in the browser) |
 
 Nothing in `firmware/hal/`, `firmware/loader/` or `firmware/app.ld` is changed. `platform.c` has one change, from FM-1
-Clock: with `DINGHY_WEB` it includes `web/app/web_host.c` (a page's FM-1) instead of `tests/host.c`; BIOFORGE has
-no page yet.
+Clock: with `DINGHY_WEB` it includes `web/app/web_host.c` (the page's FM-1) instead of `tests/host.c`.
 
 ## Updating Dinghy
 

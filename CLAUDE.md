@@ -17,6 +17,10 @@
   feedback loop round toward zero. A constant that looks like a hardware address (0x02000000, 0x1Exxxxx ...) fails the
   build's register check: write it as a shift.
 - The budget (docs/RULES.md): the audio ISR under half of its 5.8 ms.
+- The page (`web/`, published by CI from `main`): `web/app/build.sh` (WebAssembly), `web_host.c`, `worklet.js`,
+  `play.js`, `index.html`, `make_site.py`; the demos are `tests/scripts/demo_*.txt` (`tools/make_demos.sh`). After a
+  change: `make web`, `node tests/web/app_test.mjs build/web/bioforge.wasm`, and try `build/site/` in Chromium
+  (Playwright, headless): Start, PLAY, the screen, the installer's status.
 - Only edit Dinghy's own files (`platform.c`, `gfx.c`, `hal/`, `loader/`, `tools/build.py`) when the task needs it, and
   list the departure in PLATFORM.md.
 - Dinghy, Felucca, SLOOP and the SMK-37 layer stay credited: that is the code's licence. The Turing register follows
