@@ -156,3 +156,21 @@ musical, rhythmic meaning, atmosphere; and it sounded very lofi and choppy. What
   opens and DECAY closes, for the delay to carry.
 - **ABYSS** (122 BPM) and **ASH** (116 BPM): the direction, as rituals; the start scenes are THE AWAKENING, ABYSS, ASH,
   FROZEN, the rest on SHIFT + PRESETS. Scene format "BOF5".
+
+**D23 (2026-11-09) A reference, measured; the drone as the body.** The user gave a 30-minute recording, "Grim Dark
+Industrial Ambience", for its feel, to mix with melody and a little more rhythm. Nobody here can listen, so it was
+measured (`tools/bio_feel.py`: third-octave spectrum, band energies, width, flatness, crest, a pulse's
+clarity, persistent pitches): very dark (its centroid about 160 Hz; from 1 kHz to 13 kHz it falls by about 30 dB), a
+full body from 100 Hz to 2 kHz, a drone on E flat 1 with its harmonics and a cluster of semitones (D, E flat, E) over
+it, nearly all tone (flatness 0.001), wide (the side 8 dB under the middle), dense (RMS -12 dBFS), no pulse to speak of,
+layers fading in and out over minutes. Against it ABYSS had a hole from 100 Hz to 1.6 kHz, a flat floor of hiss over
+2 kHz and twice the width: the kick and the noise were doing everything, the body was missing. So:
+- **MASS** and **CLUSTER** (landscape models): three band-limited saws a few cents apart (the note, its fifth and
+  octave, a sine under; or the note and the two semitones over it), a two-pole low-pass breathing with the breath,
+  grit (a slow noise roughening it), and a side of their own (the upper voices apart, the root in the middle).
+- **DARK** (MIX's sends, SHIFT, KNOB 4): the master's two-pole low-pass, 18 kHz down to 1.2 kHz.
+- The limiter now cuts for the whole sub-block at once (it was ramping down and the start of a loud one clipped).
+- **RUST** (108 BPM): the drone body, a smouldering rumble and a wash of noise, a sub kick and its rumble, a far bone,
+  dark noise slices locked in 16ths, and a bell the register plays from the scale (WAIL). Measured the same way it is
+  within a few dB of the reference in every band to 5 kHz (centroid 150 Hz, side -10 dB), with the pulse and the melody
+  the user asked for. The start scenes: THE AWAKENING, RUST, ABYSS, ASH. Scene format "BOF6".

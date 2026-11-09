@@ -19,6 +19,7 @@ typedef struct {
     uint8_t lvl[BIO_NCH], mute[BIO_NCH], sa[BIO_NCH], sb[BIO_NCH], sc[BIO_NCH];
     uint8_t master, rib, pump;                  /* pump: HEART ducks the other channels (a side-chain), 0 .. -18 dB */
     uint8_t rumble;                             /* RUMBLE: HEART into a dark low tail of its own, ducked by it (D22) */
+    uint8_t dark;                               /* DARK: the master's low-pass, off at 0, 18 kHz .. 1.2 kHz (D23) */
 } bio_mix_t;
 typedef struct {
     uint8_t d_time, d_fb, d_tone, d_ping, d_mix, d_rev;   /* BLOOD DELAY: time (a division), feedback, tone, ping-pong, return, to the reverb */
@@ -82,6 +83,8 @@ struct bio_s {
     /* the master */
     bio_dc_t mdc_l, mdc_r;
     int32_t lim_g;
+    bio_op_t dk[4];                             /* DARK: two poles a side */
+    uint32_t dark_seen;
     int32_t duck, duck_to, duck_rel;            /* PUMP: the cut now and the hit's (Q15), its recovery a sub-block (Q30) */
     uint32_t fx_seen;                           /* the effects' settings last turned into coefficients */
     /* the meters (peak per channel, the last block), the load */
@@ -100,7 +103,7 @@ struct bio_s {
 };
 
 static const bio_mix_t BIO_MIX_INIT = {{80, 70, 58, 62, 56, 46}, {0, 0, 0, 0, 0, 0}, {12, 8, 0, 18, 10, 0},
-                                       {18, 6, 30, 28, 34, 30}, {0, 0, 0, 0, 0, 0}, 75, 50, 0, 0};   /* (no crush: D22) */
+                                       {18, 6, 30, 28, 34, 30}, {0, 0, 0, 0, 0, 0}, 75, 50, 0, 0, 0};   /* (no crush: D22) */
 static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 0,   0};
 
 static void bio_fx_coefs(bio_t *e);
@@ -122,6 +125,7 @@ static void bio_init(bio_t *e)
     e->beat_inc = 95u;                          /* 120 BPM until the sequencer sets the tempo */
     e->spb_q8 = 22050u << 8;
     e->fx_seen = ~0u;
+    e->dark_seen = ~0u;
     e->drift_to = 0;
 }
 
@@ -310,7 +314,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             if (o == O_DRONE) bars = e->p[o][P_D5] <= 50u ? 1u + (uint32_t)e->p[o][P_D5] * 7u / 50u : 8u + ((uint32_t)e->p[o][P_D5] - 50u) * 24u / 50u;
             else bars = 4u;
             life.breath = bio_sin(e->beat_q16 * (16384u / bars));   /* a turn every 4 x bars beats */
-            bio_tone_render(v, o, pe, &life, e->ob[o], BIO_SB);
+            bio_tone_render(v, o, pe, &life, e->ob[o], e->os[o], BIO_SB);
         }
         {                                       /* the scope */
             uint32_t so = e->scope_org < BIO_NORG ? e->scope_org : 0u, w = e->scope_w;
@@ -530,14 +534,27 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
            clip after it */
         {
             int32_t mg = bio_fader(e->mix.master);   /* 75 -> 0.56: -5 dB at INIT */
+            uint32_t dk = e->mix.dark > 100u ? 100u : e->mix.dark;
+            if (dk != e->dark_seen) {           /* DARK: 18 kHz at 1, 1.2 kHz at 100 */
+                uint32_t j;
+                e->dark_seen = dk;
+                bio_op_set(&e->dk[0], bio_lf_hz(18000) - (int32_t)dk * (bio_lf_hz(18000) - bio_lf_hz(1200)) / 100);
+                for (j = 1; j < 4u; j++) e->dk[j].g = e->dk[0].g;
+            }
             for (k = 0; k < BIO_SB; k++) {
                 dryl[k] = bio_dc(&e->mdc_l, (int32_t)(((int64_t)dryl[k] * mg) >> 15));
                 dryr[k] = bio_dc(&e->mdc_r, (int32_t)(((int64_t)dryr[k] * mg) >> 15));
+                if (dk) {
+                    dryl[k] = bio_op_lp(&e->dk[1], bio_op_lp(&e->dk[0], dryl[k]));
+                    dryr[k] = bio_op_lp(&e->dk[3], bio_op_lp(&e->dk[2], dryr[k]));
+                }
                 if (bio_abs(dryl[k]) > peak) peak = bio_abs(dryl[k]);
                 if (bio_abs(dryr[k]) > peak) peak = bio_abs(dryr[k]);
             }
             tg = peak > 29204 ? (int32_t)(29204u * 32767u / (uint32_t)peak) : 32767;
-            if (tg > e->lim_g) tg = e->lim_g + ((tg - e->lim_g) >> 6);   /* down at once, up slowly (~50 ms) */
+            if (tg > e->lim_g) tg = e->lim_g + ((tg - e->lim_g) >> 6);   /* up slowly (~50 ms) */
+            else e->lim_g = tg;                 /* down at once, for the whole sub-block (it was too late at its start:
+                                                   the peak clipped) */
             gstep = (tg - e->lim_g) / (int32_t)BIO_SB;
             for (k = 0; k < BIO_SB; k++) {
                 int32_t l, r;

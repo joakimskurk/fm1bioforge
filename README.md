@@ -49,7 +49,7 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   - **Twenty-two sounds to start from**: TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING,
     THUMP, WASH, FLAM SNR, BIT HAT, LASER, and the crackles EMBERS, SPARKS, SIZZLE, GREASE, CREAK, HINGE. SOUND (ENV, SHIFT, KNOB 1 on a drum) gives one to an organ; TISSUE gives
     a drum its own body back.
-- **Landscapes for the synths.** MODEL (SYN, SHIFT, KNOB 1) makes BASS, DRONE, SPASM or VOICE one of nine other
+- **Landscapes for the synths.** MODEL (SYN, SHIFT, KNOB 1) makes BASS, DRONE, SPASM or VOICE one of twelve other
   voices: **industry** HUM (the mains, with sparks), STEEL (bowed metal), PISTON (a machine stroking on the beat while
   the key is held); **cosmic** GLASS (inharmonic partials beating), BELL (FM), CHOIR (three throats through vowels);
   **the body** BLOOD (a pulse with the beat), BUBBLE (rising drops), SLIME (a wet squelch).
@@ -59,6 +59,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 - **PUMP and RUMBLE.** PUMP: HEART ducks the other channels and the delay's and reverb's returns, back by the next
   eighth (MIX's sends, SHIFT, KNOB 2). RUMBLE (KNOB 3): HEART's own dark low tail, breathing with it.
 - **DUB** chords: a synth's MODEL DUB, a minor chord through a low-pass that each note opens, for the delay.
+- **The drone's body.** MASS (octaves and a fifth) and CLUSTER (semitones): thick drones under a breathing low-pass,
+  with grit and their own width. **DARK** (MIX's sends, SHIFT, KNOB 4) rolls the whole top off.
 - **Four macros an organ.** BODY, TEXTURE, MOTION and DECAY are on the first page. The depth is behind them.
 - **The keys go into the memory.**
   - **LIVE REC**: press PLAY, then REC, and play.
@@ -80,11 +82,12 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   FREEZE) and MARROW CRUSH (a parallel drive, sample-rate and bit crusher). Each channel has its own sends.
 - **Four scenes in RAM**, each its own world at first:
   - RITUAL 00 THE AWAKENING, the idea document's start scene;
-  - 01 ABYSS, dark ambient meets noise: a deep kick and its rumble, crackle and the room breathing with it, dub chords;
-  - 02 ASH, its ambient side: a sub kick, a big rumble, fire and creaking wood, glass and a choir in a vast space;
-  - 03 FROZEN, slices of noise locked by the register into a groove.
+  - 01 RUST, grim dark industrial ambience with a pulse and a melody: a drone for a body, a smouldering rumble, a sub
+    kick, dark noise locked in 16ths, a bell the register plays;
+  - 02 ABYSS, dark ambient meets noise: a deep kick and its rumble, crackle and the room breathing with it, dub chords;
+  - 03 ASH, its ambient side: a sub kick, a big rumble, fire and creaking wood, glass and a choir in a vast space.
   - PRESETS switches between them on the next bar. **SHIFT + PRESETS loads a factory ritual** into the scene that
-    plays: those four, STREAM (one noise, gated), WALL (a riff of pitched noise), DATA (clicks, bursts, digital noise,
+    plays: those four, FROZEN (slices of noise locked into a groove), STREAM (one noise, gated), WALL (a riff of pitched noise), DATA (clicks, bursts, digital noise,
     stutters), EMBERS (crackle), FOUNDRY (industry), ORBIT (cosmic), INNARDS (the body), STATIC CULT (noise as
     percussion, with PUMP),
     SPLICE (broken, glitched), VOID (slow and wide), INFECTION and EMPTY BODY. The one in flash stays until you SAVE.
@@ -133,7 +136,7 @@ D5–G5. The middle key of each zone, which glows, plays the organ as it is set;
 
 **Try it without an FM-1:** *Play it here* on [the page](https://joakimskurk.github.io/fm1bioforge/#play), in any
 recent browser, phones too: the firmware itself compiled to WebAssembly, its sound, its screen and its keys' lights.
-The page also has thirteen demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
+The page also has fourteen demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
 
 **Install it from the browser:** [the page's installer](https://joakimskurk.github.io/fm1bioforge/#install), in Chrome
 or Edge on a computer, the FM-1 on USB. It always offers the latest build of `main` that passed its tests.

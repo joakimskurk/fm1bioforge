@@ -2,7 +2,7 @@
 # a riff of hiss in D Phrygian, struck each step and held low between; two bars of 16ths, one of triplets, one of
 # 32nds; a wind of noise over it in 8ths
 100 btndown 3
-200 enc 6 5
+200 enc 6 6
 300 btnup 3
 400 btn 12
 22900 btn 12

@@ -1,6 +1,6 @@
-# Demo: RITUAL 02, ASH (PRESETS twice): the ambient side, 116 BPM. A sub kick with a big rumble, a fire held and wood
+# Demo: RITUAL 03, ASH (PRESETS three times): the ambient side, 116 BPM. A sub kick with a big rumble, a fire held and wood
 # creaking, sparks in time, glass beating under a choir, minor-ninth dub chords far apart into the delay; a vast space
-200 enc 6 2
+200 enc 6 3
 400 btn 12
 25228 btn 12
 29228 end

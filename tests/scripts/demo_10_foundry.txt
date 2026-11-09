@@ -2,7 +2,7 @@
 # (DRONE as HUM), bowed steel (VOICE as STEEL), an anvil off the beat (SPASM as BELL), steam and metal slices locked
 # into a groove, a hinge, a deep HEART; the reverb a room of METAL
 100 btndown 3
-200 enc 6 8
+200 enc 6 9
 300 btnup 3
 400 btn 12
 26114 btn 12

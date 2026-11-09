@@ -41,45 +41,50 @@ BLOCKS, BLK, KEEP = 20, 0x30, 0x2F
 APP = {"build/web/bioforge.wasm": "bioforge.wasm", "web/app/worklet.js": "worklet.js", "web/app/play.js": "play.js"}
 SCREENS = ("seq", "syn", "mut", "mix", "fx", "voice", "perc", "land")
 DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each)
-    ("2_abyss", "RITUAL 01 · ABYSS",
+    ("2_rust", "RITUAL 01 · RUST",
+     "Grim dark industrial ambience with a pulse and a melody, 108 BPM. A drone for a body (a MASS of octaves and a "
+     "fifth on D1, a CLUSTER of semitones over it), a smouldering rumble and a wash of noise; a deep sub kick and its "
+     "rumble, a bone breaking far off, dark slices of noise locked in 16ths; a bell the register plays from the scale. "
+     "Made against a reference recording: its spectrum, its width, its weight."),
+    ("3_abyss", "RITUAL 02 · ABYSS",
      "Dark ambient meets noise, 122 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
      "crackling, the reverb and the delay breathing with it; dark ticks off the beat, sparks in time, a far clap; dub "
      "chords off the beat into a dark delay, a bass on the off-beats, the drone and a choir in a cave."),
-    ("3_ash", "RITUAL 02 · ASH",
+    ("4_ash", "RITUAL 03 · ASH",
      "The ambient side, 116 BPM: a sub kick with a big rumble, a fire held and wood creaking, sparks in time, glass "
      "beating under a choir, minor-ninth dub chords far apart into the delay; a vast space."),
-    ("4_frozen", "RITUAL 03 · FROZEN",
+    ("5_frozen", "FROZEN",
      "Rhythm made of noise. Each 16th a slice of noise with its own band, length, shape and place; the register locks "
      "them, so the same noise comes back every bar and is the groove. LOOP down: slice after slice slips to new noise; "
      "back to LOCK: what it has become stays."),
     ("1_awakening", "RITUAL 00 · THE AWAKENING",
      "The idea document's start scene, sixteen bars: HEART on the four, BONE on two and four, TEETH and CLAW between, "
      "the BASS sparingly in D Phrygian, the DRONE breathing under it all, SPASM's two nerve impulses."),
-    ("8_embers", "EMBERS",
+    ("9_embers", "EMBERS",
      "Organic crackle: a fire held under it all, sparks locked into a groove (each its own), grease on two and four, a "
      "creak of wood that comes and goes, a low HEART, the drone in the dark."),
-    ("10_orbit", "ORBIT",
+    ("11_orbit", "ORBIT",
      "Cosmic: glass beating slowly (DRONE as GLASS), a choir moving through vowels (VOICE as CHOIR), bells far apart, ice "
      "crackling and creaking, a wind drifting; the reverb VAST."),
-    ("9_foundry", "FOUNDRY",
+    ("10_foundry", "FOUNDRY",
      "Industry: a piston running (BASS as PISTON), the hum of the mains with its sparks (DRONE as HUM), bowed steel "
      "(VOICE as STEEL), an anvil off the beat, steam and metal slices locked into a groove; the reverb a room of METAL."),
-    ("11_innards", "INNARDS",
+    ("12_innards", "INNARDS",
      "The body from inside: blood pulsing with the beat (DRONE as BLOOD), a wet squelching bass (BASS as SLIME), "
      "bubbles rising (VOICE as BUBBLE), a heartbeat, grease and sizzling flesh, a breath gated in and out; in a CAVE."),
-    ("5_stream", "STREAM",
+    ("6_stream", "STREAM",
      "One noise that never stops, cut by a gate: the rhythm is where it is open. Accents open its band, every other bar "
      "ends in a stutter of the same noise, its band drifts; a low noise breathes under it with a beat you do not hear."),
-    ("6_wall", "WALL",
+    ("7_wall", "WALL",
      "A wall of noise through a band that sits on the note: a riff of hiss in D Phrygian, struck each step, in 16ths, "
      "then triplets, then 32nds; a wind of noise over it."),
-    ("7_data", "DATA",
+    ("8_data", "DATA",
      "Clinical and digital: clicks with a high ping, white bursts of a few milliseconds scattered left and right, "
      "shift-register noise at four clocks, stutters, and silence."),
-    ("12_kit", "THE NOISE KIT, SOUND BY SOUND",
+    ("13_kit", "THE NOISE KIT, SOUND BY SOUND",
      "STATIC CULT plays while TEETH's SOUND is turned one step a bar through the noise sounds, from TICK to LASER; then "
      "its own body (TISSUE) again."),
-    ("13_build", "FROM NOTHING TO A LOOP",
+    ("14_build", "FROM NOTHING TO A LOOP",
      "An empty body. PLAY, REC: HEART and BONE played in, TEETH on the off-beats; then BONE becomes a CLAP and TEETH a "
      "TICK, the same notes in noise; a bass line in one bar; then the nerve moves the texture, and is locked again."),
 ]

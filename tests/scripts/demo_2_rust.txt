@@ -1,0 +1,9 @@
+# Demo: RITUAL 01, RUST (PRESETS once): grim dark industrial ambience with a pulse and a melody, 108 BPM, D Phrygian.
+# A drone for a body (MASS on D1: octaves, a fifth, grit, breathing; a CLUSTER of semitones over it moving from D to
+# E flat), a smouldering rumble and a wash of noise; a deep sub kick on one and three and a push, its rumble; a bone
+# breaking far off; dark slices of noise locked in 16ths; a hollow bell whose notes the register picks from the scale,
+# slipping slowly, into a dark delay. Made against a reference the user gave: its spectrum, its width, its weight
+200 enc 6 1
+400 btn 12
+53733 btn 12
+58733 end

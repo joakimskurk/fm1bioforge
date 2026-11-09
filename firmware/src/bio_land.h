@@ -4,16 +4,19 @@
  * a machine that runs while the key is held), COSMIC (GLASS, inharmonic partials beating; BELL, FM; CHOIR, three
  * throats through formants) and BODY (BLOOD, a pulse with the beat; BUBBLE, rising drops; SLIME, a wet squelch). The
  * organ keeps its own envelope, note and role; the four macros mean what each model says below. Integers only, mono,
- * the same seed the same sound. And DUB (D22): a dark chord through a closing low-pass, for the delay to carry. */
+ * the same seed the same sound. And DUB (D22): a dark chord through a closing low-pass, for the delay to carry. MASS
+ * and CLUSTER (D23): the grim drone's body, a stack of octaves and a fifth, or a cluster of semitones, thick under a
+ * breathing low-pass, with grit. */
 #ifndef BIO_LAND_H
 #define BIO_LAND_H
 #include "bio_dsp.h"
 
-enum { L_OWN, L_HUM, L_STEEL, L_PISTON, L_GLASS, L_BELL, L_CHOIR, L_BLOOD, L_BUBBLE, L_SLIME, L_DUB, BIO_NLAND };
+enum { L_OWN, L_HUM, L_STEEL, L_PISTON, L_GLASS, L_BELL, L_CHOIR, L_BLOOD, L_BUBBLE, L_SLIME, L_DUB, L_MASS, L_CLUSTER,
+       BIO_NLAND };
 static const char *const BIO_LAND_NAME[BIO_NLAND] = {"OWN", "HUM", "STEEL", "PISTON", "GLASS", "BELL", "CHOIR", "BLOOD",
-                                                     "BUBBLE", "SLIME", "DUB"};
+                                                     "BUBBLE", "SLIME", "DUB", "MASS", "CLUSTER"};
 static const char *const BIO_OWN_NAME[4] = {"MUSCLE", "WOMB", "NERVE", "THROAT"};   /* BASS DRONE SPASM VOICE as they are */
-#define BIO_LAND(i) ((uint8_t)((i) * 9u + 4u))    /* a model as MODEL's value (the middle of its eleventh) */
+#define BIO_LAND(i) ((uint8_t)(((i) * 101u + 50u) / BIO_NLAND))   /* a model as MODEL's value (the middle of its share) */
 static inline uint32_t bio_land_of(uint32_t v) { v = v * BIO_NLAND / 101u; return v < BIO_NLAND ? v : BIO_NLAND - 1u; }
 
 /* a note starts: the model's own state (the organ's envelope is set already) */
@@ -39,6 +42,8 @@ static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_
     case L_CHOIR: bio_op_set(&v->o1, bio_lf_hz(5000)); break;
     case L_BLOOD: bio_op_set(&v->o1, bio_map_lf(p[P_BODY], 80, 300, 1500)); break;
     case L_SLIME: v->lx[1] = 32767; break;      /* a squelch at the start */
+    case L_MASS: case L_CLUSTER: bio_op_set(&v->o1, bio_lf_hz(90 * 32)); break;   /* (the grit: a slow noise, at the
+                                                                                     sub-block rate: 90 Hz) */
     case L_DUB:                                 /* the filter opens with the note and DECAY closes it */
         v->lx[0] = 32767;
         v->lx[1] = bio_decay(BIO_SB, bio_tau(bio_map_ms(p[P_DECAY], 20, 150, 1500) / 3u + 1u));
@@ -55,7 +60,7 @@ static const uint8_t BIO_PISTON_RATE[6] = {1, 2, 3, 4, 6, 8};          /* stroke
 
 /* n samples of a landscape: e0 the envelope at the start, step its slope, a the level; added to out[] */
 static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, const bio_life_t *life, int32_t e0,
-                            int32_t step, int32_t a, int32_t *out, uint32_t n)
+                            int32_t step, int32_t a, int32_t *out, int32_t *side, uint32_t n)
 {
     uint32_t k, inc = bio_inc(v->lf + bio_mul15(life->drift, 600));
     int32_t pk = v->peak, y, tex = p[P_TEXTURE], body = p[P_BODY], mot = p[P_MOTION];
@@ -192,10 +197,12 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         for (k = 0; k < n; k++) {
             int32_t o;
             v->pa += inc; v->pb += i2; v->pc += i3;
-            o = (bio_saw(v->pa, inc) + bio_saw(v->pb, i2) + bio_saw(v->pc, i3)) / 4;
+            int32_t sb = bio_saw(v->pb, i2), sc2 = bio_saw(v->pc, i3);
+            o = (bio_saw(v->pa, inc) + sb + sc2) / 4;
             o = bio_op_lp(&v->o1, o) + bio_mul15(bio_noise(&v->rnd), tex * 90);
             y = bio_svf_bp(&v->f1, o) + (bio_svf_bp(&v->f2, o) >> 1) + (bio_svf_bp(&v->f3, o) >> 2);
             e0 += step;
+            if (side) side[k] += bio_mul15(bio_mul15((sb - sc2) / 8, e0), a);   /* (the throats apart: wide) */
             y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);
@@ -286,6 +293,38 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
             v->pa += inc; v->pb += i1; v->pc += i2; v->pd += i3;
             o = (bio_saw(v->pa, inc) + bio_saw(v->pb, i1) + bio_saw(v->pc, i2) + bio_saw(v->pd, i3)) / 4;
             y = bio_svf(&v->f1, o, &bp);
+            e0 += step;
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_MASS: case L_CLUSTER: {   /* MASS: the note, its fifth and octave up, a sine an octave under; CLUSTER: the note
+                                        and the two semitones over it, the octave up. Three saws a few cents apart under a
+                                        two-pole low-pass (BODY: 60 .. 400 .. 4000 Hz, Q 1.4) that breathes with the
+                                        breath (MOTION, to 1.5 octaves); TEXTURE grit: a slow noise roughening it */
+        uint32_t cl = model == L_CLUSTER;
+        uint32_t i1 = bio_inc(v->lf + (cl ? BIO_SEMI + 40 : 7 * BIO_SEMI - 50));
+        uint32_t i2 = bio_inc(v->lf + (cl ? 2 * BIO_SEMI - 60 : 12 * BIO_SEMI + 30)), i3 = inc / 2u;
+        int32_t lfc = bio_map_lf((uint32_t)body, 60, 400, 4000) + bio_mul15(life->breath, mot * 983);
+        int32_t grit = tex * 300, g0 = v->lx[5], gs;
+        bio_svf_set(&v->f1, lfc, bio_q_k(14));
+        v->lx[5] = bio_op_lp(&v->o1, bio_noise(&v->rnd)) * 6;   /* (the grit: a slow noise, a value a sub-block, ramped) */
+        gs = (v->lx[5] - g0) / (int32_t)n;
+        for (k = 0; k < n; k++) {
+            int32_t o, bp, g, s1, s2;
+            v->pa += inc; v->pb += i1; v->pc += i2; v->pd += i3;
+            s1 = bio_saw(v->pb, i1); s2 = bio_saw(v->pc, i2);
+            o = (bio_saw(v->pa, inc) + (s1 * 3) / 4 + (s2 * (cl ? 3 : 2)) / 4) / 3;
+            if (side) {                         /* (its upper voices to either side, low-passed by the band's state:
+                                                   the drone wide, its root in the middle) */
+                v->lx[6] += (((s1 - s2) / 6) - v->lx[6]) >> 3;
+                side[k] += bio_mul15(bio_mul15(v->lx[6], e0), a);
+            }
+            g = g0 += gs;                       /* (a slow rough noise, about +-1) */
+            o = bio_mul15(o, 32767 - bio_mul15(grit, bio_abs(bio_clamp(g, -32767, 32767))) / 2) + bio_mul15(g, grit) / 16;
+            y = bio_svf(&v->f1, o, &bp) + (cl ? 0 : bio_sin(v->pd) / 3);   /* (MASS: the sine under it) */
             e0 += step;
             y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
             out[k] += y;

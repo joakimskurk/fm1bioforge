@@ -572,7 +572,8 @@ typedef struct { int32_t heart, breath, drift, cv; uint32_t beat; } bio_life_t; 
 #include "bio_land.h"
 
 /* n samples of a tonal organ, added to out[] (mono) */
-static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const bio_life_t *life, int32_t *out, uint32_t n)
+static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const bio_life_t *life, int32_t *out, int32_t *side,
+                            uint32_t n)
 {
     uint32_t k, inc;
     int32_t e0, e1, x, y, a, pk = v->peak, step;
@@ -590,7 +591,7 @@ static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const
         a = bio_mul15(a, 26000 + bio_mul15(life->breath, 6700 * (int32_t)p[P_MOTION] / 50));
     step = (e1 - e0) / (int32_t)n;
     if (bio_land_of(p[P_E1])) {                 /* MODEL: a landscape */
-        bio_land_render(v, bio_land_of(p[P_E1]), p, life, e0, step, a, out, n);
+        bio_land_render(v, bio_land_of(p[P_E1]), p, life, e0, step, a, out, side, n);
         pk = v->peak;
     } else switch (org) {
     case O_BASS: {

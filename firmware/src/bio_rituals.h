@@ -553,6 +553,63 @@ static void rit_ash(seq_scene_t *sc)
     sc->tur.loop = 97; sc->tur.depth = 10;
 }
 
+/* ---- grim dark industrial ambience, with a melody and a pulse (D23: the user's reference, measured) */
+
+/* RITUAL: RUST. 108 BPM, D Phrygian. The body is a drone: a MASS on D1 (octaves, a fifth, grit) breathing under a
+   low-pass, a CLUSTER of semitones above it that moves from D to E flat; under them a smouldering rumble of noise.
+   A pulse: a deep kick on one and three and a push before one, its rumble; a bone breaking far off on two and four;
+   slices of dark noise locked in 16ths, low; a wash of noise in the middle. A melody: a hollow bell the register plays
+   from the scale (WAIL), slipping slowly, into a dark delay. DARK rolls the top off */
+static void rit_rust(seq_scene_t *sc)
+{
+    static const uint8_t SL[BIO_NP] = NC(26, 10, 50, 30,  6, 30, 10, 0, 0, 10, 0,  2, 100, 10, 10,  24, 70, 54,  35, 0, 0);
+    static const uint8_t MW[BIO_NP] = NC(40, 30, 50, 80,  18, 35, 50, 0, 0, 0, 0,  60, 100, 80, 70,  24, 64, 40,  0, 0, 80);
+    static const uint8_t RB[BIO_NP] = NC(22, 10, 50, 80,  68, 20, 10, 0, 0, 10, 0,  20, 100, 0, 60,  24, 100, 50,  0, 0, 70);
+    seq_scene_blank(sc, 0x2057u);
+    rit_name(sc, "RUST");
+    sc->bpm10 = 1080;
+    /* the body */
+    rit_model(sc, O_DRONE, L_MASS, 34, 50, 60, 60);
+    sc->p[O_DRONE][P_A] = 70; sc->p[O_DRONE][P_R] = 70;
+    sc->tr[O_DRONE].len = 64;
+    seq_put(sc, O_DRONE, 0, 64 * 96 - 6, 26, 100, 0);
+    rit_model(sc, O_VOICE, L_CLUSTER, 60, 40, 70, 60);
+    sc->p[O_VOICE][P_A] = 90; sc->p[O_VOICE][P_R] = 85;
+    sc->tr[O_VOICE].len = 64;
+    seq_put(sc, O_VOICE, 0, 31 * 96, 38, 90, 0);
+    seq_put(sc, O_VOICE, 32, 31 * 96, 39, 90, 0);
+    sc->p[O_VOICE][P_PAN] = 30;
+    rit_core(sc, O_NOISE, RB);
+    sc->tr[O_NOISE].len = 64;
+    seq_put(sc, O_NOISE, 0, 64 * 96 - 6, 60, 100, 0);
+    /* the pulse */
+    rit_perc(sc, O_HEART, "SUB KICK", 50);
+    sc->p[O_HEART][P_DECAY] = 60; sc->p[O_HEART][P_LEVEL] = 92;
+    rit_steps(sc, O_HEART, "x.......x.....x.", 60, 110, 96);
+    sc->p[O_BONE][P_BODY] = 84; sc->p[O_BONE][P_DECAY] = 72; sc->p[O_BONE][P_LEVEL] = 62; sc->p[O_BONE][P_PAN] = 62;
+    sc->p[O_BONE][P_TEXTURE] = 25;              /* (fewer clicks in its fracture: a dull break) */
+    rit_steps(sc, O_BONE, "....x.......x...", 55, 92, 96);
+    rit_core(sc, O_TEETH, SL);
+    rit_steps(sc, O_TEETH, "x.xx.x.xx.x.x.xx", 60, 84, 72);
+    rit_core(sc, O_CLAW, MW);                   /* a wash of noise in the middle, held, drifting: the space's own air */
+    sc->tr[O_CLAW].len = 64;
+    seq_put(sc, O_CLAW, 0, 64 * 96 - 6, 60, 90, 0);
+    /* the melody: the register picks the bell's notes (WAIL on SPASM) */
+    rit_model(sc, O_SPASM, L_BELL, 30, 40, 20, 78);
+    sc->p[O_SPASM][P_PAN] = 64;
+    sc->tr[O_SPASM].len = 32;
+    rit_steps(sc, O_SPASM, "x..x...x..x.....x..x......x.x...", 62, 92, 48);
+    sc->tur.wail = 1; sc->tur.scale = 50; sc->tur.loop = 92; sc->tur.depth = 15;
+    /* the mix */
+    sc->mix.lvl[CH_DRONE] = 78; sc->mix.lvl[CH_VOICE] = 58; sc->mix.lvl[CH_NOISE] = 70; sc->mix.lvl[CH_DRUM] = 86;
+    sc->mix.lvl[CH_SPASM] = 62; sc->mix.lvl[CH_BASS] = 0;
+    sc->mix.sa[CH_SPASM] = 60; sc->mix.sb[CH_SPASM] = 50; sc->mix.sb[CH_DRUM] = 30; sc->mix.sa[CH_DRUM] = 0;
+    sc->mix.sb[CH_DRONE] = 30; sc->mix.sb[CH_VOICE] = 50; sc->mix.sb[CH_NOISE] = 30; sc->mix.sa[CH_VOICE] = 10;
+    sc->mix.pump = 30; sc->mix.rumble = 45; sc->mix.dark = 0; sc->mix.master = 96;
+    sc->fx.d_time = 6; sc->fx.d_fb = 50; sc->fx.d_tone = 25; sc->fx.d_mix = 30; sc->fx.d_rev = 25; sc->fx.d_ping = 1;
+    sc->fx.r_space = 2; sc->fx.r_mix = 46; sc->fx.r_decay = 65; sc->fx.r_size = 85; sc->fx.r_damp = 25; sc->fx.c_mix = 0;
+}
+
 /* the factory list (SHIFT + PRESETS) */
 typedef void (*rit_fn)(seq_scene_t *);
 static void rit_awaken(seq_scene_t *sc) { seq_scene_awaken(sc); }
@@ -565,10 +622,10 @@ static void rit_infection(seq_scene_t *sc)
 }
 static void rit_empty(seq_scene_t *sc) { seq_scene_blank(sc, 0x7E3u); rit_name(sc, "EMPTY BODY"); }
 /* (the first four are the scenes before anything is saved: the document's start, then rhythm made of noise, D20) */
-static const rit_fn BIO_RITUAL[] = {rit_awaken, rit_abyss, rit_ash, rit_frozen, rit_stream, rit_wall, rit_data,
+static const rit_fn BIO_RITUAL[] = {rit_awaken, rit_rust, rit_abyss, rit_ash, rit_frozen, rit_stream, rit_wall, rit_data,
                                     rit_embers, rit_foundry, rit_orbit, rit_innards, rit_static, rit_splice, rit_void,
                                     rit_infection, rit_empty};
-static const char *const BIO_RITUAL_NAME[] = {"AWAKENING", "ABYSS", "ASH", "FROZEN", "STREAM", "WALL", "DATA",
+static const char *const BIO_RITUAL_NAME[] = {"AWAKENING", "RUST", "ABYSS", "ASH", "FROZEN", "STREAM", "WALL", "DATA",
                                               "EMBERS", "FOUNDRY", "ORBIT", "INNARDS", "STATIC CULT", "SPLICE", "VOID",
                                               "INFECTION", "EMPTY BODY"};
 #define BIO_NRITUAL (sizeof BIO_RITUAL / sizeof BIO_RITUAL[0])

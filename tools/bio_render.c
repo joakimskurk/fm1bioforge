@@ -85,7 +85,8 @@ int main(int argc, char **argv)
         return render(argv[3], bars * 4u * (uint32_t)(44100u * 60u / (scenes[0].bpm10 / 10u)) + 88200u);
     }
     if (!strcmp(argv[1], "lands") && argc > 2) {   /* the landscapes (bio_land.h), each 3 s on an organ it suits */
-        static const uint8_t ORG[BIO_NLAND] = {0, O_DRONE, O_DRONE, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_BASS, O_VOICE, O_BASS, O_SPASM};
+        static const uint8_t ORG[BIO_NLAND] = {0, O_DRONE, O_DRONE, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_BASS, O_VOICE, O_BASS, O_SPASM,
+                                               O_DRONE, O_DRONE};
         static const uint8_t PH[4][4] = {{26, 29, 26, 33}, {38, 38, 38, 38}, {62, 67, 69, 74}, {50, 50, 50, 50}};
         static int32_t buf[512];
         int16_t pcm[512];

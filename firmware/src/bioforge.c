@@ -86,7 +86,7 @@ static void touched(void) { ui.dirty[sq.cur] = 1; ui.dirty_draw |= D_STATUS; ui.
 enum { KT_NONE, KT_P, KT_LVL, KT_SA, KT_SB, KT_SC, KT_MASTER, KT_RIB, KT_TDEPTH, KT_TLEN, KT_TCLK, KT_TRATTLE,
        KT_TROUTE, KT_TWAIL, KT_TSCALE, KT_FX, KT_BPM, KT_SWING, KT_QUANT, KT_QSTR, KT_RECMODE, KT_STEPLEN, KT_KEYLED,
        KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE, KT_PUMP, KT_KIT,
-       KT_RUMBLE };
+       KT_RUMBLE, KT_DARK };
 typedef struct { uint8_t type, idx; const char *name; } knob_t;
 
 static const char *const DRUM_DEEP[8] = {"PRESS", "FRACT", "FRIC", "VENT", "RESO", "MATTER", "DRIVE", "MODEL"};
@@ -128,6 +128,7 @@ static knob_t knob_for(uint32_t k)
                 if (k == 0u) { n.type = KT_RIB; n.name = "RIB"; }
                 if (k == 1u) { n.type = KT_PUMP; n.name = "PUMP"; }
                 if (k == 2u) { n.type = KT_RUMBLE; n.name = "RUMBLE"; }
+                if (k == 3u) { n.type = KT_DARK; n.name = "DARK"; }
             }
             else { n.type = (uint8_t)(k == 0u ? KT_LVL : k == 1u ? KT_SA : k == 2u ? KT_SB : KT_SC); n.name = A[k]; }
         }
@@ -220,6 +221,7 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
     case KT_RIB: return sc->mix.rib;
     case KT_PUMP: return sc->mix.pump;
     case KT_RUMBLE: return sc->mix.rumble;
+    case KT_DARK: return sc->mix.dark;
     case KT_KIT:                                /* (the kicks a drum organ's only) */
         *lo = o == O_NOISE ? 1 : 0;
         *hi = (int32_t)(o == O_NOISE ? BIO_NPERC_KIT - BIO_NKICK_KIT : BIO_NPERC_KIT);
@@ -299,6 +301,7 @@ static void knob_turn(knob_t n, int32_t d)
     case KT_RIB: sc->mix.rib = (uint8_t)nv; break;
     case KT_PUMP: sc->mix.pump = (uint8_t)nv; break;
     case KT_RUMBLE: sc->mix.rumble = (uint8_t)nv; break;
+    case KT_DARK: sc->mix.dark = (uint8_t)nv; break;
     case KT_KIT: {                              /* a sound into the organ (its PAN kept); 0: the drum's own body again */
         uint8_t pan = sc->p[o][P_PAN];
         uint32_t i;
@@ -400,6 +403,7 @@ static void knob_text(knob_t n, char *s)
     case KT_TCLK: str_cat(s, BIO_TUR_CLK_NAME[v & 3]); return;
     case KT_TWAIL: { static const char *const W[4] = {"OFF", "SPASM", "VOICE", "BOTH"}; str_cat(s, W[v & 3]); return; }
     case KT_TRATTLE: if (!v) { str_cat(s, "OFF"); return; } break;
+    case KT_DARK: case KT_RUMBLE: case KT_PUMP: if (!v) { str_cat(s, "OFF"); return; } break;
     case KT_FX:
         if (n.idx == 0u) { str_cat(s, BIO_DIV_NAME[v < 10 ? v : 4]); return; }
         if (n.idx == 3u) { str_cat(s, v ? "ON" : "OFF"); return; }

@@ -229,7 +229,7 @@ if (fm1) {
         if (m.type === 'frame') { if (m.lcd) draw(m.lcd); show(m.leds, m.glow); if (m.store) keepStore(m.store); }
         else if (m.type === 'ready') {
           $('start').hidden = true; fm1.classList.add('on'); fm1.classList.toggle('active', active);
-          say('Running: RITUAL 00, THE AWAKENING. Press PLAY (or Space). PRESETS turns the scene: ABYSS, ASH, FROZEN.');
+          say('Running: RITUAL 00, THE AWAKENING. Press PLAY (or Space). PRESETS turns the scene: RUST, ABYSS, ASH.');
         } else if (m.type === 'error') say(`It did not start: ${m.message}`);
       };
       node.port.postMessage({ type: 'boot', wasm, store: loadStore() }, [wasm]);

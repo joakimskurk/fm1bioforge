@@ -491,6 +491,31 @@ static void test_perc(void)
         check(ok_h, "the landscapes: each of nine models heard on each of the four synths (over -30 dBFS)");
         check(ok_c && ok_s, "and none clips, and each is asleep 12 s after its release (no CPU)");
     }
+    /* DARK: the master's low-pass takes the top off (a tone of 6 kHz down by 20 dB at 100), and nothing at 0 */
+    {
+        int32_t pk0 = 0, pk1 = 0;
+        uint32_t d, q;
+        for (d = 0; d < 2u; d++) {
+            static int32_t b[512];
+            uint32_t ph = 0, inc = bio_inc(bio_lf_hz(6000));
+            setup(&eng, &sq, scn, und, red);
+            eng.tick = 0;
+            eng.mix.dark = d ? 100 : 0;
+            memset(b, 0, sizeof b);
+            bio_render(&eng, b, 256);           /* (the engine sets its DARK filter) */
+            {                                   /* a tone through that filter, as the master would put it */
+                bio_op_t f0 = eng.dk[0], f1 = eng.dk[1];
+                int32_t pk = 0;
+                for (q = 0; q < 4410u; q++) {
+                    int32_t x = bio_sin(ph += inc) / 2;
+                    if (d) x = bio_op_lp(&f1, bio_op_lp(&f0, x));
+                    if (q > 2000u && bio_abs(x) > pk) pk = bio_abs(x);
+                }
+                if (d) pk1 = pk; else pk0 = pk;
+            }
+        }
+        check(pk1 * 10 < pk0, "DARK 100: a 6 kHz tone 20 dB down; DARK 0 leaves it");
+    }
     /* SPACE: the reverb's rooms are other rooms (ROOM's lines shorter, METAL's the shortest, VAST's the longest) */
     {
         uint32_t L[BIO_NSPACE], sp;
