@@ -4,6 +4,7 @@
   repository); the plan fitted to the FM-1 is `docs/bioforge/PLAN.md`, and what was decided, and why, is
   `docs/bioforge/DECISIONS.md` (add to it, dated). The user: the document is the idea; design and content are fitted
   to the FM-1 and to what is possible.
+- The idea document's pictures are inspiration only (D16): keep their mood and colour rules, not their layout.
 - The code: `firmware/src/bio_engine.h` (the organs, the rib, the FX: no platform, shared with the host tools),
   `bio_turing.h` (the register), `bio_seq.h` (scenes, tracks, events, recording, undo), `bio_ui.h` (the screens),
   `bioforge.c` (the app: the panel, MIDI, saving). `firmware/gen/bio_art.h` is made by `tools/gen_art.py`: never edit

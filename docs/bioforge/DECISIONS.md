@@ -59,3 +59,9 @@ values FONT_S and FONT_L. SEQ is the first page: the pattern is what tells most 
 
 **D15 (2026-11-09) No page in the browser yet.** The sister firmwares have one (the firmware compiled to WebAssembly,
 an installer); BIOFORGE's comes after the sound has been heard on an FM-1.
+
+**D16 (2026-11-09) The document's pictures are inspiration, not a design to match.** The user: the designs in the
+pictures will not necessarily match what BIOFORGE ends up with; they are only the inspiration. What is kept from them
+is the mood and the colour rules (§1 of the plan: almost black, bone, flesh, a little green; green is sound, red is
+recording). The layout, the controls on each page and how much is on a screen follow the FM-1 and what reads at
+240 x 240, and can change freely.
