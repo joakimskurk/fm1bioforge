@@ -75,6 +75,11 @@ struct bio_s {
     /* the meters (peak per channel, the last block), the load */
     int32_t meter[BIO_NCH];
     int32_t ob[BIO_NORG][BIO_SB];
+    /* the CPU rule (the idea document's 5.10): over budget, the drums not in focus ring on two modes, not four */
+    volatile uint32_t shed, focus;
+    /* the scope: an organ's own output, every fourth sample (the main loop draws it) */
+    volatile uint32_t scope_org, scope_w;
+    int16_t scope[256];
     /* the tick */
     bio_tick_fn tick;
     void *tick_ctx;
@@ -230,8 +235,11 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             for (k = 0; k < BIO_SB; k++) e->ob[o][k] = 0;
         /* the drums */
         for (o = 0; o < 4u; o++) {
+            uint32_t nm = e->drum[o].nm;
             bio_drum_ctl(&e->drum[o], o, e->drift, o == O_CLAW ? e->nerve_scrape : o == O_TEETH ? e->nerve_metal : 0);
+            if (e->shed && o != e->focus && nm > 2u) e->drum[o].nm = 2;   /* (the transients stay; the ring thins) */
             bio_drum_render(&e->drum[o], o, e->ob[o], e->rib_in, BIO_SB);
+            e->drum[o].nm = nm;
         }
         /* the tonal organs: their parameters with the note's locks and the nerve's ROT on TEXTURE */
         for (o = 4u; o < BIO_NORG; o++) {
@@ -248,10 +256,22 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             life.breath = bio_sin(e->beat_q16 * (16384u / bars));   /* a turn every 4 x bars beats */
             bio_tone_render(v, o, pe, &life, e->ob[o], BIO_SB);
         }
+        {                                       /* the scope */
+            uint32_t so = e->scope_org < BIO_NORG ? e->scope_org : 0u, w = e->scope_w;
+            for (k = 0; k < BIO_SB; k += 4u) e->scope[w++ & 255u] = (int16_t)bio_sat(e->ob[so][k]);
+            e->scope_w = w;
+        }
         /* the rib: the drums' shared skeleton, at most -20 dB under them */
         {
             int32_t rg = (int32_t)e->mix.rib * 66;   /* 50 -> 3300 (-20 dB) */
-            for (k = 0; k < BIO_SB; k++) {
+            uint32_t in = 0;
+            for (k = 0; k < BIO_SB; k++) in |= (uint32_t)(e->rib_in[k] != 0);
+            if (!in && bio_abs(e->rib[0].x2) + bio_abs(e->rib[1].x2) + bio_abs(e->rib[2].x2) + bio_abs(e->rib[0].x1) +
+                       bio_abs(e->rib[1].x1) + bio_abs(e->rib[2].x1) < (16 << 8)) {
+                e->rib[0].x1 = e->rib[0].x2 = e->rib[1].x1 = e->rib[1].x2 = e->rib[2].x1 = e->rib[2].x2 = 0;
+                rg = 0;
+            }
+            if (rg) for (k = 0; k < BIO_SB; k++) {
                 int32_t r = 0, x = e->rib_in[k] * 64;
                 r += bio_mode_tick(&e->rib[0], x) >> 8;
                 r += bio_mode_tick(&e->rib[1], x) >> 8;
@@ -268,24 +288,37 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             gc[o] = bio_mul15(g, bio_fader(e->mix.sc[o]));
         }
         for (k = 0; k < BIO_SB; k++) dryl[k] = dryr[k] = sa[k] = sb[k] = sc[k] = 0;
-        for (o = 0; o < BIO_NORG; o++) {
-            uint32_t ch = BIO_ORG_CH[o], pan = e->p[o][P_PAN];
-            int32_t pl, pr, pk = 0;
-            if (o < 4u ? !e->drum[o].awake && o != O_HEART : !e->tone[o - 4u].awake) continue;
-            pan = pan > 100u ? 100u : pan;
-            pl = bio_mul15(BIO_SIN[256u + pan * 256u / 100u], chg[ch]);   /* cos */
-            pr = bio_mul15(BIO_SIN[pan * 256u / 100u], chg[ch]);          /* sin */
-            for (k = 0; k < BIO_SB; k++) {
-                int32_t x = e->ob[o][k];
-                dryl[k] += bio_mul15(x, pl);
-                dryr[k] += bio_mul15(x, pr);
-                sa[k] += bio_mul15(x, ga[ch]);
-                sb[k] += bio_mul15(x, gb[ch]);
-                sc[k] += bio_mul15(x, gc[ch]);
-                if (bio_abs(x) > pk) pk = bio_abs(x);
+        {
+            int32_t chm[BIO_SB];                /* a channel's mono sum, for its sends */
+            uint32_t ch, used = 0;
+            for (ch = 0; ch < BIO_NCH; ch++) {
+                uint32_t any = 0;
+                for (k = 0; k < BIO_SB; k++) chm[k] = 0;
+                for (o = 0; o < BIO_NORG; o++) {
+                    uint32_t pan = e->p[o][P_PAN];
+                    int32_t pl, pr, pk = 0;
+                    if (BIO_ORG_CH[o] != ch || !(o < 4u ? e->drum[o].awake || o == O_HEART : e->tone[o - 4u].awake)) continue;
+                    any = 1;
+                    pan = pan > 100u ? 100u : pan;
+                    pl = bio_m15(BIO_SIN[256u + pan * 256u / 100u], chg[ch]);   /* cos */
+                    pr = bio_m15(BIO_SIN[pan * 256u / 100u], chg[ch]);          /* sin */
+                    for (k = 0; k < BIO_SB; k++) {
+                        int32_t x = bio_sat(e->ob[o][k]);
+                        dryl[k] += bio_m15(x, pl);
+                        dryr[k] += bio_m15(x, pr);
+                        chm[k] += x;
+                        if (bio_abs(x) > pk) pk = bio_abs(x);
+                    }
+                    pk = bio_m15(pk, chg[ch]);
+                    if (pk > meter[ch]) meter[ch] = pk;
+                }
+                if (!any || !chg[ch]) continue;
+                used |= 1u << ch;
+                if (ga[ch]) for (k = 0; k < BIO_SB; k++) sa[k] += bio_mul15(chm[k], ga[ch]);
+                if (gb[ch]) for (k = 0; k < BIO_SB; k++) sb[k] += bio_mul15(chm[k], gb[ch]);
+                if (gc[ch]) for (k = 0; k < BIO_SB; k++) sc[k] += bio_mul15(chm[k], gc[ch]);
             }
-            pk = bio_mul15(pk, chg[ch]);
-            if (pk > meter[ch]) meter[ch] = pk;
+            (void)used;
         }
         /* BLOOD DELAY: stereo, darker each time round, ping-pong, a send on into the reverb */
         {
@@ -317,14 +350,14 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         {
             int32_t ret = bio_fader(e->fx.r_mix);
             uint32_t fz = e->freeze;
+            int32_t m0 = (int32_t)(bio_sin(e->rlfo) >> 11), m2 = (int32_t)(bio_sin(e->rlfo * 3u + 0x5000000u) >> 11);
+            e->rlfo += 64000u * (BIO_SB / 2u);  /* ~0.33 Hz: its movement once a sub-block */
             for (k = 0; k < BIO_SB; k++) {
                 if (!(k & 1u)) {
                     e->rhalf = sb[k];
                 } else {
                     int32_t x = fz ? 0 : (e->rhalf + sb[k]) >> 2, y[4], a, b, c, d;
                     uint32_t j;
-                    int32_t m0 = (int32_t)(bio_sin(e->rlfo) >> 11), m2 = (int32_t)(bio_sin(e->rlfo * 3u + 0x5000000u) >> 11);
-                    e->rlfo += 64000u;          /* ~0.33 Hz */
                     e->pre[e->pw] = (int16_t)bio_sat(x);
                     {
                         int32_t i = (int32_t)e->pw - (int32_t)e->rpre;

@@ -24,10 +24,11 @@ run "the tests under ASan and UBSan (a signed overflow is a bug on the FM-1 too)
 run "the renderer" cc -O2 -Wall -Wextra -Werror -Wno-unused-function $I -o build/bio_render tools/bio_render.c
 if [ -f firmware/src/bioforge.c ]; then
     CF="-O2 -Wall -Werror -Wno-unused-function -DDINGHY_HOST -DAPP_VER=\"test\" -Ifirmware/hal -Ifirmware/src -Ifirmware/gen"
-    run "bioforge.c compiles for the host without a warning (-Werror)" sh -c "cc $CF -o build/host/bioforge firmware/src/bioforge.c"
+    run "bioforge.c compiles for the host without a warning (-Werror)" cc $CF -o build/host/bioforge firmware/src/bioforge.c
     if command -v clang >/dev/null 2>&1; then
-        run "bioforge.c with clang (-Werror; the chip's compiler is a clang)" sh -c "clang $CF -o build/host/bioforge-clang firmware/src/bioforge.c"
+        run "bioforge.c with clang (-Werror; the chip's compiler is a clang)" clang $CF -o build/host/bioforge-clang firmware/src/bioforge.c
     fi
+    run "the SMK-37 build of it, for the host" cc $CF -Wno-unused-variable -DBOARD_SMK37=1 -o build/host/bioforge-smk37 firmware/src/bioforge.c
 fi
 run "the awakening (8 bars), dry (4), each organ alone: build/audio/*.wav" sh -c '
     build/bio_render awaken build/audio/awaken.wav 8 && build/bio_render dry build/audio/dry.wav 4 &&

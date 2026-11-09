@@ -20,6 +20,9 @@ static inline int64_t bio_rz64(int64_t v, int s) { return (v + ((v >> 63) & ((((
 static inline int32_t bio_mul30(int32_t a, int32_t b) { return (int32_t)(((int64_t)a * b) >> 30); }
 static inline int32_t bio_mul30z(int32_t a, int32_t b) { return (int32_t)bio_rz64((int64_t)a * b, 30); }
 static inline int32_t bio_mul15(int32_t a, int32_t b) { return (int32_t)(((int64_t)a * b) >> 15); }
+static inline int32_t bio_mul30r(int32_t a, int32_t b) { return (int32_t)(((int64_t)a * b + (1 << 29)) >> 30); }
+/* a Q15 sample (|a| < 2^16) times a Q15 gain (0..32767): in 32 bits */
+static inline int32_t bio_m15(int32_t a, int32_t b) { return (a * b) >> 15; }
 static inline int32_t bio_abs(int32_t x) { return x < 0 ? -x : x; }
 
 /* ---- noise: xorshift32 (never 0) */
@@ -69,7 +72,11 @@ static int32_t bio_log2(uint32_t v)             /* log2(v) in Q16, v >= 1 */
     int32_t o = 31;
     uint32_t m, j, r;
     if (!v) return 0;
-    while (!(v & 0x80000000u)) { v <<= 1; o--; }
+    if (!(v & 0xFFFF0000u)) { v <<= 16; o -= 16; }
+    if (!(v & 0xFF000000u)) { v <<= 8; o -= 8; }
+    if (!(v & 0xF0000000u)) { v <<= 4; o -= 4; }
+    if (!(v & 0xC0000000u)) { v <<= 2; o -= 2; }
+    if (!(v & 0x80000000u)) { v <<= 1; o -= 1; }
     m = (v >> 15) & 0xFFFFu;                    /* the mantissa's 16 bits under the top one */
     j = m >> 8;
     r = m & 255u;
@@ -125,7 +132,7 @@ static inline uint32_t bio_scale(uint32_t x, int32_t oct) { return (uint32_t)(((
 typedef struct { int32_t x1, x2, f, d; } bio_mode_t;
 static inline int32_t bio_mode_tick(bio_mode_t *m, int32_t in)
 {
-    int32_t x1 = bio_mul30z(m->d, m->x1) - bio_mul30(m->f, m->x2) + in;
+    int32_t x1 = bio_mul30r(m->d, m->x1) - bio_mul30(m->f, m->x2) + in;   /* (rounded: no bias, so it dies out) */
     m->x1 = x1;
     m->x2 += bio_mul30(m->f, x1);
     return m->x2;
@@ -161,8 +168,8 @@ static inline int32_t bio_svf(bio_svf_t *s, int32_t x, int32_t *bp)
     int32_t v3 = x - s->ic2;
     int32_t v1 = bio_mul30(s->a1, s->ic1) + bio_mul30(s->a2, v3);
     int32_t v2 = s->ic2 + bio_mul30(s->a2, s->ic1) + bio_mul30(s->a3, v3);
-    s->ic1 = bio_clamp(2 * v1 - s->ic1, -(1 << 24), 1 << 24);
-    s->ic2 = bio_clamp(2 * v2 - s->ic2, -(1 << 24), 1 << 24);
+    s->ic1 = 2 * v1 - s->ic1;                   /* (no clamp: the TPT form is stable, its states stay within the input */
+    s->ic2 = 2 * v2 - s->ic2;                   /*  times Q, far under 2^30) */
     *bp = v1;
     return v2;
 }

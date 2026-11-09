@@ -29,6 +29,11 @@ static void wav_hdr(FILE *f, uint32_t frames)
     fwrite("data", 1, 4, f); fwrite(&bytes, 4, 1, f);
 }
 
+static double dbfs(int32_t peak)                 /* (no libm: from the engine's own log2) */
+{
+    return peak > 0 ? 6.0206 * ((double)bio_log2((uint32_t)peak) / 65536.0 - 14.99996) : -999.0;
+}
+
 static int render(const char *path, uint32_t frames)
 {
     FILE *f = fopen(path, "wb");
@@ -52,7 +57,7 @@ static int render(const char *path, uint32_t frames)
         done += 256;
     }
     fclose(f);
-    printf("%s: %u frames, peak %d (%.1f dBFS), %u clipped\n", path, frames, peak, peak ? 20.0 * __builtin_log10((double)peak / 32767.0) : -999.0, clip);
+    printf("%s: %u frames, peak %d (%.1f dBFS), %u clipped\n", path, frames, peak, dbfs(peak), clip);
     return 0;
 }
 
@@ -110,7 +115,7 @@ int main(int argc, char **argv)
                 done += 256;
             }
             fclose(f);
-            printf("%s: organ %u, peak %d (%.1f dBFS)\n", argv[3], o, peak, peak ? 20.0 * __builtin_log10((double)peak / 32767.0) : -999.0);
+            printf("%s: organ %u, peak %d (%.1f dBFS)\n", argv[3], o, peak, dbfs(peak));
         }
         return 0;
     }

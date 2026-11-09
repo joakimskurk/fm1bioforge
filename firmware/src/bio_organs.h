@@ -86,7 +86,8 @@ static const uint8_t BIO_P_INIT[BIO_NORG][BIO_NP] = {
 /* LEVEL 0..100 as a fader: the square (80: -3.9 dB, 50: -12 dB), Q15 */
 static inline int32_t bio_level(uint32_t v) { if (v > 100u) v = 100u; return (int32_t)(v * v * 32767u / 10000u); }
 /* (v - init) in octaves at k units an octave, Q16: how a macro scales a time or a level from its INIT */
-static inline int32_t bio_oct(int32_t v, int32_t init, int32_t k) { return (v - init) * 65536 / k; }
+static inline int32_t bio_oct(int32_t v, int32_t init, int32_t k) { return (v - init) * (65536 / k); }   /* (so no constant
+                                                   folds into the chip ROM's address range: docs/RULES.md) */
 /* a 0..100 parameter on a log scale: lo at 0, mid at 50, hi at 100 (Hz) -> lf */
 static int32_t bio_map_lf(uint32_t v, uint32_t lo, uint32_t mid, uint32_t hi)
 {
@@ -105,11 +106,11 @@ static inline uint32_t bio_lin(uint32_t v, uint32_t lo, uint32_t hi) { if (v > 1
 /* ---- a drum organ: one body */
 #define BIO_NCLK 10
 typedef struct {
-    uint32_t t, rnd, awake;
+    uint32_t t, rnd, awake, exc;               /* exc: the excitation still going (else only the body rings) */
     int32_t amp;                                /* the strike's level, Q15 */
     /* PRESSURE */
     uint32_t p_on;
-    int32_t p_imp, p_dec;                       /* the impulse after its onset, its decay (Q30) */
+    int32_t p_imp, p_dec, p_inc;                /* the impulse after its onset, its decay (Q30), its rise */
     int32_t p_peak;
     uint32_t sub_ph, sub_inc, sub_end;
     int32_t sub_k, sub_env, sub_dec;            /* the sweep's factor, the body's level and decay (Q30) */
@@ -163,6 +164,7 @@ static void bio_drum_hit(bio_drum_t *d, uint32_t org, int32_t note_q8, uint32_t 
     d->t = 0;
     d->rnd = bio_hash(seed, org + 1u);
     d->awake = 1;
+    d->exc = 1;
     d->fade = 32767;
     d->amp = bio_mul15(velq, bio_level(p[P_LEVEL]));   /* LEVEL: a fader's law */
     d->drive = (int32_t)(bio_exp2((int32_t)df->drive10 * 1089 + bio_oct(p[P_D7], 50, 25)) >> 4);   /* Q12 */
@@ -172,6 +174,7 @@ static void bio_drum_hit(bio_drum_t *d, uint32_t org, int32_t note_q8, uint32_t 
     d->p_on = BIO_MS(df->p_on10) / 10u + 1u;
     d->p_peak = bio_mul15(lvl, 32767 - (int32_t)df->p_sub * 327) * 2;
     d->p_imp = 0;
+    d->p_inc = d->p_peak / (int32_t)d->p_on;
     d->p_dec = bio_decay(1, bio_tau(df->p_on10 / 10u + 2u));
     d->sub_ph = 0x40000000u;                    /* from its peak: the piston's push */
     d->sub_inc = bio_inc(bio_lf_hz(df->p_f0) + pitch + mass);
@@ -306,12 +309,35 @@ static void bio_drum_render(bio_drum_t *d, uint32_t org, int32_t *out, int32_t *
     uint32_t k;
     int32_t pk = d->peak;
     if (!d->awake) return;
+    if (!d->exc) {                              /* the excitation is over: only the body (and the pitch body) rings */
+        uint32_t i, subon = d->sub_env > (1 << 16);
+        for (k = 0; k < n; k++) {
+            int32_t body = 0, y;
+            for (i = 0; i < d->nm; i++) body += bio_mode_tick(&d->m[i], 0) >> 8;
+            if (subon) {
+                d->sub_inc = d->sub_end + (uint32_t)bio_mul30((int32_t)(d->sub_inc - d->sub_end), d->sub_k);
+                d->sub_ph += d->sub_inc;
+                body += bio_mul15(bio_sin(d->sub_ph), d->sub_env >> 15);
+                d->sub_env = bio_mul30z(d->sub_env, d->sub_dec);
+            }
+            y = bio_dc(&d->dc, bio_flesh(body, d->drive));
+            y = bio_mul15(y, bio_mul15(d->amp, d->fade));
+            if (d->fade < 32767) d->fade = d->fade > 600 ? d->fade - 600 : 0;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        d->t += n;
+        d->peak = pk;
+        d->last = 0;
+        d->press_out = bio_clamp(d->sub_env >> 15, 0, 32767);
+        goto sleep;
+    }
     for (k = 0; k < n; k++) {
         uint32_t t = d->t;
         int32_t w = bio_noise(&d->rnd), ex, fr, crack, vent, sub, body = 0, y;
         uint32_t i;
         /* PRESSURE */
-        if (t < d->p_on) d->p_imp = d->p_peak * (int32_t)(t + 1u) / (int32_t)d->p_on;
+        if (t < d->p_on) d->p_imp += d->p_inc;
         else d->p_imp = bio_mul30z(d->p_imp, d->p_dec);
         d->sub_inc = d->sub_end + (uint32_t)bio_mul30((int32_t)(d->sub_inc - d->sub_end), d->sub_k);
         d->sub_ph += d->sub_inc;
@@ -357,12 +383,15 @@ static void bio_drum_render(bio_drum_t *d, uint32_t org, int32_t *out, int32_t *
     }
     d->peak = pk;
     d->press_out = bio_clamp((d->sub_env >> 15) + (d->p_imp >> 1), 0, 32767);
-    /* asleep when it has rung out (everything under ~-90 dB), or faded out (PANIC) */
-    if (!d->fade || (d->t > d->v_at + d->v_len && d->iclk >= d->nclk && d->f_env < (1 << 14) && d->sub_env < (1 << 16) &&
-                     d->p_imp < 8 && d->brst < 8)) {
+    if (d->t > d->v_at + d->v_len && d->iclk >= d->nclk && d->f_env < (1 << 19) && d->p_imp < 16 && d->brst < 16 &&
+        d->v_env < (1 << 19))
+        d->exc = 0;                             /* (from here the fast path: the friction under -66 dB is let go) */
+sleep:
+    /* asleep when it has rung out (the body and the pitch body under ~-72 dB), or faded out (PANIC) */
+    if (!d->fade || (!d->exc && d->sub_env < (1 << 16))) {
         uint32_t i, quiet = 1;
         for (i = 0; i < d->nm; i++)
-            if (bio_abs(d->m[i].x1) > (1 << 8) || bio_abs(d->m[i].x2) > (1 << 8)) quiet = 0;
+            if (bio_abs(d->m[i].x1) > (8 << 8) || bio_abs(d->m[i].x2) > (8 << 8)) quiet = 0;
         if (quiet || !d->fade) {
             d->awake = 0;
             for (i = 0; i < d->nm; i++) d->m[i].x1 = d->m[i].x2 = 0;
@@ -536,8 +565,7 @@ static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const
         int32_t band = (int32_t)p[P_D8] * 200 + (int32_t)p[P_BODY] * 120;
         uint32_t incb;
         bio_svf_set(&v->f1, lfc, bio_q_k(bio_lin(p[P_D2], 5, 80)));
-        bio_svf_set(&v->f2, v->lf + 3 * 65536 + 25000, bio_q_k(60));   /* bands at ~13 x and ~ 29 x the root */
-        bio_svf_set(&v->f3, v->lf + 4 * 65536 + 56000, bio_q_k(80));
+        bio_svf_set(&v->f2, v->lf + 3 * 65536 + 25000, bio_q_k(60));   /* a band at ~10 x the root (D2: 760 Hz) */
         inc = bio_inc(v->lf + bio_mul15(life->drift, 300));
         incb = (uint32_t)(((uint64_t)inc * ratio) >> 16);
         for (k = 0; k < n; k++) {
@@ -551,7 +579,7 @@ static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const
             o = (o >> 1) + (b >> 1);
             y = bio_svf(&v->f1, o, &x);
             b2 = bio_svf_bp(&v->f2, o);
-            b3 = bio_svf_bp(&v->f3, o);
+            b3 = 0;
             y += bio_mul15(b2 + b3, band);
             e0 += step;
             y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
@@ -602,7 +630,7 @@ static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const
            between U O A E I (MOUTH); BREATH and NERVE move the mouth a little by themselves */
         int32_t m = ((int32_t)p[P_D1] <= 50 ? (int32_t)p[P_D1] * 143 / 10 : 717 + ((int32_t)p[P_D1] - 50) * 67) +
                     bio_mul15(life->breath, (int32_t)p[P_MOTION] * 3) + bio_mul15(life->drift, (int32_t)p[P_MOTION] * 2);
-        int32_t vi, fr, sh = ((int32_t)p[P_D3] - 50) * BIO_SEMI * 12 / 50 - 3 * BIO_SEMI - ((int32_t)p[P_BODY] - 50) * BIO_SEMI / 12;
+        int32_t vi, fr, sh = ((int32_t)p[P_D3] - 50) * 1311 - 3 * BIO_SEMI - ((int32_t)p[P_BODY] - 50) * 455;   /* SHIFT ±12, BODY */
         int32_t br = (int32_t)p[P_D2] * 59 + ((int32_t)p[P_TEXTURE] - 50) * 40, sub = (int32_t)p[P_D4] * 90;
         int32_t f[3];
         uint32_t j;
