@@ -2,7 +2,7 @@
 # through the kit (TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING, THUMP, WASH, FLAM SNR,
 # BIT HAT, LASER), each in TEETH's sixteenths; then TISSUE again (its own body)
 100 btndown 3
-150 enc 6 9
+150 enc 6 11
 190 btnup 3
 300 enc 0 3
 400 btn 4

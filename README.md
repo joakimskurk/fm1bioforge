@@ -54,8 +54,11 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   the key is held); **cosmic** GLASS (inharmonic partials beating), BELL (FM), CHOIR (three throats through vowels);
   **the body** BLOOD (a pulse with the beat), BUBBLE (rising drops), SLIME (a wet squelch).
 - **Rooms.** The reverb's SPACE (FX, again, again): HALL, ROOM, CAVE, METAL (a ringing tank) or VAST.
-- **PUMP.** HEART ducks the other channels, a side-chain from the kick, back by the next eighth (MIX's sends,
-  SHIFT, KNOB 2).
+- **A deep kick.** A drum organ's MODEL KICK: a sine swept down to its pitch, held, a long decay, drive, then low-passed
+  so it keeps almost no top. DEEP KICK, SUB KICK and DUB KICK on the SOUND knob.
+- **PUMP and RUMBLE.** PUMP: HEART ducks the other channels and the delay's and reverb's returns, back by the next
+  eighth (MIX's sends, SHIFT, KNOB 2). RUMBLE (KNOB 3): HEART's own dark low tail, breathing with it.
+- **DUB** chords: a synth's MODEL DUB, a minor chord through a low-pass that each note opens, for the delay.
 - **Four macros an organ.** BODY, TEXTURE, MOTION and DECAY are on the first page. The depth is behind them.
 - **The keys go into the memory.**
   - **LIVE REC**: press PLAY, then REC, and play.
@@ -77,12 +80,13 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   FREEZE) and MARROW CRUSH (a parallel drive, sample-rate and bit crusher). Each channel has its own sends.
 - **Four scenes in RAM**, each its own world at first:
   - RITUAL 00 THE AWAKENING, the idea document's start scene;
-  - 01 FROZEN, slices of noise locked by the register into a groove;
-  - 02 STREAM, one noise that never stops, cut by a gate;
-  - 03 WALL, a riff of pitched noise, in 16ths, triplets and 32nds.
+  - 01 ABYSS, dark ambient meets noise: a deep kick and its rumble, crackle and the room breathing with it, dub chords;
+  - 02 ASH, its ambient side: a sub kick, a big rumble, fire and creaking wood, glass and a choir in a vast space;
+  - 03 FROZEN, slices of noise locked by the register into a groove.
   - PRESETS switches between them on the next bar. **SHIFT + PRESETS loads a factory ritual** into the scene that
-    plays: those four, DATA (clicks, bursts, digital noise, stutters), EMBERS (crackle), FOUNDRY (industry), ORBIT
-    (cosmic), INNARDS (the body), STATIC CULT (noise as percussion, with PUMP),
+    plays: those four, STREAM (one noise, gated), WALL (a riff of pitched noise), DATA (clicks, bursts, digital noise,
+    stutters), EMBERS (crackle), FOUNDRY (industry), ORBIT (cosmic), INNARDS (the body), STATIC CULT (noise as
+    percussion, with PUMP),
     SPLICE (broken, glitched), VOID (slow and wide), INFECTION and EMPTY BODY. The one in flash stays until you SAVE.
   - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
@@ -129,7 +133,7 @@ D5–G5. The middle key of each zone, which glows, plays the organ as it is set;
 
 **Try it without an FM-1:** *Play it here* on [the page](https://joakimskurk.github.io/fm1bioforge/#play), in any
 recent browser, phones too: the firmware itself compiled to WebAssembly, its sound, its screen and its keys' lights.
-The page also has eleven demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
+The page also has thirteen demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
 
 **Install it from the browser:** [the page's installer](https://joakimskurk.github.io/fm1bioforge/#install), in Chrome
 or Edge on a computer, the FM-1 on USB. It always offers the latest build of `main` that passed its tests.

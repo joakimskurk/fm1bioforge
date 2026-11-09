@@ -2,7 +2,7 @@
 # page (SOURCE RESO MODE BURSTS), ENV and with SEL held its SOUND, turned to the next sound (CRUSH); TEETH turned back
 # to TISSUE; MIX's sends with SEL held: RIB and PUMP; SEL held and PRESETS turned on: VOID loaded.
 100 btndown 3
-150 enc 6 9
+150 enc 6 11
 190 btnup 3
 400 btn 12
 1500 shot

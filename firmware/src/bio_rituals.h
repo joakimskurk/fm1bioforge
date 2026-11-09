@@ -15,7 +15,7 @@ static void rit_perc(seq_scene_t *sc, uint32_t org, const char *kit, uint32_t pa
 }
 /* an organ as the noise core, its parameters given (a drum one switched to MODEL NOISE, NOISE's BREATH off) */
 #define NC(b, t, m, d, src, res, mode, bur, clk, drv, cr, a, g, w, r, tn, lvl, pan, scat, tone, drift) \
-    {b, t, m, d, src, res, mode, bur, clk, drv, cr, 100, a, g, w, r, tn, lvl, pan, 0, scat, tone, drift, 0}
+    {b, t, m, d, src, res, mode, bur, clk, drv, cr, 50, a, g, w, r, tn, lvl, pan, 0, scat, tone, drift, 0}
 static void rit_core(seq_scene_t *sc, uint32_t org, const uint8_t *v)
 {
     uint32_t k;
@@ -364,7 +364,7 @@ static void rit_foundry(seq_scene_t *sc)
     sc->mix.lvl[CH_BASS] = 84; sc->mix.lvl[CH_DRONE] = 52; sc->mix.lvl[CH_VOICE] = 58; sc->mix.lvl[CH_SPASM] = 64;
     sc->mix.lvl[CH_NOISE] = 80; sc->mix.lvl[CH_DRUM] = 88;
     sc->mix.sb[CH_SPASM] = 50; sc->mix.sb[CH_VOICE] = 40; sc->mix.sb[CH_DRUM] = 24; sc->mix.sb[CH_NOISE] = 20;
-    sc->fx.r_space = 3; sc->fx.r_mix = 30; sc->fx.r_decay = 30; sc->fx.d_mix = 0; sc->fx.c_mix = 20;
+    sc->fx.r_space = 3; sc->fx.r_mix = 30; sc->fx.r_decay = 30; sc->fx.d_mix = 0; sc->fx.c_mix = 0;
     sc->mix.pump = 40;
     sc->tur.loop = 95; sc->tur.depth = 10;
 }
@@ -442,9 +442,115 @@ static void rit_innards(seq_scene_t *sc)
     sc->mix.lvl[CH_DRONE] = 78; sc->mix.lvl[CH_BASS] = 80; sc->mix.lvl[CH_VOICE] = 62; sc->mix.lvl[CH_SPASM] = 0;
     sc->mix.lvl[CH_NOISE] = 56; sc->mix.lvl[CH_DRUM] = 86;
     sc->mix.sb[CH_VOICE] = 40; sc->mix.sb[CH_BASS] = 14; sc->mix.sb[CH_DRUM] = 20;
-    sc->fx.r_space = 2; sc->fx.r_mix = 30; sc->fx.r_decay = 40; sc->fx.d_mix = 0; sc->fx.c_mix = 12;
+    sc->fx.r_space = 2; sc->fx.r_mix = 30; sc->fx.r_decay = 40; sc->fx.d_mix = 0; sc->fx.c_mix = 0;
     sc->mix.pump = 30;
     sc->tur.loop = 94; sc->tur.depth = 15;
+}
+
+/* ---- dark ambient meets noise, a deep kick (D22) */
+
+/* RITUAL: ABYSS. 122 BPM, D minor. A deep kick with almost no top on the four, its RUMBLE under it; everything else
+   breathes with it (PUMP): a fire crackling held, the reverb and the delay. Noise in time: dark ticks off the beat and
+   ghosts locked between, sparks now and then, a low clap far away on two and four. Dub chords off the beat into a
+   dark delay, a bass on the off-beats, the drone and a choir in a cave */
+static void rit_abyss(seq_scene_t *sc)
+{
+    static const uint8_t TK[BIO_NP] = NC(72, 10, 50, 30,  6, 15, 90, 0, 0, 0, 0,  0, 0, 30, 20,  24, 78, 62,  25, 0, 0);
+    static const uint8_t CL[BIO_NP] = NC(32, 20, 52, 55,  6, 30, 50, 80, 0, 10, 0,  0, 0, 40, 30,  24, 74, 46,  0, 0, 0);
+    seq_scene_blank(sc, 0xAB7550u);
+    rit_name(sc, "ABYSS");
+    sc->bpm10 = 1220;
+    rit_perc(sc, O_HEART, "DEEP KICK", 50);
+    rit_steps(sc, O_HEART, "x...x...x...x...", 60, 112, 96);
+    rit_core(sc, O_BONE, CL);
+    rit_steps(sc, O_BONE, "....x.......x...", 60, 84, 48);
+    rit_core(sc, O_TEETH, TK);
+    rit_steps(sc, O_TEETH, "g.x.g.xgg.x.g.xg", 60, 88, 30);
+    rit_perc(sc, O_CLAW, "SPARKS", 30);
+    sc->p[O_CLAW][P_E1] = 40;
+    sc->p[O_CLAW][P_LEVEL] = 80;
+    sc->tr[O_CLAW].len = 32;
+    rit_steps(sc, O_CLAW, ".......x.............x.....x....", 72, 90, 48);
+    rit_perc(sc, O_NOISE, "EMBERS", 50);
+    sc->p[O_NOISE][P_E3] = 40;                  /* (its band drifting) */
+    sc->tr[O_NOISE].len = 64;
+    seq_put(sc, O_NOISE, 0, 64 * 96 - 6, 60, 96, 0);
+    /* dub chords off the beat, two bars: D, D, C, B flat (a minor 7th) */
+    rit_model(sc, O_SPASM, L_DUB, 30, 30, 60, 45);
+    sc->p[O_SPASM][P_D] = 40;
+    sc->tr[O_SPASM].len = 32;
+    rit_steps(sc, O_SPASM, "...x.......x.......x.......x....", 50, 96, 30);
+    sc->tr[O_SPASM].ev[2].note = 48; sc->tr[O_SPASM].ev[3].note = 46;
+    /* the bass on the off-beats, low, short */
+    rit_steps(sc, O_BASS, "..x...x...x...x.", 26, 92, 40);
+    sc->p[O_BASS][P_D1] = 26; sc->p[O_BASS][P_D] = 18; sc->p[O_BASS][P_TEXTURE] = 36;
+    /* the drone under it all, the choir far away */
+    sc->tr[O_DRONE].len = 64;
+    seq_put(sc, O_DRONE, 0, 32 * 96 - 6, 38, 90, 0);
+    seq_put(sc, O_DRONE, 32, 32 * 96 - 6, 34, 90, 0);
+    sc->p[O_DRONE][P_D1] = 26; sc->p[O_DRONE][P_MOTION] = 70;
+    rit_model(sc, O_VOICE, L_CHOIR, 22, 40, 50, 60);
+    sc->p[O_VOICE][P_A] = 80; sc->p[O_VOICE][P_R] = 85;
+    sc->tr[O_VOICE].len = 64;
+    seq_put(sc, O_VOICE, 0, 30 * 96, 62, 70, 0);
+    seq_put(sc, O_VOICE, 32, 30 * 96, 60, 70, 0);
+    /* the mix: the kick and its rumble, everything else breathing with it */
+    sc->mix.lvl[CH_DRUM] = 92; sc->mix.lvl[CH_BASS] = 66; sc->mix.lvl[CH_DRONE] = 56; sc->mix.lvl[CH_SPASM] = 74;
+    sc->mix.lvl[CH_VOICE] = 44; sc->mix.lvl[CH_NOISE] = 70;
+    sc->mix.sa[CH_SPASM] = 70; sc->mix.sb[CH_SPASM] = 40; sc->mix.sb[CH_DRUM] = 22; sc->mix.sa[CH_DRUM] = 0;
+    sc->mix.sb[CH_DRONE] = 40; sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_NOISE] = 34; sc->mix.sb[CH_BASS] = 0;
+    sc->mix.sa[CH_BASS] = 0; sc->mix.sa[CH_VOICE] = 20;
+    sc->mix.pump = 55; sc->mix.rumble = 62; sc->mix.master = 80;
+    sc->fx.d_time = 4; sc->fx.d_fb = 56; sc->fx.d_tone = 28; sc->fx.d_mix = 34; sc->fx.d_rev = 20; sc->fx.d_ping = 1;
+    sc->fx.r_space = 2; sc->fx.r_mix = 36; sc->fx.r_decay = 60; sc->fx.r_size = 80; sc->fx.r_damp = 30; sc->fx.c_mix = 0;
+    sc->tur.loop = 97; sc->tur.depth = 10; sc->tur.rattle = 15;
+}
+
+/* RITUAL: ASH. 116 BPM, the ambient side of ABYSS: a sub kick, softer, its rumble bigger; no ticks, only the fire held
+   and wood creaking now and then, sparks in time; glass beating under a choir, minor-ninth dub chords far apart into
+   the delay; a vast space */
+static void rit_ash(seq_scene_t *sc)
+{
+    seq_scene_blank(sc, 0xA54u);
+    rit_name(sc, "ASH");
+    sc->bpm10 = 1160;
+    rit_perc(sc, O_HEART, "SUB KICK", 50);
+    rit_steps(sc, O_HEART, "x...x...x...x...", 60, 104, 96);
+    rit_perc(sc, O_CLAW, "CREAK", 26);
+    sc->tr[O_CLAW].len = 64;
+    seq_put(sc, O_CLAW, 12, 8 * 96, 60, 80, 0);
+    seq_put(sc, O_CLAW, 44, 6 * 96, 55, 80, 0);
+    rit_perc(sc, O_TEETH, "SPARKS", 70);
+    sc->p[O_TEETH][P_E1] = 50; sc->p[O_TEETH][P_LEVEL] = 74;
+    rit_steps(sc, O_TEETH, "..x...x?..x...x.", 72, 80, 40);
+    rit_perc(sc, O_NOISE, "EMBERS", 50);
+    sc->p[O_NOISE][P_E3] = 50;
+    sc->tr[O_NOISE].len = 64;
+    seq_put(sc, O_NOISE, 0, 64 * 96 - 6, 60, 100, 0);
+    rit_model(sc, O_SPASM, L_DUB, 26, 60, 70, 60);
+    sc->p[O_SPASM][P_D] = 60;
+    sc->tr[O_SPASM].len = 64;
+    seq_put(sc, O_SPASM, 6, 30, 50, 96, 0);
+    seq_put(sc, O_SPASM, 27, 30, 46, 90, 0);
+    seq_put(sc, O_SPASM, 38, 30, 50, 96, 0);
+    seq_put(sc, O_SPASM, 59, 30, 45, 90, 0);
+    rit_model(sc, O_DRONE, L_GLASS, 50, 40, 60, 70);
+    sc->p[O_DRONE][P_A] = 70;
+    sc->tr[O_DRONE].len = 64;
+    seq_put(sc, O_DRONE, 0, 32 * 96 - 6, 38, 90, 0);
+    seq_put(sc, O_DRONE, 32, 32 * 96 - 6, 41, 90, 0);
+    rit_model(sc, O_VOICE, L_CHOIR, 18, 50, 60, 60);
+    sc->p[O_VOICE][P_A] = 90; sc->p[O_VOICE][P_R] = 90;
+    sc->tr[O_VOICE].len = 64;
+    seq_put(sc, O_VOICE, 0, 62 * 96, 57, 70, 0);
+    sc->mix.lvl[CH_DRUM] = 88; sc->mix.lvl[CH_BASS] = 0; sc->mix.lvl[CH_DRONE] = 50; sc->mix.lvl[CH_SPASM] = 72;
+    sc->mix.lvl[CH_VOICE] = 46; sc->mix.lvl[CH_NOISE] = 76;
+    sc->mix.sa[CH_SPASM] = 80; sc->mix.sb[CH_SPASM] = 50; sc->mix.sb[CH_DRUM] = 26; sc->mix.sa[CH_DRUM] = 0;
+    sc->mix.sb[CH_DRONE] = 50; sc->mix.sb[CH_VOICE] = 80; sc->mix.sb[CH_NOISE] = 40;
+    sc->mix.pump = 60; sc->mix.rumble = 80; sc->mix.master = 80;
+    sc->fx.d_time = 7; sc->fx.d_fb = 62; sc->fx.d_tone = 24; sc->fx.d_mix = 36; sc->fx.d_rev = 30; sc->fx.d_ping = 1;
+    sc->fx.r_space = 4; sc->fx.r_mix = 44; sc->fx.r_decay = 70; sc->fx.r_size = 90; sc->fx.r_damp = 26; sc->fx.c_mix = 0;
+    sc->tur.loop = 97; sc->tur.depth = 10;
 }
 
 /* the factory list (SHIFT + PRESETS) */
@@ -459,10 +565,11 @@ static void rit_infection(seq_scene_t *sc)
 }
 static void rit_empty(seq_scene_t *sc) { seq_scene_blank(sc, 0x7E3u); rit_name(sc, "EMPTY BODY"); }
 /* (the first four are the scenes before anything is saved: the document's start, then rhythm made of noise, D20) */
-static const rit_fn BIO_RITUAL[] = {rit_awaken, rit_frozen, rit_stream, rit_wall, rit_data, rit_embers, rit_foundry,
-                                    rit_orbit, rit_innards, rit_static, rit_splice, rit_void, rit_infection, rit_empty};
-static const char *const BIO_RITUAL_NAME[] = {"AWAKENING", "FROZEN", "STREAM", "WALL", "DATA", "EMBERS", "FOUNDRY",
-                                              "ORBIT", "INNARDS", "STATIC CULT", "SPLICE", "VOID", "INFECTION",
-                                              "EMPTY BODY"};
+static const rit_fn BIO_RITUAL[] = {rit_awaken, rit_abyss, rit_ash, rit_frozen, rit_stream, rit_wall, rit_data,
+                                    rit_embers, rit_foundry, rit_orbit, rit_innards, rit_static, rit_splice, rit_void,
+                                    rit_infection, rit_empty};
+static const char *const BIO_RITUAL_NAME[] = {"AWAKENING", "ABYSS", "ASH", "FROZEN", "STREAM", "WALL", "DATA",
+                                              "EMBERS", "FOUNDRY", "ORBIT", "INNARDS", "STATIC CULT", "SPLICE", "VOID",
+                                              "INFECTION", "EMPTY BODY"};
 #define BIO_NRITUAL (sizeof BIO_RITUAL / sizeof BIO_RITUAL[0])
 #endif

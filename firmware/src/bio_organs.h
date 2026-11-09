@@ -11,6 +11,7 @@
 #define BIO_ORGANS_H
 #include "bio_dsp.h"
 #include "bio_perc.h"
+#include "bio_kick.h"
 
 enum { O_HEART, O_BONE, O_TEETH, O_CLAW, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_NOISE, BIO_NORG };
 enum { CH_DRUM, CH_BASS, CH_DRONE, CH_SPASM, CH_VOICE, CH_NOISE, BIO_NCH };
@@ -148,6 +149,8 @@ typedef struct {
     int32_t peak;
     uint32_t perc;                              /* MODEL NOISE: this organ is a perc voice for now */
     bio_perc_t np;
+    uint32_t kick;                              /* MODEL KICK: a deep kick (D22) */
+    bio_kick_t kk;
 } bio_drum_t;
 
 /* the perc voice's parameters from an organ's (the four macros, D1..D7, its envelope page) */
@@ -160,7 +163,9 @@ static void bio_perc_params(const uint8_t *p, bio_perc_p_t *pp)
     pp->tune = (int8_t)((int32_t)p[P_TUNE] - 24);
     pp->scatter = p[P_E1]; pp->tone = p[P_E2]; pp->drift = p[P_E3];
 }
-static inline uint32_t bio_is_perc(uint32_t org, const uint8_t *p) { return org == 8u || (org < 4u && p[P_D8] >= 50u); }
+/* a drum organ's MODEL (D8): TISSUE under 33, NOISE to 65, KICK from 66 */
+static inline uint32_t bio_is_perc(uint32_t org, const uint8_t *p) { return org == 8u || (org < 4u && p[P_D8] >= 33u && p[P_D8] < 66u); }
+static inline uint32_t bio_is_kick(uint32_t org, const uint8_t *p) { return org < 4u && p[P_D8] >= 66u; }
 
 /* a hit: note = semitones from the organ's own pitch (Q8), vel 1..127, len = the gesture (samples), p = the
    parameters (locks applied), seed = this hit's */
@@ -179,6 +184,19 @@ static void bio_drum_hit(bio_drum_t *d, uint32_t org, int32_t note_q8, uint32_t 
     uint32_t i, n, s = seed;
     int32_t lvl;
 
+    if (bio_is_kick(org, p)) {                  /* MODEL KICK */
+        bio_kick_p_t kp;
+        kp.body = p[P_BODY]; kp.texture = (uint8_t)bio_clamp(tex, 0, 100); kp.motion = p[P_MOTION]; kp.decay = p[P_DECAY];
+        kp.tone = p[P_D1]; kp.drive = p[P_D2]; kp.knock = p[P_D3]; kp.hold = p[P_D4]; kp.attack = p[P_A];
+        kp.tune = (int8_t)((int32_t)p[P_TUNE] - 24);
+        bio_kick_hit(&d->kk, &kp, note_q8, vel, bio_level(p[P_LEVEL]), seed);
+        d->kick = 1;
+        d->perc = 0;
+        d->awake = 1;
+        d->t = 0;
+        return;
+    }
+    d->kick = 0;
     if (bio_is_perc(org, p)) {                  /* MODEL NOISE: the perc voice */
         bio_perc_p_t pp;
         bio_perc_params(p, &pp);
@@ -316,7 +334,7 @@ static void bio_drum_ctl(bio_drum_t *d, uint32_t org, int32_t drift, int32_t rot
 {
     uint32_t i;
     int32_t g;
-    if (!d->awake || d->perc) return;
+    if (!d->awake || d->perc || d->kick) return;
     if (d->bend) d->bend = bio_mul30(d->bend, d->bend_k);
     for (i = 0; i < d->nm; i++) {               /* MOTION: the modes drift apart a little while they ring */
         int32_t lf = d->m_lf[i] + d->bend + (int32_t)(((int64_t)drift * d->mot * (int32_t)(i + 1u)) >> 15);
@@ -339,6 +357,13 @@ static void bio_drum_render(bio_drum_t *d, uint32_t org, int32_t *out, int32_t *
     uint32_t k;
     int32_t pk = d->peak;
     if (!d->awake) return;
+    if (d->kick) {                              /* the kick (its level HEART's pressure) */
+        bio_kick_render(&d->kk, out, n, &d->press_out);
+        d->awake = d->kk.awake;
+        d->peak = d->kk.peak;
+        d->t += n;
+        return;
+    }
     if (d->perc) {                              /* the perc voice (into the rib a little of it too) */
         uint32_t j;
         int32_t tmp[BIO_SB];

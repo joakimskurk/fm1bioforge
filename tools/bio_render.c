@@ -85,7 +85,7 @@ int main(int argc, char **argv)
         return render(argv[3], bars * 4u * (uint32_t)(44100u * 60u / (scenes[0].bpm10 / 10u)) + 88200u);
     }
     if (!strcmp(argv[1], "lands") && argc > 2) {   /* the landscapes (bio_land.h), each 3 s on an organ it suits */
-        static const uint8_t ORG[BIO_NLAND] = {0, O_DRONE, O_DRONE, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_BASS, O_VOICE, O_BASS};
+        static const uint8_t ORG[BIO_NLAND] = {0, O_DRONE, O_DRONE, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_BASS, O_VOICE, O_BASS, O_SPASM};
         static const uint8_t PH[4][4] = {{26, 29, 26, 33}, {38, 38, 38, 38}, {62, 67, 69, 74}, {50, 50, 50, 50}};
         static int32_t buf[512];
         int16_t pcm[512];
@@ -122,14 +122,14 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "palette") && argc > 2) {   /* the perc kit: each sound three times (its note, -5, +7) */
         static int32_t buf[512];
         int16_t pcm[512];
-        uint32_t i, done = 0, frames = (uint32_t)BIO_NPERC_KIT * 66150u, j;
+        uint32_t i, done = 0, frames = (uint32_t)(BIO_NPERC_KIT - BIO_NKICK_KIT) * 66150u, j;
         FILE *f = fopen(argv[2], "wb");
         if (!f) { perror(argv[2]); return 1; }
         eng.tick = 0;
         eng.mix.lvl[CH_NOISE] = 100;
         eng.mix.sa[CH_NOISE] = 0; eng.mix.sb[CH_NOISE] = 14;
         wav_hdr(f, frames);
-        for (i = 0; i < BIO_NPERC_KIT; i++) {
+        for (i = 0; i < BIO_NPERC_KIT - BIO_NKICK_KIT; i++) {
             uint32_t t0 = 0, hold = BIO_PERC_KIT[i].p[P_D] ? 33075u : 0u;
             for (j = 0; j < BIO_NP; j++) eng.p[O_NOISE][j] = BIO_PERC_KIT[i].p[j];
             eng.p[O_NOISE][P_D8] = 0;                /* (no BREATH) */

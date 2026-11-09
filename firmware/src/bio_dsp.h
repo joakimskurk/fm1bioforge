@@ -52,6 +52,26 @@ static inline int32_t bio_sin(uint32_t ph)
     int32_t a = BIO_SIN[i], b = BIO_SIN[i + 1u];
     return a + (int32_t)(((b - a) * (int32_t)fr) >> 16);
 }
+/* a saw without most of its aliasing (polyBLEP: the step at the wrap smoothed over a sample each side), Q15. The
+   division only near the wrap (a 32-bit one): 2 samples of every period */
+static inline int32_t bio_saw(uint32_t ph, uint32_t inc)
+{
+    int32_t s = (int32_t)(ph >> 16) - 32768, x;
+    uint32_t d = inc >> 15;
+    if (!d) return s;
+    if (ph < inc) {                             /* just after the wrap */
+        x = (int32_t)(ph / d);
+        s -= 2 * x - ((x * x) >> 15) - 32768;
+    } else if (0u - ph < inc) {                 /* just before it */
+        x = -(int32_t)((0u - ph) / d);
+        s -= ((x * x) >> 15) + 2 * x + 32768;
+    }
+    return s;
+}
+static inline int32_t bio_pulse(uint32_t ph, uint32_t inc, uint32_t w)   /* width w (of 2^32): two saws, Q15 */
+{
+    return (bio_saw(ph, inc) - bio_saw(ph - w, inc)) >> 1;
+}
 static inline int32_t bio_tri(uint32_t ph)      /* in phase with bio_sin, Q15 */
 {
     int32_t v = (int32_t)((ph + 0x40000000u) >> 16) - 32768;

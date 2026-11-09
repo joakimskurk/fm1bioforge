@@ -137,3 +137,22 @@ crackle of a fire, of frying, of wood creaking; the worlds of industry, the cosm
   short their echoes are a pitch: a tank) or VAST (the biggest, longest, open).
 - Rituals EMBERS (crackle), FOUNDRY (industry), ORBIT (cosmic), INNARDS (the body), on SHIFT + PRESETS; demos of each.
   Scene format "BOF4". The awakening costs 2 647 instructions a frame (2 566 before), the landscapes 1 700 .. 2 000.
+
+**D22 (2026-11-09) Dark ambient meets noise; a deep kick; clean, not lofi.** The user: not there yet. They want grim
+dark ambient meeting a bit more noise, a deep techno kick with almost no top, noise and crackle in time but with a
+musical, rhythmic meaning, atmosphere; and it sounded very lofi and choppy. What was found and done:
+- **Lofi.** MARROW CRUSH was on in every scene by default (its return at 40 %, BASS, SPASM and NOISE sent to it): off
+  now, sends 0; SPLICE keeps it on purpose. The landscapes' saws and pulses were naive (aliasing): polyBLEP now
+  (`bio_saw`, `bio_pulse`). The half-rate reverb took the full band in (folding the noise's highs down) and gave images
+  out: a low-pass before (7 kHz) and after (9 kHz). A landscape no longer resets its phases and filters when a note comes
+  over a sounding one (a click each note).
+- **MODEL KICK** (`bio_kick.h`) on a drum organ (D8: TISSUE under 33, NOISE to 65, KICK from 66): a sine swept down to
+  its pitch, held, a long decay, drive, then two low-pass poles (TONE): almost nothing over 1 kHz (a test). Its phase
+  runs on through a new hit and its attack is a ramp: no click. DEEP KICK, SUB KICK, DUB KICK in the kit.
+- **RUMBLE** (MIX's sends, SHIFT, KNOB 3): HEART into a low tail of its own (two lines at an eighth of the rate, feeding
+  each other through low-passes, about 2 s), ducked by PUMP. **PUMP** now ducks the delay's and the reverb's returns too,
+  so the whole space breathes with the kick.
+- **DUB** (a landscape model): a minor chord (minor, 7th, 9th, fifths) of four saws through a low-pass that the note
+  opens and DECAY closes, for the delay to carry.
+- **ABYSS** (122 BPM) and **ASH** (116 BPM): the direction, as rituals; the start scenes are THE AWAKENING, ABYSS, ASH,
+  FROZEN, the rest on SHIFT + PRESETS. Scene format "BOF5".

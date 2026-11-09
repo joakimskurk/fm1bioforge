@@ -1,7 +1,9 @@
-# Demo: RITUAL 02, STREAM (PRESETS twice): one noise that never stops, cut by a gate: the rhythm is where it is open.
+# Demo: STREAM (SEL held, PRESETS turned: a factory ritual): one noise that never stops, cut by a gate: the rhythm is where it is open.
 # Accents open its band, the end of every other bar stutters in 32nds (the same noise again), its band drifts over four
 # bars; under it a low noise breathing with a beat you do not hear (PUMP), a thin high noise on the off-beat 8ths
-200 enc 6 2
+100 btndown 3
+200 enc 6 4
+300 btnup 3
 400 btn 12
 22900 btn 12
 25400 end

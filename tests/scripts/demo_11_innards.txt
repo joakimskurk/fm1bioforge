@@ -2,7 +2,7 @@
 # squelching bass (BASS as SLIME), bubbles rising (VOICE as BUBBLE), a heartbeat, grease, flesh sizzling, a breath
 # gated in and out; the reverb a CAVE
 100 btndown 3
-200 enc 6 8
+200 enc 6 10
 300 btnup 3
 400 btn 12
 26487 btn 12

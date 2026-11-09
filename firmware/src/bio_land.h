@@ -4,30 +4,33 @@
  * a machine that runs while the key is held), COSMIC (GLASS, inharmonic partials beating; BELL, FM; CHOIR, three
  * throats through formants) and BODY (BLOOD, a pulse with the beat; BUBBLE, rising drops; SLIME, a wet squelch). The
  * organ keeps its own envelope, note and role; the four macros mean what each model says below. Integers only, mono,
- * the same seed the same sound. */
+ * the same seed the same sound. And DUB (D22): a dark chord through a closing low-pass, for the delay to carry. */
 #ifndef BIO_LAND_H
 #define BIO_LAND_H
 #include "bio_dsp.h"
 
-enum { L_OWN, L_HUM, L_STEEL, L_PISTON, L_GLASS, L_BELL, L_CHOIR, L_BLOOD, L_BUBBLE, L_SLIME, BIO_NLAND };
+enum { L_OWN, L_HUM, L_STEEL, L_PISTON, L_GLASS, L_BELL, L_CHOIR, L_BLOOD, L_BUBBLE, L_SLIME, L_DUB, BIO_NLAND };
 static const char *const BIO_LAND_NAME[BIO_NLAND] = {"OWN", "HUM", "STEEL", "PISTON", "GLASS", "BELL", "CHOIR", "BLOOD",
-                                                     "BUBBLE", "SLIME"};
+                                                     "BUBBLE", "SLIME", "DUB"};
 static const char *const BIO_OWN_NAME[4] = {"MUSCLE", "WOMB", "NERVE", "THROAT"};   /* BASS DRONE SPASM VOICE as they are */
-#define BIO_LAND(i) ((uint8_t)((i) * 10u + 5u))   /* a model as MODEL's value */
+#define BIO_LAND(i) ((uint8_t)((i) * 9u + 4u))    /* a model as MODEL's value (the middle of its eleventh) */
 static inline uint32_t bio_land_of(uint32_t v) { v = v * BIO_NLAND / 101u; return v < BIO_NLAND ? v : BIO_NLAND - 1u; }
 
 /* a note starts: the model's own state (the organ's envelope is set already) */
 static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_t seed)
 {
     uint32_t k;
-    for (k = 0; k < 8u; k++) v->lx[k] = 0;
-    for (k = 0; k < 4u; k++) v->lu[k] = 0;
-    v->pa = v->pb = v->pc = v->pd = 0;
+    if (v->env.v < (1 << 22)) {                 /* (from silence only: a note over a sounding one keeps its phases and
+                                                   filters, so it does not click) */
+        for (k = 0; k < 8u; k++) v->lx[k] = 0;
+        for (k = 0; k < 4u; k++) v->lu[k] = 0;
+        v->pa = v->pb = v->pc = v->pd = 0;
+        v->f1.ic1 = v->f1.ic2 = v->f2.ic1 = v->f2.ic2 = v->f3.ic1 = v->f3.ic2 = v->f4.ic1 = v->f4.ic2 = 0;
+    }
     v->rnd = bio_hash(seed, 0x1A2Du);
-    v->f1.ic1 = v->f1.ic2 = v->f2.ic1 = v->f2.ic2 = v->f3.ic1 = v->f3.ic2 = v->f4.ic1 = v->f4.ic2 = 0;
     switch (model) {
     case L_HUM: bio_op_set(&v->o1, bio_lf_hz(6000)); break;
-    case L_PISTON: bio_op_set(&v->o1, bio_lf_hz(3000)); v->lu[0] = ~0u; break;
+    case L_PISTON: bio_op_set(&v->o1, bio_lf_hz(3000)); v->lu[0] = ~0u; v->lu[1] = 0; break;
     case L_BELL: {                              /* the index: BODY to 5 rad, falling over DECAY's time */
         v->lx[0] = (int32_t)p[P_BODY] * 327;
         v->lx[1] = bio_decay(BIO_SB, bio_tau(bio_map_ms(p[P_DECAY], 40, 400, 4000) / 2u + 1u));
@@ -36,6 +39,10 @@ static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_
     case L_CHOIR: bio_op_set(&v->o1, bio_lf_hz(5000)); break;
     case L_BLOOD: bio_op_set(&v->o1, bio_map_lf(p[P_BODY], 80, 300, 1500)); break;
     case L_SLIME: v->lx[1] = 32767; break;      /* a squelch at the start */
+    case L_DUB:                                 /* the filter opens with the note and DECAY closes it */
+        v->lx[0] = 32767;
+        v->lx[1] = bio_decay(BIO_SB, bio_tau(bio_map_ms(p[P_DECAY], 20, 150, 1500) / 3u + 1u));
+        break;
     default: break;
     }
 }
@@ -63,7 +70,7 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         for (k = 0; k < n; k++) {
             int32_t x, bp;
             v->pa += inc;
-            x = (v->pa < w ? 16384 : 0) - (int32_t)(w >> 18) + bio_mul15(bio_sin(v->pa * 2u), 6000);
+            x = (bio_pulse(v->pa, inc, w) >> 1) + bio_mul15(bio_sin(v->pa * 2u), 6000);
             x = bio_op_lp(&v->o1, x);
             (void)bio_svf(&v->f1, x, &bp);
             y = (x >> 1) + bp;
@@ -185,7 +192,7 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         for (k = 0; k < n; k++) {
             int32_t o;
             v->pa += inc; v->pb += i2; v->pc += i3;
-            o = ((int32_t)(v->pa >> 16) + (int32_t)(v->pb >> 16) + (int32_t)(v->pc >> 16) - 3 * 32768) / 4;
+            o = (bio_saw(v->pa, inc) + bio_saw(v->pb, i2) + bio_saw(v->pc, i3)) / 4;
             o = bio_op_lp(&v->o1, o) + bio_mul15(bio_noise(&v->rnd), tex * 90);
             y = bio_svf_bp(&v->f1, o) + (bio_svf_bp(&v->f2, o) >> 1) + (bio_svf_bp(&v->f3, o) >> 2);
             e0 += step;
@@ -253,12 +260,32 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         for (k = 0; k < n; k++) {
             int32_t o;
             v->pa += inc; v->pb += inc / 2u;
-            o = ((int32_t)(v->pa >> 16) - 32768) / 2 + bio_mul15(v->pb < (1u << 31) ? 12000 : -12000, body * 327);
+            o = bio_saw(v->pa, inc) / 2 + bio_mul15(bio_pulse(v->pb, inc / 2u, 1u << 31) * 3 / 4, body * 327);
             {
                 int32_t bp;
                 y = bio_svf(&v->f1, o, &bp);
             }
             y = bio_clamp(y, -50000, 50000);
+            e0 += step;
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_DUB: {   /* four saws a chord (TEXTURE: minor, minor 7th, minor 9th, fifths), a little apart, through a
+                       resonant low-pass: BODY its cutoff, MOTION how far the note opens it */
+        static const int8_t CH[4][4] = {{0, 3, 7, 12}, {0, 3, 7, 10}, {0, 3, 10, 14}, {0, 7, 12, 19}};
+        uint32_t c = (uint32_t)tex * 4u / 101u, i1 = bio_inc(v->lf + CH[c][1] * BIO_SEMI + 90);
+        uint32_t i2 = bio_inc(v->lf + CH[c][2] * BIO_SEMI - 70), i3 = bio_inc(v->lf + CH[c][3] * BIO_SEMI + 40);
+        int32_t lfc = bio_map_lf((uint32_t)body, 200, 900, 4000) + bio_mul15(v->lx[0], mot * 1966);   /* (to 3 octaves) */
+        v->lx[0] = bio_mul30(v->lx[0], v->lx[1]);
+        bio_svf_set(&v->f1, lfc, bio_q_k(25));
+        for (k = 0; k < n; k++) {
+            int32_t o, bp;
+            v->pa += inc; v->pb += i1; v->pc += i2; v->pd += i3;
+            o = (bio_saw(v->pa, inc) + bio_saw(v->pb, i1) + bio_saw(v->pc, i2) + bio_saw(v->pd, i3)) / 4;
+            y = bio_svf(&v->f1, o, &bp);
             e0 += step;
             y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
             out[k] += y;

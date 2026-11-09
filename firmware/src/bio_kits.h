@@ -13,7 +13,7 @@
 typedef struct { const char *name; uint8_t p[BIO_NP]; } bio_preset_t;
 
 #define PK(b, t, m, d, src, res, mode, bur, clk, drv, cr, a, g, w, r, tn, lvl) \
-    {b, t, m, d, src, res, mode, bur, clk, drv, cr, 100, a, g, w, r, tn, lvl, 50, 0, 0, 0, 0, 0}
+    {b, t, m, d, src, res, mode, bur, clk, drv, cr, 50, a, g, w, r, tn, lvl, 50, 0, 0, 0, 0, 0}
 /* (BODY 38: 1.2 kHz, 55: 2.9 kHz, 70: 4.8 kHz, 85: 8.2 kHz; DECAY 25: 22 ms to -40 dB, 40: 60 ms, 50: 120 ms,
     60: 230 ms, 80: 0.8 s; RESO 20: Q 1.3, 50: Q 5.5, 80: Q 13, 95: Q 19) */
 static const bio_preset_t BIO_PERC_KIT[] = {
@@ -41,8 +41,14 @@ static const bio_preset_t BIO_PERC_KIT[] = {
     {"GREASE",     PK(70, 70, 50, 35,  81, 20,  60,  0,  0, 20,  0,   0,   0, 40, 20, 24, 100)},
     {"CREAK",      PK(40, 40, 50, 75,  93, 70,  50,  0,  0, 20,  0,  10, 100, 30, 40, 24, 100)},   /* wood, held: it creaks, then is still */
     {"HINGE",      PK(30, 70, 50, 45,  93, 80,  50,  0,  0, 10,  0,   0,   0, 20, 30, 24, 100)},
+    /* the deep kicks (D22): MODEL KICK, on a drum organ only (bio_kick.h) */
+#define KK(b, t, m, d, tone, drv, kn, hold, a, lvl) {b, t, m, d, tone, drv, kn, hold, 0, 0, 0, 100, a, 0, 0, 0, 24, lvl, 50, 0, 0, 0, 0, 0}
+    {"DEEP KICK",  KK(40, 45, 30, 55,  30, 35, 10, 20,  5, 100)},   /* 44 Hz, two octaves down in 13 ms, half a second */
+    {"SUB KICK",   KK(30, 30, 45, 75,  20, 20,  0, 40,  8, 100)},   /* lower, longer, softer: the floor itself */
+    {"DUB KICK",   KK(50, 55, 25, 45,  40, 50, 25, 10,  4, 100)},   /* tighter, warmer, a knock */
 };
 #define BIO_NPERC_KIT (sizeof BIO_PERC_KIT / sizeof BIO_PERC_KIT[0])
+#define BIO_NKICK_KIT 3u                        /* (the last three: a drum organ's only) */
 
 /* into an organ: a drum organ is switched to MODEL NOISE; the NOISE organ keeps its D8 (BREATH) */
 static void bio_preset_set(uint8_t *dst, const bio_preset_t *k, uint32_t org)

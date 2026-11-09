@@ -1,7 +1,7 @@
 # Demo: ORBIT (a factory ritual): cosmic, 76 BPM. Glass beating slowly (DRONE as GLASS), a choir moving through vowels
 # (VOICE as CHOIR), bells far apart (SPASM as BELL), ice crackling and creaking, a wind drifting; the reverb VAST
 100 btndown 3
-200 enc 6 7
+200 enc 6 9
 300 btnup 3
 400 btn 12
 25663 btn 12

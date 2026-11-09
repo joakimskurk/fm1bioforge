@@ -12,11 +12,13 @@
 #define BIO_PRE_N 2700u                         /* its pre-delay: 120 ms */
 #define BIO_AP1 113u
 #define BIO_AP2 337u
+#define BIO_RUM_N 512u                          /* the rumble's two lines, at an eighth of the rate (93 ms) */
 
 /* the mix and the effects' settings, 0..100 (written by the main loop) */
 typedef struct {
     uint8_t lvl[BIO_NCH], mute[BIO_NCH], sa[BIO_NCH], sb[BIO_NCH], sc[BIO_NCH];
     uint8_t master, rib, pump;                  /* pump: HEART ducks the other channels (a side-chain), 0 .. -18 dB */
+    uint8_t rumble;                             /* RUMBLE: HEART into a dark low tail of its own, ducked by it (D22) */
 } bio_mix_t;
 typedef struct {
     uint8_t d_time, d_fb, d_tone, d_ping, d_mix, d_rev;   /* BLOOD DELAY: time (a division), feedback, tone, ping-pong, return, to the reverb */
@@ -67,6 +69,12 @@ struct bio_s {
     uint32_t rlfo;
     bio_op_t rdamp[4];
     bio_op_t rhp_l, rhp_r;
+    bio_op_t rin, rol, ror;                     /* the half rate's guards: in (no aliasing), out (no images) */
+    /* the rumble: HEART at an eighth of the rate (5.5 kHz) through two low lines that feed each other, dark */
+    int16_t rum[2][BIO_RUM_N];
+    uint32_t rum_w;
+    int32_t rum_acc, rum_pl, rum_pr, rum_l, rum_r;
+    bio_op_t rum_in, rum_d0, rum_d1, rum_ol, rum_or;
     uint32_t freeze;
     /* the crush */
     int32_t c_hold, c_cnt;
@@ -92,8 +100,8 @@ struct bio_s {
 };
 
 static const bio_mix_t BIO_MIX_INIT = {{80, 70, 58, 62, 56, 46}, {0, 0, 0, 0, 0, 0}, {12, 8, 0, 18, 10, 0},
-                                       {18, 6, 30, 28, 34, 30}, {0, 10, 0, 20, 0, 12}, 75, 50, 0};
-static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 40,   0};
+                                       {18, 6, 30, 28, 34, 30}, {0, 0, 0, 0, 0, 0}, 75, 50, 0, 0};   /* (no crush: D22) */
+static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 0,   0};
 
 static void bio_fx_coefs(bio_t *e);
 
@@ -157,7 +165,7 @@ static void bio_release(bio_t *e, uint32_t org, uint32_t note)
 static void bio_panic(bio_t *e)                 /* every organ to silence in a few ms; the patterns are not touched */
 {
     uint32_t k;
-    for (k = 0; k < 4u; k++) if (e->drum[k].awake) { e->drum[k].fade = 32766; e->drum[k].np.fade = 32766; }
+    for (k = 0; k < 4u; k++) if (e->drum[k].awake) { e->drum[k].fade = 32766; e->drum[k].np.fade = 32766; e->drum[k].kk.fade = 32766; }
     if (e->noise.awake) e->noise.fade = 32766;
     for (k = 0; k < 4u; k++) {
         bio_tone_t *v = &e->tone[k];
@@ -208,6 +216,14 @@ static void bio_fx_coefs(bio_t *e)
     if (e->rpre >= BIO_PRE_N) e->rpre = BIO_PRE_N - 1u;
     bio_op_set(&e->rhp_l, bio_lf_hz(150));
     e->rhp_r = e->rhp_l;
+    bio_op_set(&e->rin, bio_lf_hz(7000));
+    bio_op_set(&e->rum_in, bio_lf_hz(160 * 8));   /* (filters run at an eighth: their coefficient for 8x) */
+    bio_op_set(&e->rum_d0, bio_lf_hz(220 * 8));
+    e->rum_d1.g = e->rum_d0.g;
+    bio_op_set(&e->rum_ol, bio_lf_hz(260));
+    e->rum_or.g = e->rum_ol.g;
+    bio_op_set(&e->rol, bio_lf_hz(9000));
+    e->ror.g = e->rol.g;
     bio_op_set(&e->dtl, bio_map_lf(f->d_tone, 500, 3400, 12000));
     e->dtr.g = e->dtl.g;
 }
@@ -370,7 +386,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         }
         /* BLOOD DELAY: stereo, darker each time round, ping-pong, a send on into the reverb */
         {
-            int32_t fb = (int32_t)(e->fx.d_fb > 85u ? 85u : e->fx.d_fb) * 327, ret = bio_fader(e->fx.d_mix);
+            int32_t fb = (int32_t)(e->fx.d_fb > 85u ? 85u : e->fx.d_fb) * 327, ret = bio_mul15(bio_fader(e->fx.d_mix), 32767 - e->duck);
             int32_t torev = (int32_t)(e->fx.d_rev > 35u ? 35u : e->fx.d_rev) * 327;
             e->dtime_to = bio_dly_time(e);
             if (!e->dtime) e->dtime = e->dtime_to;
@@ -396,15 +412,16 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         }
         /* BILE REVERB: FDN4 at half rate, two diffusers, damping, a slow modulation; FREEZE */
         {
-            int32_t ret = bio_fader(e->fx.r_mix);
+            int32_t ret = bio_mul15(bio_fader(e->fx.r_mix), 32767 - e->duck);   /* (PUMP: the returns breathe too) */
             uint32_t fz = e->freeze;
             int32_t m0 = (int32_t)(bio_sin(e->rlfo) >> 11), m2 = (int32_t)(bio_sin(e->rlfo * 3u + 0x5000000u) >> 11);
             e->rlfo += 64000u * (BIO_SB / 2u);  /* ~0.33 Hz: its movement once a sub-block */
             for (k = 0; k < BIO_SB; k++) {
+                int32_t in = bio_op_lp(&e->rin, sb[k]);   /* (what would fold back at half rate, down first) */
                 if (!(k & 1u)) {
-                    e->rhalf = sb[k];
+                    e->rhalf = in;
                 } else {
-                    int32_t x = fz ? 0 : (e->rhalf + sb[k]) >> 2, y[4], a, b, c, d;
+                    int32_t x = fz ? 0 : (e->rhalf + in) >> 2, y[4], a, b, c, d;
                     uint32_t j;
                     e->pre[e->pw] = (int16_t)bio_sat(x);
                     {
@@ -456,10 +473,37 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
                 {                               /* back to the full rate: halfway, then there */
                     int32_t l = k & 1u ? e->rout_l : (e->rprev_l + e->rout_l) >> 1;
                     int32_t r = k & 1u ? e->rout_r : (e->rprev_r + e->rout_r) >> 1;
-                    l = bio_op_hp(&e->rhp_l, l);
-                    r = bio_op_hp(&e->rhp_r, r);
+                    l = bio_op_hp(&e->rhp_l, bio_op_lp(&e->rol, l));
+                    r = bio_op_hp(&e->rhp_r, bio_op_lp(&e->ror, r));
                     dryl[k] += bio_mul15(l, ret);
                     dryr[k] += bio_mul15(r, ret);
+                }
+            }
+        }
+        /* RUMBLE: HEART, an eighth of the rate, two lines of 37 and 53 ms feeding each other (orthogonal) through a
+           low-pass each, about 2 s long; back up to the full rate smoothly, ducked by PUMP */
+        if (e->mix.rumble) {
+            int32_t rl = bio_mul15(bio_fader(e->mix.rumble), 32767 - e->duck) * 2;
+            for (k = 0; k < BIO_SB; k++) {
+                e->rum_acc += e->ob[O_HEART][k];
+                if ((k & 7u) == 7u) {
+                    int32_t x = bio_op_lp(&e->rum_in, e->rum_acc >> 4), a, b;   /* (the mean of 8, halved) */
+                    uint32_t w = e->rum_w;
+                    e->rum_acc = 0;
+                    a = bio_op_lp(&e->rum_d0, e->rum[0][(w - 207u) & (BIO_RUM_N - 1u)]);
+                    b = bio_op_lp(&e->rum_d1, e->rum[1][(w - 293u) & (BIO_RUM_N - 1u)]);
+                    e->rum[0][w] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)(a + b) * 19820, 15) + x);   /* (0.857 x 0.707) */
+                    e->rum[1][w] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)(a - b) * 19820, 15) + x);
+                    e->rum_w = (w + 1u) & (BIO_RUM_N - 1u);
+                    e->rum_pl = e->rum_l; e->rum_pr = e->rum_r;
+                    e->rum_l = a; e->rum_r = b;
+                }
+                {
+                    int32_t f = (int32_t)(k & 7u) + 1, l, r;
+                    l = e->rum_pl + (((e->rum_l - e->rum_pl) * f) >> 3);
+                    r = e->rum_pr + (((e->rum_r - e->rum_pr) * f) >> 3);
+                    dryl[k] += bio_mul15(bio_op_lp(&e->rum_ol, l), rl);
+                    dryr[k] += bio_mul15(bio_op_lp(&e->rum_or, r), rl);
                 }
             }
         }

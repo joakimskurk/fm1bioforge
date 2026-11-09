@@ -85,11 +85,13 @@ static void touched(void) { ui.dirty[sq.cur] = 1; ui.dirty_draw |= D_STATUS; ui.
 /* ---- the knobs: what each of the four turns on this page */
 enum { KT_NONE, KT_P, KT_LVL, KT_SA, KT_SB, KT_SC, KT_MASTER, KT_RIB, KT_TDEPTH, KT_TLEN, KT_TCLK, KT_TRATTLE,
        KT_TROUTE, KT_TWAIL, KT_TSCALE, KT_FX, KT_BPM, KT_SWING, KT_QUANT, KT_QSTR, KT_RECMODE, KT_STEPLEN, KT_KEYLED,
-       KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE, KT_PUMP, KT_KIT };
+       KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE, KT_PUMP, KT_KIT,
+       KT_RUMBLE };
 typedef struct { uint8_t type, idx; const char *name; } knob_t;
 
 static const char *const DRUM_DEEP[8] = {"PRESS", "FRACT", "FRIC", "VENT", "RESO", "MATTER", "DRIVE", "MODEL"};
 static const char *const PERC_DEEP[8] = {"SOURCE", "RESO", "MODE", "BURSTS", "CLICK", "DRIVE", "CRUSH", "MODEL"};   /* MODEL NOISE */
+static const char *const KICK_DEEP[8] = {"TONE", "DRIVE", "KNOCK", "HOLD", "", "", "", "MODEL"};   /* MODEL KICK (D22) */
 static const char *const DEEP[5][8] = {
     {"CUTOFF", "RESO", "ENV", "GLIDE", "MORPH", "PM", "SUB", "DRIVE"},          /* BASS */
     {"CUTOFF", "RESO", "BEAT", "COUPLE", "BREATH", "MORPH", "PM", "BANDS"},     /* DRONE */
@@ -103,7 +105,7 @@ static const char *const CORE[4] = {"SCATTER", "TONE", "DRIFT", ""};   /* the no
 static uint32_t org_perc(uint32_t o) { return bio_is_perc(o, SC()->p[o]); }
 static const char *deep_name(uint32_t o, uint32_t i)
 {
-    return o < 4u ? (org_perc(o) ? PERC_DEEP[i] : DRUM_DEEP[i]) : DEEP[o - 4u][i];
+    return o < 4u ? (org_perc(o) ? PERC_DEEP[i] : bio_is_kick(o, SC()->p[o]) ? KICK_DEEP[i] : DRUM_DEEP[i]) : DEEP[o - 4u][i];
 }
 
 static knob_t knob_for(uint32_t k)
@@ -122,7 +124,11 @@ static knob_t knob_for(uint32_t k)
         } else {
             static const char *const A[4] = {"LEVEL", "DELAY", "REVERB", "CRUSH"};
             n.idx = BIO_ORG_CH[o];
-            if (sh) { if (k == 0u) { n.type = KT_RIB; n.name = "RIB"; } if (k == 1u) { n.type = KT_PUMP; n.name = "PUMP"; } }
+            if (sh) {
+                if (k == 0u) { n.type = KT_RIB; n.name = "RIB"; }
+                if (k == 1u) { n.type = KT_PUMP; n.name = "PUMP"; }
+                if (k == 2u) { n.type = KT_RUMBLE; n.name = "RUMBLE"; }
+            }
             else { n.type = (uint8_t)(k == 0u ? KT_LVL : k == 1u ? KT_SA : k == 2u ? KT_SB : KT_SC); n.name = A[k]; }
         }
         break;
@@ -213,7 +219,11 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
     case KT_MASTER: return sc->mix.master;
     case KT_RIB: return sc->mix.rib;
     case KT_PUMP: return sc->mix.pump;
-    case KT_KIT: *lo = o == O_NOISE ? 1 : 0; *hi = (int32_t)BIO_NPERC_KIT; return ui.kit[o];
+    case KT_RUMBLE: return sc->mix.rumble;
+    case KT_KIT:                                /* (the kicks a drum organ's only) */
+        *lo = o == O_NOISE ? 1 : 0;
+        *hi = (int32_t)(o == O_NOISE ? BIO_NPERC_KIT - BIO_NKICK_KIT : BIO_NPERC_KIT);
+        return ui.kit[o];
     case KT_TDEPTH: return sc->tur.depth;
     case KT_TLEN: *hi = 7; return sc->tur.len_i;
     case KT_TCLK: *hi = 3; return sc->tur.clock;
@@ -288,6 +298,7 @@ static void knob_turn(knob_t n, int32_t d)
     case KT_MASTER: sc->mix.master = (uint8_t)nv; break;
     case KT_RIB: sc->mix.rib = (uint8_t)nv; break;
     case KT_PUMP: sc->mix.pump = (uint8_t)nv; break;
+    case KT_RUMBLE: sc->mix.rumble = (uint8_t)nv; break;
     case KT_KIT: {                              /* a sound into the organ (its PAN kept); 0: the drum's own body again */
         uint8_t pan = sc->p[o][P_PAN];
         uint32_t i;
@@ -373,7 +384,7 @@ static void knob_text(knob_t n, char *s)
             if (n.idx == P_D && !v) { str_cat(p, "HIT"); return; }
             if ((n.idx == P_E1 || n.idx == P_E2 || n.idx == P_E3) && !v) { str_cat(p, "OFF"); return; }
         }
-        if (n.idx == P_D8 && cur_org() < 4u) { str_cat(p, v >= 50 ? "NOISE" : "TISSUE"); return; }
+        if (n.idx == P_D8 && cur_org() < 4u) { str_cat(p, v >= 66 ? "KICK" : v >= 33 ? "NOISE" : "TISSUE"); return; }
         if (n.idx == P_E1 && cur_org() >= 4u && cur_org() < O_NOISE) {   /* a synth's MODEL: its own, or a landscape */
             uint32_t m = bio_land_of((uint32_t)v);
             str_cat(p, m ? BIO_LAND_NAME[m] : BIO_OWN_NAME[cur_org() - 4u]);
@@ -631,7 +642,7 @@ static void kits_find(void)
     uint32_t o, i, j;
     for (o = 0; o < BIO_NORG; o++) {
         const uint8_t *p = SC()->p[o];
-        if (o != O_NOISE && (o >= 4u || !bio_is_perc(o, p))) { ui.kit[o] = 0; continue; }
+        if (o != O_NOISE && (o >= 4u || (!bio_is_perc(o, p) && !bio_is_kick(o, p)))) { ui.kit[o] = 0; continue; }
         if (!ui.kit[o]) ui.kit[o] = 1;
         for (i = 0; i < BIO_NPERC_KIT; i++) {
             for (j = 0; j < BIO_NP; j++)
@@ -824,9 +835,10 @@ static void draw_syn(void)
     cv_t5(8, 5, ORG_NAME[o], COL_GREEN, 2);
     if (o < 4u || o == O_NOISE) {               /* what it is: a drum (and its SOUND, if noise), or NOISE's SOUND */
         int32_t x = 8 + t5w(ORG_NAME[o], 2) + 8;
+        uint32_t kk = o < 4u && bio_is_kick(o, SC()->p[o]);
         if (o < 4u) { cv_t5(x, 11, "DRUM", COL_BONE_D, 1); x += t5w("DRUM", 1) + 6; }
-        if (org_perc(o) && kit_same(o, ui.kit[o])) cv_t5(x, 11, BIO_PERC_KIT[ui.kit[o] - 1u].name, COL_FLESH, 1);
-        else if (o < 4u && org_perc(o)) cv_t5(x, 11, "NOISE", COL_FLESH, 1);
+        if ((org_perc(o) || kk) && kit_same(o, ui.kit[o])) cv_t5(x, 11, BIO_PERC_KIT[ui.kit[o] - 1u].name, COL_FLESH, 1);
+        else if (o < 4u && (org_perc(o) || kk)) cv_t5(x, 11, kk ? "KICK" : "NOISE", COL_FLESH, 1);
     }
     if (ui.sub) cv_t5(200, 11, ui.sub == 1u ? "DEEP" : "ENV", COL_FLESH, 1);
     {                                           /* the scope: the organ's own output, now */
@@ -888,6 +900,25 @@ static void draw_syn(void)
             cv_rect(12 + bio_clamp(c, 0, 215), 100, 1, 26, COL_GREEN);
             cv_rect(184, 128, 2 + (v->env >> 24) * 44 / 64, 3, v->gate ? COL_GREEN : COL_FLESH);
         }
+    } else if (o < 4u && bio_is_kick(o, SC()->p[o])) {   /* the kick: its pitch, sweep, tail, tone; its level now */
+        const uint8_t *pp = SC()->p[o];
+        const bio_kick_t *v = &eng.drum[o].kk;
+        static const char *const L[4] = {"PITCH", "SWEEP", "DECAY", "TONE"};
+        int32_t a = bio_lf_hz(30), m = bio_lf_hz(48), b = bio_lf_hz(80);
+        int32_t lf = pp[P_BODY] <= 50u ? a + (m - a) * (int32_t)pp[P_BODY] / 50 : m + (b - m) * ((int32_t)pp[P_BODY] - 50) / 50;
+        int32_t lt = pp[P_D1] <= 50u ? bio_lf_hz(60) + (bio_lf_hz(220) - bio_lf_hz(60)) * (int32_t)pp[P_D1] / 50
+                                     : bio_lf_hz(220) + (bio_lf_hz(2000) - bio_lf_hz(220)) * ((int32_t)pp[P_D1] - 50) / 50;
+        for (i = 0; i < 4u; i++) {
+            cv_t5(10 + (int32_t)i * 57, 82, L[i], COL_BONE_D, 1);
+            p = s;
+            if (i == 0u) { p = u2s(p, bio_exp2(lf + ((int32_t)pp[P_TUNE] - 24) * BIO_SEMI - (14 << 16)) >> 2); str_cat(p, "HZ"); }
+            if (i == 1u) { p = u2s(p, (5u + (uint32_t)pp[P_TEXTURE] * 35u / 100u) / 10u); *p++ = '.';
+                           p = u2s(p, (5u + (uint32_t)pp[P_TEXTURE] * 35u / 100u) % 10u); str_cat(p, " OCT"); }
+            if (i == 2u) { p = u2s(p, bio_perc_ms(pp[P_DECAY], 80, 450, 3000)); str_cat(p, "MS"); }
+            if (i == 3u) { p = u2s(p, bio_exp2(lt - (14 << 16)) >> 2); str_cat(p, "HZ"); }
+            cv_t5(10 + (int32_t)i * 57, 92, s, COL_FLESH, 1);
+        }
+        if (v->awake) cv_rect(12, 112, 2 + (v->env >> 24) * 216 / 64, 4, COL_GREEN);
     } else if (o < 4u) {                        /* the body: its modes, ringing where they are; the excitation */
         bio_drum_t *d = &eng.drum[o];
         static const char *const C[4] = {"PRESS", "FRACT", "FRIC", "VENT"};

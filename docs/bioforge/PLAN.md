@@ -36,7 +36,7 @@ screen. One AC791N core, no FPU: integers only; the audio interrupt gets 256 fra
 | **SELECT** | the focus: DRUM (the kit), HEART, BONE, TEETH, CLAW, BASS, DRONE, SPASM, VOICE, NOISE |
 | **SEL** (SELECT pushed) | SHIFT, held; a tap keeps the knobs' second row |
 | **ALGORITHM** | the Turing's LOOP, on every page: the one big knob from chaos to lock |
-| **PRESETS** | the scene, RITUAL 00..03: THE AWAKENING, FROZEN, STREAM, WALL (playing: from the next bar); SHIFT: a factory ritual into it (D19, D20) |
+| **PRESETS** | the scene, RITUAL 00..03: THE AWAKENING, ABYSS, ASH, FROZEN (playing: from the next bar); SHIFT: a factory ritual into it (D19, D20, D22) |
 | **KNOB 1..4** | the page's four parameters (SHIFT: the second row) |
 | **HOME** | MIX: the six channels (again: the focused channel's sends) |
 | **SEQ** | SEQ: the grid. **Held:** the white keys are the 16 steps of the focused track |
@@ -118,6 +118,10 @@ step. The same scene, the same start, the same knobs: the same sound, sample for
 Each has the same four macros, mapped to what they mean for it (BODY: mass, sub, drive; TEXTURE: PM, growl, breath,
 roughness; MOTION: the filter's movement, the Turing's depth on it; DECAY: its envelope). On the perc voice BODY is the
 cutoff (120 Hz .. 2.4 kHz at 50 .. 14 kHz), TEXTURE the grain (CRACKLE's density), MOTION the sweep, DECAY the strike's.
+
+**The deep kick, RUMBLE, DUB (D22).** A drum organ's MODEL KICK (D8 from 66): a sine swept to its pitch, held, a long
+decay, drive and two low-pass poles (`bio_kick.h`). RUMBLE: HEART's own dark low tail, ducked by PUMP, which ducks the
+returns too. DUB: a synth's minor chord through a closing low-pass.
 
 **Crackle (D21).** The noise core's sources are eight: WHITE PINK DIGI METAL and the crackles DUST, FIRE (clustered
 pops over a smoulder), FRY (a dense sizzle), CREAK (gliding stick-slip); TEXTURE their density.

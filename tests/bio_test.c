@@ -290,6 +290,12 @@ static void test_record(void)
     check(seq_undo(&sq) && scn[0].tr[O_TEETH].n + scn[0].tr[O_CLAW].n == n0, "and undone in one go");
 }
 
+static uint32_t rit_index(const char *name)     /* a factory ritual by its name */
+{
+    uint32_t i;
+    for (i = 0; i < BIO_NRITUAL; i++) if (!strcmp(BIO_RITUAL_NAME[i], name)) return i;
+    return 0;
+}
 static double rms_of(uint32_t blocks)       /* (a square root without libm) */
 {
     double m = (double)sum2 / ((double)blocks * 512.0), r = m > 1 ? m : 1;
@@ -303,7 +309,7 @@ static void test_perc(void)
     uint32_t i, ok_heard = 1, ok_clip = 1, ok_sleep = 1, ok_same = 1, ok_tissue;
     static int16_t a[200 * 512], b[200 * 512];
     /* each sound of the kit, on NOISE alone: heard, not clipped, asleep 3 s after (a held one after its release) */
-    for (i = 0; i < BIO_NPERC_KIT; i++) {
+    for (i = 0; i < BIO_NPERC_KIT - BIO_NKICK_KIT; i++) {
         uint32_t held = BIO_PERC_KIT[i].p[P_D] != 0u;
         setup(&eng, &sq, scn, und, red);
         seq_sound(&sq);
@@ -365,7 +371,7 @@ static void test_perc(void)
         uint32_t k, same = 1, slipped = 0, nz = 0, loop;
         for (loop = 100u; loop >= 60u; loop -= 40u) {
             setup(&eng, &sq, scn, und, red);
-            BIO_RITUAL[1](&scn[0]);             /* FROZEN */
+            BIO_RITUAL[rit_index("FROZEN")](&scn[0]);
             scn[0].tur.loop = (uint8_t)loop;
             sq.tur_reset = 1;
             seq_play(&sq);
@@ -406,11 +412,60 @@ static void test_perc(void)
     {
         seq_ev_t ev = {0, 96, 60, 100, 1u << EV_RAT_SH, 0};
         setup(&eng, &sq, scn, und, red);
-        BIO_RITUAL[1](&scn[0]);
+        BIO_RITUAL[rit_index("FROZEN")](&scn[0]);
         seq_play(&sq);
         seq_fire(&sq, O_NOISE, &ev, 3);
         check(sq.rat_left[O_NOISE] == 1u && sq.rat_seed[O_NOISE] == sq.nseed[O_NOISE][3],
               "a noise step's ratchet repeats its own noise (a stutter)");
+    }
+    /* the deep kick (D22): each of the kit's kicks on HEART heard, low (almost nothing over 1 kHz), unclipped, asleep */
+    {
+        uint32_t j, ok = 1;
+        for (j = BIO_NPERC_KIT - BIO_NKICK_KIT; j < BIO_NPERC_KIT; j++) {
+            static int16_t kb[200 * 512];
+            int64_t lo = 0, hi = 0;
+            uint32_t q;
+            setup(&eng, &sq, scn, und, red);
+            seq_sound(&sq);
+            eng.tick = 0;
+            eng.fx.d_mix = eng.fx.r_mix = eng.fx.c_mix = 0;
+            eng.mix.lvl[CH_DRUM] = 100;
+            bio_preset_set(eng.p[O_HEART], &BIO_PERC_KIT[j], O_HEART);
+            peak = 0; clipped = 0;
+            bio_trigger(&eng, O_HEART, 0, 120, 0, 0, 5u);
+            run(&eng, 200, kb);
+            for (q = 2; q < 200u * 512u; q += 2) {   /* (left: the energy, and that of its difference, a crude high-pass) */
+                int32_t d = kb[q] - kb[q - 2];
+                lo += (int64_t)kb[q] * kb[q];
+                hi += (int64_t)d * d;
+            }
+            if (peak < 8000 || clipped || hi * 100 > lo || eng.drum[O_HEART].kick != 1u) {
+                ok = 0;
+                printf("     %s: peak %d, top %.4f\n", BIO_PERC_KIT[j].name, (int)peak, lo ? (double)hi / (double)lo : 0.0);
+            }
+            run(&eng, 600, 0);
+            if (eng.drum[O_HEART].awake) ok = 0;
+        }
+        check(ok, "MODEL KICK: each deep kick on HEART loud, almost no top (its edges under 1 %), unclipped, then asleep");
+    }
+    /* RUMBLE: HEART's own low tail, and PUMP ducks it */
+    {
+        int32_t with, without;
+        uint32_t r;
+        for (r = 0; r < 2u; r++) {
+            setup(&eng, &sq, scn, und, red);
+            seq_sound(&sq);
+            eng.tick = 0;
+            eng.fx.d_mix = eng.fx.r_mix = eng.fx.c_mix = 0;
+            bio_preset_set(eng.p[O_HEART], bio_preset_find("DEEP KICK"), O_HEART);
+            eng.mix.rumble = r ? 80 : 0;
+            bio_trigger(&eng, O_HEART, 0, 120, 0, 0, 5u);
+            run(&eng, 140, 0);                  /* (0.8 s: the kick nearly gone, its rumble not) */
+            peak = 0;
+            run(&eng, 40, 0);
+            if (r) with = peak; else without = peak;
+        }
+        check(with > 300 && with > without * 4, "RUMBLE: HEART leaves a low tail after itself");
     }
     /* the landscapes (D21): every model on every synth heard, not clipped, asleep after its release */
     {
