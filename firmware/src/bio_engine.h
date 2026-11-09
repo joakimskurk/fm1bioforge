@@ -146,7 +146,13 @@ static void bio_panic(bio_t *e)                 /* every organ to silence in a f
         if (v->env.st) { v->env.st = 3; v->env.kr = bio_decay(BIO_SB, BIO_MS(1)); }
     }
 }
-static int bio_busy(const bio_t *e)             /* anything sounding (a save waits for silence) */
+static int bio_quiet(const bio_t *e)            /* under -50 dBFS on every channel: a flash erase's gap is not heard */
+{
+    uint32_t k;
+    for (k = 0; k < BIO_NCH; k++) if (e->meter[k] > 100) return 0;
+    return 1;
+}
+static int bio_busy(const bio_t *e)             /* anything sounding at all */
 {
     uint32_t k;
     for (k = 0; k < 4u; k++) if (e->drum[k].awake) return 1;

@@ -416,7 +416,7 @@ static int32_t bio_adsr_step(bio_adsr_t *e)
         if (e->v >= (1 << 30)) { e->v = 1 << 30; e->st = 2; }
         break;
     case 2: e->v = e->sus + bio_mul30(e->v - e->sus, e->kd); break;
-    case 3: e->v = bio_mul30z(e->v, e->kr); if (e->v < (1 << 12)) { e->v = 0; e->st = 0; } break;
+    case 3: e->v = bio_mul30z(e->v, e->kr); if (e->v < (1 << 18)) { e->v = 0; e->st = 0; } break;   /* (-72 dB: asleep) */
     default: e->v = 0;
     }
     return e->v;

@@ -1061,8 +1061,7 @@ static void encoders_in(void)
         ui.dirty_draw |= D_STATUS | (ui.page == PG_MUT ? D_MAIN : 0u);
     }
     if ((e = fm1_enc_take(ENC_PRESETS)) != 0) { /* the scene */
-        int32_t s = (int32_t)sq.next + (e > 0 ? 1 : -1);
-        s = s < 0 ? (int32_t)SEQ_NSCENE - 1 : s >= (int32_t)SEQ_NSCENE ? 0 : s;
+        int32_t s = ((int32_t)sq.next + e % (int32_t)SEQ_NSCENE + (int32_t)SEQ_NSCENE) % (int32_t)SEQ_NSCENE;
         sq.next = (uint32_t)s;
         if (!sq.playing) { sq.cur = sq.next; sq.tur_reset = 1; ui.cursor = 0; ui.steppage = 0; }
         set.scene = (uint8_t)sq.next;
@@ -1144,14 +1143,14 @@ static void app_main(void)
         if (sq.writing != ui.writing_seen) { ui.writing_seen = sq.writing; ui.t_writing = fm1_ms; ui.dirty_draw |= D_STATUS; }
         /* saving: when nothing plays and nothing sounds */
         for (k = 0; k < SEQ_NSCENE; k++)
-            if (ui.save_req[k] && !sq.playing && !bio_busy(&eng) && fm1_ms - t_save_try > 300u) {
+            if (ui.save_req[k] && !sq.playing && bio_quiet(&eng) && fm1_ms - t_save_try > 300u) {
                 t_save_try = fm1_ms;
                 ui.save_req[k] = 0;
                 if (!scene_save(k)) { ui.dirty[k] = 0; say("SAVED"); }
                 else say("SAVE FAILED");
                 blob_save(0, &set, sizeof set);
             }
-        if (!sq.playing && ui.dirty[sq.cur] && fm1_ms - ui.t_input > 6000u && !bio_busy(&eng) && fm1_ms - t_save_try > 6000u) {
+        if (!sq.playing && ui.dirty[sq.cur] && fm1_ms - ui.t_input > 6000u && bio_quiet(&eng) && fm1_ms - t_save_try > 6000u) {
             ui.save_req[sq.cur] = 1;            /* left alone, stopped, quiet: kept (the document's inactivity save) */
             t_save_try = fm1_ms;
         }
