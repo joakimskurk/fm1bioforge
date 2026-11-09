@@ -1,0 +1,20 @@
+# BIOFORGE's pages: the awakening plays (PLAY), then MIX, SEQ, SYN on HEART, MUT (LOOP turned down to 80), FX, GLO
+300 btn 12
+1400 shot
+1500 btn 11
+2310 shot
+2400 btn 6
+2500 enc 0 1
+2930 shot
+3000 btn 5
+3200 enc 1 -20
+3500 shot
+3700 btn 2
+3900 shot
+4000 btn 7
+4200 shot
+4300 enc 0 4
+4400 btn 6
+4700 shot
+5000 btn 12
+6500 end

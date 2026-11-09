@@ -1,0 +1,30 @@
+# LIVE REC: focus BASS (SELECT 5), PLAY, REC; four notes over a bar (keys 9 = D4 - 36 = D1 ... as the octave -3
+# plays them); REC off; it plays back in the loop. Then SHIFT + OCT-: UNDO. STEP REC: STOP, REC, three notes.
+200 enc 0 5
+300 btn 12
+400 btn 13
+500 keys 0x200
+700 keys 0
+1000 keys 0x400
+1150 keys 0
+1500 keys 0x200
+1900 keys 0
+2100 keys 0x80
+2300 keys 0
+2400 btn 13
+3300 shot
+4500 shot
+4600 btndown 3
+4650 btn 0
+4700 btnup 3
+4900 shot
+5000 btn 12
+5200 btn 13
+5300 keys 0x1
+5400 keys 0
+5500 keys 0x4
+5600 keys 0
+5700 keys 0x10
+5800 keys 0
+6000 shot
+6500 end
