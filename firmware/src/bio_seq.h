@@ -21,7 +21,7 @@
 #define SEQ_MAXLEN 64u
 #define SEQ_NSCENE 4u
 #define SEQ_BAR (16u * SEQ_TPS)
-#define SEQ_MAGIC 0x31464F42u                   /* "BOF1": the scene's format */
+#define SEQ_MAGIC 0x32464F42u                   /* "BOF2": the scene's format (2: the mix's PUMP) */
 #define SEQ_NUNDO 16u
 #define SEQ_NREDO 8u
 
@@ -195,7 +195,9 @@ static void seq_tick(bio_t *e, void *ctx)
         seq_in_t in = s->q[s->qr & 31u];
         s->qr++;
         if (in.on) {
-            uint32_t len = in.org == O_CLAW ? BIO_MS(300) : BIO_MS(125);
+            uint32_t len = in.org == O_NOISE || (in.org < 4u && s->e->p[in.org][P_D8] >= 50u) ? 0xFFFFFFFFu   /* (a perc voice:
+                                                   held until the key is let go) */
+                         : in.org == O_CLAW ? BIO_MS(300) : BIO_MS(125);
             bio_trigger(s->e, in.org, in.org < 4u ? (int32_t)in.note - 60 : (int32_t)in.note, in.vel, len, 0,
                         bio_hash(s->sc[s->cur].seed, in.note * 131u + in.org + s->e->frames));
             if (in.org >= 4u) s->off_t[in.org] = 0;   /* a held key: no sequenced end cuts it */
@@ -223,7 +225,7 @@ static void seq_tick(bio_t *e, void *ctx)
     /* the next scene, on the bar */
     if (s->next != s->cur && t1 / SEQ_BAR != t0 / SEQ_BAR) {
         uint32_t o;
-        for (o = 4u; o < BIO_NORG; o++) bio_release(s->e, o, 255u);
+        for (o = 0; o < BIO_NORG; o++) bio_release(s->e, o, 255u);
         s->cur = s->next;
         for (o = 0; o < BIO_NORG; o++) s->ver_seen[o] = ~0u;
         seq_tempo(s);
@@ -378,7 +380,7 @@ static void seq_play(seq_t *s)
     s->nghost = 0;
     for (k = 0; k < BIO_NORG; k++) { s->cursor[k] = 0; s->ver_seen[k] = ~0u; s->off_t[k] = 0; s->rat_left[k] = 0; }
     bio_tur_reset(&s->tur, &s->sc[s->cur].tur);
-    for (k = 0; k < 5u; k++) {                  /* the same start, the same sound */
+    for (k = 0; k < 4u; k++) {                  /* the same start, the same sound */
         s->e->tone[k].rnd = bio_hash(s->sc[s->cur].seed, k);
         s->e->tone[k].pa = s->e->tone[k].pb = s->e->tone[k].pc = 0;
         s->e->tone[k].gt = 0;
@@ -413,7 +415,7 @@ static void seq_stop(seq_t *s)
     s->playing = 0;
     for (k = 0; k < BIO_NORG; k++) { s->off_t[k] = 0; s->rat_left[k] = 0; }
     SEQ_UNLOCK();
-    for (k = 4u; k < BIO_NORG; k++) bio_release(s->e, k, 255u);   /* (safe from here: one store each) */
+    for (k = 0; k < BIO_NORG; k++) bio_release(s->e, k, 255u);   /* (safe from here: one store each) */
 }
 
 /* the transport's tick now, into a track (the main loop's view: the ISR's ticks and frames since) */

@@ -1,0 +1,7 @@
+# Demo: RITUAL 03, VOID (PRESETS three times): 70 BPM and wide. A huge HEART twice a bar with the drone breathing
+# under it (PUMP 70 %), a bone far off, noise washes held for bars, crackle in the dark, the throat singing long
+# notes, a long reverb
+200 enc 6 3
+400 btn 12
+28000 btn 12
+33000 end

@@ -1,0 +1,60 @@
+# Demo: FROM NOTHING TO A LOOP, the idea document's first workflow. EMPTY BODY (SEL held and PRESETS turned back: the
+# last factory ritual), PLAY, REC: the kit played in (HEART on the beats, BONE on two and four), then TEETH on the
+# off-beats; REC off: it loops. Then BONE is given the CLAP and TEETH the TICK (ENV, SEL held: SOUND): the same notes,
+# noise now. SELECT to BASS, REC, four notes over a bar; REC off. Then the nerve: LOOP down to 70 % and RATTLE up
+# (MUT), so the texture starts to move; LOOP back up: LOCK.
+100 btndown 3
+200 enc 6 -1
+300 btnup 3
+400 btn 12
+2200 btn 13
+2300 keys 0x8
+2380 keys 0
+2800 keys 0x408
+2880 keys 0
+3300 keys 0x8
+3380 keys 0
+3800 keys 0x408
+3880 keys 0
+4550 keys 0x20000
+4620 keys 0
+5050 keys 0x20000
+5120 keys 0
+5550 keys 0x20000
+5620 keys 0
+6050 keys 0x20000
+6120 keys 0
+6250 btn 13
+6500 enc 0 2
+6600 btn 4
+6700 btndown 3
+6800 enc 2 1
+6900 enc 2 1
+7000 enc 2 1
+7100 enc 2 1
+7200 enc 2 1
+7300 btnup 3
+7400 enc 0 1
+7500 btndown 3
+7600 enc 2 1
+7700 btnup 3
+8000 enc 0 2
+10200 btn 13
+10300 keys 0x200
+10750 keys 0
+11050 keys 0x400
+11280 keys 0
+11300 keys 0x200
+11750 keys 0
+12050 keys 0x80
+12280 keys 0
+12300 btn 13
+16300 btn 5
+16400 enc 5 60
+16500 enc 1 -10
+17500 enc 1 -10
+18500 enc 1 -10
+24300 enc 1 30
+24400 enc 5 -60
+30300 btn 12
+33000 end

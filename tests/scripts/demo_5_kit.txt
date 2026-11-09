@@ -1,0 +1,27 @@
+# Demo: THE NOISE KIT, SOUND BY SOUND. STATIC CULT plays; SELECT to TEETH, ENV, SEL held: SOUND turned one step a bar
+# through the kit (TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING, THUMP, WASH, FLAM SNR,
+# BIT HAT, LASER), each in TEETH's sixteenths; then TISSUE again (its own body)
+200 enc 6 1
+300 enc 0 3
+400 btn 4
+500 btn 12
+700 btndown 3
+2258 enc 2 1
+4076 enc 2 1
+5895 enc 2 1
+7713 enc 2 1
+9531 enc 2 1
+11349 enc 2 1
+13167 enc 2 1
+14985 enc 2 1
+16804 enc 2 1
+18622 enc 2 1
+20440 enc 2 1
+22258 enc 2 1
+24076 enc 2 1
+25895 enc 2 1
+27713 enc 2 1
+29531 enc 2 -16
+31409 btnup 3
+31509 btn 12
+34009 end

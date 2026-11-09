@@ -36,7 +36,7 @@ screen. One AC791N core, no FPU: integers only; the audio interrupt gets 256 fra
 | **SELECT** | the focus: DRUM (the kit), HEART, BONE, TEETH, CLAW, BASS, DRONE, SPASM, VOICE, NOISE |
 | **SEL** (SELECT pushed) | SHIFT, held; a tap keeps the knobs' second row |
 | **ALGORITHM** | the Turing's LOOP, on every page: the one big knob from chaos to lock |
-| **PRESETS** | the scene, RITUAL 00..03 (playing: from the next bar) |
+| **PRESETS** | the scene, RITUAL 00..03 (playing: from the next bar); SHIFT: a factory ritual into it (D19) |
 | **KNOB 1..4** | the page's four parameters (SHIFT: the second row) |
 | **HOME** | MIX: the six channels (again: the focused channel's sends) |
 | **SEQ** | SEQ: the grid. **Held:** the white keys are the 16 steps of the focused track |
@@ -113,10 +113,18 @@ step. The same scene, the same start, the same knobs: the same sound, sample for
 | **DRONE** womb | OSC A triangle/saw, OSC B sine at 1.012 (beating), light PM, a resonant band (the second waits for the budget), low-pass breathing over an 8-bar BREATH, ducked by HEART | D2, morph 1.25, PM 0.18, 610 Hz, Q 1.5, duck −1.5 dB / 140 ms, A 1.4 s R 2.8 s |
 | **SPASM** nerve discharge | OSC A sine, OSC B at 1.414, a PM strike that falls fast, a band-pass "nerve node", ratchet 1–4 | G3, PM 2.4 falling in 75 ms, amp 160 ms, 1.8 kHz, Q 3.2 |
 | **VOICE** artificial throat | a glottal pulse with a subharmonic, breath noise, three formants moving U O A E I (MOUTH) | A2, MOUTH 0.7, breath 18 %, shift −3 semitones, A 230 ms R 1.1 s |
-| **NOISE** breath, friction, leak | pink-ish and white noise; BREATH (band-pass), SCRAPE (narrow, grainy AM), STEAM (high-pass, short) | BREATH, 1.45 kHz, Q 1.2, rough 15 %, 4-bar breath, A 800 ms R 1.6 s |
+| **NOISE** noise as percussion (D18) | the perc voice (`bio_perc.h`): a source (WHITE, PINK, DIGI and METAL shift-register noise, CRACKLE), grain (sample and hold), a resonant state-variable filter morphing low-pass → band-pass → high-pass that pings at high resonance, a sweep on its own envelope (a zap down, a rise up), BURSTS 1..4 (a clap), a click, an envelope that strikes or is held while the key is (GATE), drive, a crusher, a decorrelated side for width; its loudness kept wherever the filter is | a breath: pink, 1.5 kHz band-pass, A 250 ms, held, 4-bar BREATH (D8) |
 
 Each has the same four macros, mapped to what they mean for it (BODY: mass, sub, drive; TEXTURE: PM, growl, breath,
-roughness; MOTION: the filter's movement, the Turing's depth on it; DECAY: its envelope).
+roughness; MOTION: the filter's movement, the Turing's depth on it; DECAY: its envelope). On the perc voice BODY is the
+cutoff (120 Hz .. 2.4 kHz at 50 .. 14 kHz), TEXTURE the grain (CRACKLE's density), MOTION the sweep, DECAY the strike's.
+
+**MODEL NOISE.** A drum organ's D8 (MODEL) over 50 makes it a perc voice with the same parameters; its SOUND knob
+(ENV, SHIFT, KNOB 1) loads one of sixteen noise sounds (`bio_kits.h`: TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE,
+CRUSH, CRACKLE, GRAIN, PING, THUMP, WASH, FLAM SNR, BIT HAT, LASER) or TISSUE, the drum's own body again.
+
+**PUMP** (MIX, the sends, SHIFT, KNOB 2): HEART ducks the other five channels, up to −18 dB, in 2 ms, back with a
+time constant of a sixth of a beat (by the next eighth).
 
 **Life signals** (not channels): HEART PRESSURE (HEART's impact envelope: ducks the DRONE, moves its filter), BREATH (a
 slow cycle in bars: the DRONE's filter, NOISE, VOICE), NERVE DRIFT (a slow random walk, a little detune and colour).

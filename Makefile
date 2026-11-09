@@ -20,7 +20,7 @@ art:
 	$(PY) tools/gen_art.py
 perf:
 	mkdir -p build && cc -Os -Wall -Wno-unused-function -Ifirmware/src -Ifirmware/gen -o build/bio_perf tools/bio_perf.c
-	for m in awaken worst; do valgrind --tool=callgrind --callgrind-out-file=build/cg.$$m.out build/bio_perf $$m 690 2>&1 | \
+	for m in awaken worst perc ritual1 ritual2 ritual3; do valgrind --tool=callgrind --callgrind-out-file=build/cg.$$m.out build/bio_perf $$m 690 2>&1 | \
 	    sed -n 's/.*Collected : \([0-9]*\)/\1/p' | awk -v m=$$m '{ printf "%s: %d instructions a frame\n", m, $$1 / 176640 }'; done
 fw:
 	BOARD=smk37 PYTHON=$(PY) sh build.sh

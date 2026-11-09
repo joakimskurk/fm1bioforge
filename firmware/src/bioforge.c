@@ -6,7 +6,7 @@
  *
  *   SELECT       the focus: DRUM (the kit), HEART BONE TEETH CLAW BASS DRONE SPASM VOICE NOISE; SEL (pushed): SHIFT
  *   ALGORITHM    the Turing's LOOP, on every page (chaos to lock)
- *   PRESETS      the scene, RITUAL 00..03 (playing: on the next bar)
+ *   PRESETS      the scene, RITUAL 00..03 (playing: on the next bar); SHIFT: a factory ritual into this one
  *   KNOB 1..4    the page's four (SHIFT, or SEL tapped: the second four)
  *   HOME  MIX (again: the sends); held: white keys 1-6 mute     SEQ  SEQ; held: the white keys are the steps
  *   EDIT  SYN (again: deeper)      ENV   the organ's envelope    LFO  MUT; held: WRITE 0, WRITE 1, RESET, FUSE, LOCK
@@ -24,6 +24,7 @@ static void app_idle(void);
 #define SEQ_LOCK() fm1_irq_off()
 #define SEQ_UNLOCK() fm1_irq_on()
 #include "bio_seq.h"
+#include "bio_rituals.h"
 #include "bio_ui.h"
 
 #if defined(DINGHY_HOST) && defined(__APPLE__)
@@ -67,6 +68,8 @@ static struct {
     const char *msg;
     uint32_t burst, stutter_at, sel_alone, sel_down;
     uint32_t tur_seen, writing_seen, t_writing;
+    uint8_t kit[BIO_NORG];                      /* the SOUND each organ was last given (0: TISSUE) */
+    uint32_t factory;                           /* the factory ritual SHIFT + PRESETS last loaded */
 } ui;
 #define D_TOP 1u
 #define D_STATUS 2u
@@ -82,18 +85,25 @@ static void touched(void) { ui.dirty[sq.cur] = 1; ui.dirty_draw |= D_STATUS; ui.
 /* ---- the knobs: what each of the four turns on this page */
 enum { KT_NONE, KT_P, KT_LVL, KT_SA, KT_SB, KT_SC, KT_MASTER, KT_RIB, KT_TDEPTH, KT_TLEN, KT_TCLK, KT_TRATTLE,
        KT_TROUTE, KT_TWAIL, KT_TSCALE, KT_FX, KT_BPM, KT_SWING, KT_QUANT, KT_QSTR, KT_RECMODE, KT_STEPLEN, KT_KEYLED,
-       KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE };
+       KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE, KT_PUMP, KT_KIT };
 typedef struct { uint8_t type, idx; const char *name; } knob_t;
 
-static const char *const DRUM_DEEP[8] = {"PRESS", "FRACT", "FRIC", "VENT", "RESO", "MATTER", "DRIVE", ""};
+static const char *const DRUM_DEEP[8] = {"PRESS", "FRACT", "FRIC", "VENT", "RESO", "MATTER", "DRIVE", "MODEL"};
+static const char *const PERC_DEEP[8] = {"SOURCE", "RESO", "MODE", "BURSTS", "CLICK", "DRIVE", "CRUSH", "MODEL"};   /* MODEL NOISE */
 static const char *const DEEP[5][8] = {
     {"CUTOFF", "RESO", "ENV", "GLIDE", "MORPH", "PM", "SUB", "DRIVE"},          /* BASS */
     {"CUTOFF", "RESO", "BEAT", "COUPLE", "BREATH", "MORPH", "PM", "BANDS"},     /* DRONE */
     {"RATIO", "PM", "PM DEC", "BAND", "RATCH", "Q", "", ""},                    /* SPASM */
     {"MOUTH", "BREATH", "SHIFT", "SUB", "", "", "", ""},                        /* VOICE */
-    {"MODE", "FREQ", "Q", "ROUGH", "BREATH", "", "", ""},                       /* NOISE */
+    {"SOURCE", "RESO", "MODE", "BURSTS", "CLICK", "DRIVE", "CRUSH", "BREATH"},  /* NOISE: the perc voice */
 };
 static const char *const MACRO[4] = {"BODY", "TEXTURE", "MOTION", "DECAY"};
+
+static uint32_t org_perc(uint32_t o) { return bio_is_perc(o, SC()->p[o]); }
+static const char *deep_name(uint32_t o, uint32_t i)
+{
+    return o < 4u ? (org_perc(o) ? PERC_DEEP[i] : DRUM_DEEP[i]) : DEEP[o - 4u][i];
+}
 
 static knob_t knob_for(uint32_t k)
 {
@@ -111,7 +121,7 @@ static knob_t knob_for(uint32_t k)
         } else {
             static const char *const A[4] = {"LEVEL", "DELAY", "REVERB", "CRUSH"};
             n.idx = BIO_ORG_CH[o];
-            if (sh) { if (k == 0u) { n.type = KT_RIB; n.name = "RIB"; } }
+            if (sh) { if (k == 0u) { n.type = KT_RIB; n.name = "RIB"; } if (k == 1u) { n.type = KT_PUMP; n.name = "PUMP"; } }
             else { n.type = (uint8_t)(k == 0u ? KT_LVL : k == 1u ? KT_SA : k == 2u ? KT_SB : KT_SC); n.name = A[k]; }
         }
         break;
@@ -127,20 +137,26 @@ static knob_t knob_for(uint32_t k)
         if (ui.sub == 0u) {
             n.type = KT_P;
             n.idx = (uint8_t)(sh ? P_D1 + k : P_BODY + k);
-            n.name = sh ? (o < 4u ? DRUM_DEEP[k] : DEEP[o - 4u][k]) : MACRO[k];
+            n.name = sh ? deep_name(o, k) : MACRO[k];
         } else if (ui.sub == 1u) {
             n.type = KT_P;
             n.idx = (uint8_t)(sh ? P_D5 + k : P_D1 + k);
-            n.name = o < 4u ? DRUM_DEEP[sh ? 4u + k : k] : DEEP[o - 4u][sh ? 4u + k : k];
+            n.name = deep_name(o, sh ? 4u + k : k);
         } else {                                /* ENV: the envelope; drums: the gesture, tune, level, pan */
             static const char *const T[4] = {"ATTACK", "DECAY", "SUSTAIN", "RELEASE"};
             static const char *const D[4] = {"ATTACK", "TUNE", "LEVEL", "PAN"};
             static const char *const S2[4] = {"TUNE", "LEVEL", "PAN", ""};
+            static const char *const PE[4] = {"ATTACK", "GATE", "WIDTH", "RELEASE"};   /* the perc voice's */
+            static const char *const DS[4] = {"SOUND", "GATE", "WIDTH", "RELEASE"};
             static const uint8_t DI[4] = {P_A, P_TUNE, P_LEVEL, P_PAN}, SI[4] = {P_TUNE, P_LEVEL, P_PAN, P_SPARE};
             n.type = KT_P;
-            if (o < 4u) { n.idx = DI[k]; n.name = D[k]; if (sh) n.name = ""; }
-            else if (sh) { n.idx = SI[k]; n.name = S2[k]; }
-            else { n.idx = (uint8_t)(P_A + k); n.name = T[k]; }
+            if (o < 4u) {                       /* SHIFT: the SOUND (TISSUE or a noise one), and a noise one's envelope */
+                n.idx = sh ? (uint8_t)(P_A + k) : DI[k];
+                n.name = sh ? (k == 0u || org_perc(o) ? DS[k] : "") : D[k];
+                if (sh && k == 0u) n.type = KT_KIT;
+            }
+            else if (sh) { n.idx = SI[k]; n.name = o == O_NOISE && k == 3u ? "SOUND" : S2[k]; if (o == O_NOISE && k == 3u) n.type = KT_KIT; }
+            else { n.idx = (uint8_t)(P_A + k); n.name = o == O_NOISE ? PE[k] : T[k]; }
         }
         if (!n.name[0]) n.type = KT_NONE;
         break;
@@ -193,6 +209,8 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
     case KT_SC: return sc->mix.sc[n.idx];
     case KT_MASTER: return sc->mix.master;
     case KT_RIB: return sc->mix.rib;
+    case KT_PUMP: return sc->mix.pump;
+    case KT_KIT: *lo = o == O_NOISE ? 1 : 0; *hi = (int32_t)BIO_NPERC_KIT; return ui.kit[o];
     case KT_TDEPTH: return sc->tur.depth;
     case KT_TLEN: *hi = 7; return sc->tur.len_i;
     case KT_TCLK: *hi = 3; return sc->tur.clock;
@@ -265,6 +283,17 @@ static void knob_turn(knob_t n, int32_t d)
     case KT_SC: sc->mix.sc[n.idx] = (uint8_t)nv; break;
     case KT_MASTER: sc->mix.master = (uint8_t)nv; break;
     case KT_RIB: sc->mix.rib = (uint8_t)nv; break;
+    case KT_PUMP: sc->mix.pump = (uint8_t)nv; break;
+    case KT_KIT: {                              /* a sound into the organ (its PAN kept); 0: the drum's own body again */
+        uint8_t pan = sc->p[o][P_PAN];
+        uint32_t i;
+        ui.kit[o] = (uint8_t)nv;
+        if (nv) bio_preset_set(sc->p[o], &BIO_PERC_KIT[nv - 1], o);
+        else for (i = 0; i < BIO_NP; i++) sc->p[o][i] = BIO_P_INIT[o][i];
+        sc->p[o][P_PAN] = pan;
+        ui.dirty_draw |= D_ALL;
+        break;
+    }
     case KT_TDEPTH: sc->tur.depth = (uint8_t)nv; break;
     case KT_TLEN: sc->tur.len_i = (uint8_t)nv; break;
     case KT_TCLK: sc->tur.clock = (uint8_t)nv; break;
@@ -325,8 +354,23 @@ static void knob_text(knob_t n, char *s)
     case KT_P:
         if (n.idx == P_TUNE) { if (v > 24) *p++ = '+'; i2s(p, v - 24); return; }
         if (n.idx == P_PAN) { if (v == 50) str_cat(p, "C"); else { *p++ = v < 50 ? 'L' : 'R'; u2s(p, (uint32_t)bio_abs(v - 50) * 2u); } return; }
-        if (n.idx == P_D1 && cur_org() == O_NOISE) { str_cat(p, v < 34 ? "SCRAPE" : v < 67 ? "BREATH" : "STEAM"); return; }
+        if (org_perc(cur_org())) {              /* the perc voice's switches */
+            if (n.idx == P_D1) { str_cat(p, BIO_PS_NAME[v < 20 ? 0 : v < 40 ? 1 : v < 60 ? 2 : v < 80 ? 3 : 4]); return; }
+            if (n.idx == P_D3) { str_cat(p, v <= 8 ? "LOW" : v >= 92 ? "HIGH" : v >= 42 && v <= 58 ? "BAND" : v < 50 ? "LO>BD" : "BD>HI"); return; }
+            if (n.idx == P_D4) { u2s(p, v < 25 ? 1u : v < 50 ? 2u : v < 75 ? 3u : 4u); return; }
+            if (n.idx == P_D && !v) { str_cat(p, "HIT"); return; }
+        }
+        if (n.idx == P_D8 && cur_org() < 4u) { str_cat(p, v >= 50 ? "NOISE" : "TISSUE"); return; }
         break;
+    case KT_KIT: {
+        uint32_t o = cur_org(), i, same = 1;
+        if (!v) { str_cat(p, "TISSUE"); return; }
+        for (i = 0; i < BIO_NP; i++)            /* turned since: marked */
+            if (i != P_PAN && (i != P_D8 || o != O_NOISE) && SC()->p[o][i] != BIO_PERC_KIT[v - 1].p[i]) same = 0;
+        p = str_cat(p, BIO_PERC_KIT[v - 1].name);
+        if (!same) str_cat(p, "*");
+        return;
+    }
     case KT_TLEN: u2s(s, BIO_TUR_LEN[v & 7]); return;
     case KT_TCLK: str_cat(s, BIO_TUR_CLK_NAME[v & 3]); return;
     case KT_TWAIL: { static const char *const W[4] = {"OFF", "SPASM", "VOICE", "BOTH"}; str_cat(s, W[v & 3]); return; }
@@ -560,24 +604,45 @@ static int scene_save(uint32_t i)
     ui.dirty_draw = D_ALL;                      /* (the canvas held the slot) */
     return r;
 }
-static void name_set(seq_scene_t *sc, const char *n) { uint32_t k; for (k = 0; k < 11u && n[k]; k++) sc->name[k] = n[k]; sc->name[k] = 0; }
+/* the four scenes before anything is saved: the first four factory rituals (bio_rituals.h) */
 static void defaults(void)
 {
-    seq_scene_awaken(&scenes[0]);
-    /* RITUAL 01, SLOW INFECTION: the awakening with a nerve that slips and rattles */
-    scenes[1] = scenes[0];
-    scenes[1].tur.loop = 80; scenes[1].tur.depth = 30; scenes[1].tur.rattle = 45; scenes[1].tur.len_i = 7;
-    scenes[1].seed = 0xA5F01u;
-    name_set(&scenes[1], "INFECTION");
-    /* RITUAL 02, MARROW: slower, the bass through the crusher, WAIL on SPASM, swung */
-    scenes[2] = scenes[0];
-    scenes[2].bpm10 = 960; scenes[2].mix.sc[CH_BASS] = 55; scenes[2].mix.sc[CH_SPASM] = 60; scenes[2].fx.c_mix = 62;
-    scenes[2].tur.wail = 1; scenes[2].tur.loop = 70; scenes[2].tur.clock = 1; scenes[2].swing = 30;
-    scenes[2].seed = 0x3A770u;
-    name_set(&scenes[2], "MARROW");
-    /* RITUAL 03, an empty body for your own */
-    seq_scene_blank(&scenes[3], 0x7E3u);
-    name_set(&scenes[3], "EMPTY BODY");
+    uint32_t i;
+    for (i = 0; i < SEQ_NSCENE; i++) BIO_RITUAL[i](&scenes[i]);
+}
+/* which SOUND an organ has (the kit's list, 1..; 0: its own body), for the SOUND knob */
+static void kits_find(void)
+{
+    uint32_t o, i, j;
+    for (o = 0; o < BIO_NORG; o++) {
+        const uint8_t *p = SC()->p[o];
+        if (o != O_NOISE && (o >= 4u || !bio_is_perc(o, p))) { ui.kit[o] = 0; continue; }
+        if (!ui.kit[o]) ui.kit[o] = 1;
+        for (i = 0; i < BIO_NPERC_KIT; i++) {
+            for (j = 0; j < BIO_NP; j++)
+                if (j != P_PAN && (j != P_D8 || o != O_NOISE) && p[j] != BIO_PERC_KIT[i].p[j]) break;
+            if (j == BIO_NP) { ui.kit[o] = (uint8_t)(i + 1u); break; }
+        }
+    }
+}
+/* SHIFT + PRESETS: a factory ritual into the scene that plays (the one in flash stays until SAVE) */
+static void factory_load(int32_t e)
+{
+    seq_scene_t *sc = SC();
+    ui.factory = (uint32_t)(((int32_t)ui.factory + e % (int32_t)BIO_NRITUAL + (int32_t)BIO_NRITUAL) % (int32_t)BIO_NRITUAL);
+    SEQ_LOCK();
+    BIO_RITUAL[ui.factory](sc);
+    {
+        uint32_t k;
+        for (k = 0; k < BIO_NORG; k++) sq.ver[k]++;
+    }
+    sq.nundo = sq.nredo = 0;                    /* (its tracks are not the ones undo kept) */
+    sq.tur_reset = 1;
+    SEQ_UNLOCK();
+    kits_find();
+    say(BIO_RITUAL_NAME[ui.factory]);
+    touched();
+    ui.dirty_draw = D_ALL;
 }
 
 /* ---- drawing */
@@ -742,7 +807,11 @@ static void draw_syn(void)
     char s[20], *p;
     cv_at(0, 49, 240, 134);
     cv_t5(8, 5, ORG_NAME[o], COL_GREEN, 2);
-    if (o < 4u) cv_t5(8 + t5w(ORG_NAME[o], 2) + 8, 11, "DRUM", COL_BONE_D, 1);
+    if (o < 4u || o == O_NOISE) {               /* what it is: a drum (and its SOUND, if noise), or NOISE's SOUND */
+        int32_t x = 8 + t5w(ORG_NAME[o], 2) + 8;
+        if (o < 4u) { cv_t5(x, 11, "DRUM", COL_BONE_D, 1); x += t5w("DRUM", 1) + 6; }
+        if (org_perc(o)) cv_t5(x, 11, ui.kit[o] ? BIO_PERC_KIT[ui.kit[o] - 1u].name : "NOISE", COL_FLESH, 1);
+    }
     if (ui.sub) cv_t5(200, 11, ui.sub == 1u ? "DEEP" : "ENV", COL_FLESH, 1);
     {                                           /* the scope: the organ's own output, now */
         uint32_t w = eng.scope_w;
@@ -756,7 +825,49 @@ static void draw_syn(void)
             py = y;
         }
     }
-    if (o < 4u) {                               /* the body: its modes, ringing where they are; the excitation */
+    if (org_perc(o)) {                          /* noise as percussion: its source, the filter's shape and cutoff, its level */
+        const uint8_t *pp = SC()->p[o];
+        const bio_perc_t *v = o == O_NOISE ? &eng.noise : &eng.drum[o].np;
+        int32_t a = bio_lf_hz(120), m = bio_lf_hz(2400), b = bio_lf_hz(14000), lf, x, px = -1, py = 0, q10;
+        int32_t mode = pp[P_D3], lo = bio_lf_hz(40), hi = bio_lf_hz(18000);
+        static const char *const L[4] = {"SOURCE", "MODE", "CUTOFF", "DECAY"};
+        lf = pp[P_BODY] <= 50u ? a + (m - a) * (int32_t)pp[P_BODY] / 50 : m + (b - m) * ((int32_t)pp[P_BODY] - 50) / 50;
+        lf += ((int32_t)pp[P_TUNE] - 24) * BIO_SEMI;
+        q10 = 5 + (int32_t)pp[P_D2] * (int32_t)pp[P_D2] / 50;   /* (as bio_perc_hit) */
+        for (i = 0; i < 4u; i++) {
+            uint32_t hz;
+            cv_t5(10 + (int32_t)i * 57, 82, L[i], COL_BONE_D, 1);
+            p = s;
+            if (i == 0u) str_cat(p, BIO_PS_NAME[pp[P_D1] < 20u ? 0 : pp[P_D1] < 40u ? 1 : pp[P_D1] < 60u ? 2 : pp[P_D1] < 80u ? 3 : 4]);
+            if (i == 1u) str_cat(p, mode <= 8 ? "LOW" : mode >= 92 ? "HIGH" : mode >= 42 && mode <= 58 ? "BAND" : mode < 50 ? "LO>BD" : "BD>HI");
+            if (i == 2u) {
+                hz = bio_exp2(lf - (14 << 16)) >> 2;
+                if (hz >= 1000u) { p = u2s(p, hz / 1000u); *p++ = '.'; p = u2s(p, hz % 1000u / 100u); str_cat(p, "K"); }
+                else u2s(p, hz);
+            }
+            if (i == 3u) { p = u2s(p, bio_perc_ms(pp[P_DECAY], 4, 120, 3000)); str_cat(p, "MS"); }
+            cv_t5(10 + (int32_t)i * 57, 92, s, COL_FLESH, 1);
+        }
+        /* the filter's shape over 40 Hz .. 18 kHz: 12 dB an octave, its peak by Q; the cutoff now (the sweep) */
+        for (x = 0; x < 216; x++) {
+            int32_t f = lo + (hi - lo) / 216 * x, d = (f - lf) / 4096, g, pk;   /* d: sixteenths of an octave */
+            int32_t glp = d > 0 ? -12 * d : 0, ghp = d < 0 ? 12 * d : 0, gbp = -6 * bio_abs(d);
+            g = mode <= 50 ? glp + (gbp - glp) * mode / 50 : gbp + (ghp - gbp) * (mode - 50) / 50;
+            pk = bio_abs(d) < 8 ? (8 - bio_abs(d)) * (q10 > 7 ? q10 - 7 : 0) / 4 : 0;   /* (dB x 16) */
+            g = bio_clamp((g + pk) / 16, -30, 24);
+            {
+                int32_t y = 112 - g * 14 / 30;
+                if (px >= 0) cv_line(px, py, 12 + x, y, COL_FLESH);
+                px = 12 + x;
+                py = y;
+            }
+        }
+        if (v->awake) {
+            int32_t c = (v->lf0 + bio_mul30(v->sweep, v->fenv) - lo) * 216 / (hi - lo);
+            cv_rect(12 + bio_clamp(c, 0, 215), 100, 1, 26, COL_GREEN);
+            cv_rect(184, 128, 2 + (v->env >> 24) * 44 / 64, 3, v->gate ? COL_GREEN : COL_FLESH);
+        }
+    } else if (o < 4u) {                        /* the body: its modes, ringing where they are; the excitation */
         bio_drum_t *d = &eng.drum[o];
         static const char *const C[4] = {"PRESS", "FRACT", "FRIC", "VENT"};
         for (i = 0; i < BIO_DRUM_DEF[o].nm; i++) {
@@ -772,7 +883,7 @@ static void draw_syn(void)
             cv_t5(10 + (int32_t)i * 57, 82, C[i], COL_BONE_D, 1);
             cv_rect(10 + (int32_t)i * 57, 91, (int32_t)v * 44 / 100, 2, COL_FLESH);
         }
-    } else {                                    /* a tonal organ: its envelope now, its note */
+    } else if (o < O_NOISE) {                   /* a tonal organ: its envelope now, its note */
         bio_tone_t *v = &eng.tone[o - 4u];
         int32_t e = v->awake ? (v->env.v >> 24) : 0;
         cv_t5(10, 86, "ENV", COL_BONE_D, 1);
@@ -1060,7 +1171,8 @@ static void encoders_in(void)
         touched();
         ui.dirty_draw |= D_STATUS | (ui.page == PG_MUT ? D_MAIN : 0u);
     }
-    if ((e = fm1_enc_take(ENC_PRESETS)) != 0) { /* the scene */
+    if ((e = fm1_enc_take(ENC_PRESETS)) != 0 && ui.shift) { factory_load(e); ui.sel_alone = 0; }   /* (held: a latch must not load one) */
+    else if (e) {                               /* the scene */
         int32_t s = ((int32_t)sq.next + e % (int32_t)SEQ_NSCENE + (int32_t)SEQ_NSCENE) % (int32_t)SEQ_NSCENE;
         sq.next = (uint32_t)s;
         if (!sq.playing) { sq.cur = sq.next; sq.tur_reset = 1; ui.cursor = 0; ui.steppage = 0; }
@@ -1069,7 +1181,7 @@ static void encoders_in(void)
         ui.t_input = fm1_ms;
     }
     for (k = 0; k < 4u; k++)
-        if ((e = fm1_enc_take(ENC_KNOB1 + k)) != 0) knob_turn(knob_for(k), accel(e));
+        if ((e = fm1_enc_take(ENC_KNOB1 + k)) != 0) { knob_turn(knob_for(k), accel(e)); ui.sel_alone = 0; }   /* (SEL held for it: not a tap) */
 }
 
 static void app_audio(int32_t *out, uint32_t n)
@@ -1128,7 +1240,7 @@ static void app_main(void)
         eng.scope_org = cur_org();
         eng.focus = cur_org();
         eng.shed = isr_load > 75u ? 1u : isr_load < 60u ? 0u : eng.shed;   /* (with a gap, so it does not flicker) */
-        if (sq.cur != sc_seen) { sc_seen = sq.cur; ui.dirty_draw = D_ALL; }   /* a scene changed on the bar */
+        if (sq.cur != sc_seen) { sc_seen = sq.cur; kits_find(); ui.dirty_draw = D_ALL; }   /* a scene changed on the bar */
         /* BURST: STUTTER holds the playhead on its step; SPASM fires a nerve burst */
         if ((ui.burst & 1u) && sq.playing && sq.ticks >= ui.stutter_at + SEQ_TPS / 2u) {
             SEQ_LOCK();

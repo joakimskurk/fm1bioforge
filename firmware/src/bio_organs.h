@@ -1,14 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* BIOFORGE's nine organs. The drums (HEART, BONE, TEETH, CLAW) are TISSUE: an excitation (PRESSURE, FRACTURE,
  * FRICTION, VENT) through damped modes, the flesh curve, a DC block. Each drum organ is one body that keeps ringing:
- * a hit excites it again, nothing is stolen (DECISIONS.md D2). The tonal organs (BASS, DRONE, SPASM, VOICE, NOISE) are
- * monophonic. Every hit's noise comes from its seed: the same seed, the same sound.
+ * a hit excites it again, nothing is stolen (DECISIONS.md D2); MODEL NOISE (D8) makes one a perc voice (bio_perc.h)
+ * instead. The tonal organs (BASS, DRONE, SPASM, VOICE) are monophonic; NOISE is the perc voice. Every hit's noise
+ * comes from its seed: the same seed, the same sound.
  *
  * The numbers in BIO_DRUM_DEF are the idea document's (5.3): frequencies in Hz, times in ms (decays: to -40 dB),
  * levels in % of the excitation. Parameters are 0..100 (tune 0..48, 24 = in tune; pan 0..100, 50 = centre). */
 #ifndef BIO_ORGANS_H
 #define BIO_ORGANS_H
 #include "bio_dsp.h"
+#include "bio_perc.h"
 
 enum { O_HEART, O_BONE, O_TEETH, O_CLAW, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_NOISE, BIO_NORG };
 enum { CH_DRUM, CH_BASS, CH_DRONE, CH_SPASM, CH_VOICE, CH_NOISE, BIO_NCH };
@@ -72,15 +74,15 @@ static const bio_drum_def_t BIO_DRUM_DEF[4] = {
 /* the default parameters of every organ (the four macros, the depth at 50 = the document's INIT, the envelope, tune,
    level, pan) */
 static const uint8_t BIO_P_INIT[BIO_NORG][BIO_NP] = {
-    {76, 48, 18, 46,  50, 50, 50, 50, 50, 50, 50, 50,  30, 0, 0, 0,  24, 90, 50, 0},   /* HEART */
-    {48, 74, 26, 42,  50, 50, 50, 50, 50, 50, 50, 50,  30, 0, 0, 0,  24, 86, 44, 0},   /* BONE */
-    {31, 69, 39, 29,  50, 50, 50, 50, 50, 50, 50, 50,  30, 0, 0, 0,  24, 96, 60, 0},   /* TEETH */
-    {61, 82, 52, 58,  50, 50, 50, 50, 50, 50, 50, 50,  50, 0, 0, 0,  24, 80, 38, 0},   /* CLAW */
+    {76, 48, 18, 46,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 90, 50, 0},   /* HEART (D8: MODEL, TISSUE) */
+    {48, 74, 26, 42,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 86, 44, 0},   /* BONE */
+    {31, 69, 39, 29,  50, 50, 50, 50, 50, 50, 50, 0,  30, 0, 0, 0,  24, 96, 60, 0},   /* TEETH */
+    {61, 82, 52, 58,  50, 50, 50, 50, 50, 50, 50, 0,  50, 0, 0, 0,  24, 80, 38, 0},   /* CLAW */
     {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  12, 50, 62, 40,  24, 86, 50, 0},   /* BASS */
     {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  70, 50, 100, 75,  24, 84, 50, 0},  /* DRONE */
     {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  0, 50, 0, 30,  24, 76, 58, 0},   /* SPASM */
     {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  60, 50, 80, 65,  24, 80, 46, 0},   /* VOICE */
-    {50, 50, 50, 50,  50, 50, 50, 50, 50, 50, 50, 50,  70, 50, 100, 70,  24, 72, 50, 0},  /* NOISE */
+    {42, 15, 50, 60,  30, 19, 50, 0, 0, 0, 0, 50,  63, 100, 40, 96,  24, 72, 50, 0},  /* NOISE (the perc voice: a breath) */
 };
 
 /* LEVEL 0..100 as a fader: the square (80: -3.9 dB, 50: -12 dB), Q15 */
@@ -142,7 +144,20 @@ typedef struct {
     int32_t fade;                               /* the release to silence (PANIC), Q15; 32767 = open */
     int32_t press_out;                          /* HEART: its pressure envelope (the life signal), Q15 */
     int32_t peak;
+    uint32_t perc;                              /* MODEL NOISE: this organ is a perc voice for now */
+    bio_perc_t np;
 } bio_drum_t;
+
+/* the perc voice's parameters from an organ's (the four macros, D1..D7, its envelope page) */
+static void bio_perc_params(const uint8_t *p, bio_perc_p_t *pp)
+{
+    pp->body = p[P_BODY]; pp->texture = p[P_TEXTURE]; pp->motion = p[P_MOTION]; pp->decay = p[P_DECAY];
+    pp->source = p[P_D1]; pp->reso = p[P_D2]; pp->mode = p[P_D3]; pp->bursts = p[P_D4]; pp->click = p[P_D5];
+    pp->drive = p[P_D6]; pp->crush = p[P_D7];
+    pp->attack = p[P_A]; pp->gate = p[P_D]; pp->width = p[P_S]; pp->release = p[P_R];
+    pp->tune = (int8_t)((int32_t)p[P_TUNE] - 24);
+}
+static inline uint32_t bio_is_perc(uint32_t org, const uint8_t *p) { return org == 8u || (org < 4u && p[P_D8] >= 50u); }
 
 /* a hit: note = semitones from the organ's own pitch (Q8), vel 1..127, len = the gesture (samples), p = the
    parameters (locks applied), seed = this hit's */
@@ -161,6 +176,18 @@ static void bio_drum_hit(bio_drum_t *d, uint32_t org, int32_t note_q8, uint32_t 
     uint32_t i, n, s = seed;
     int32_t lvl;
 
+    if (bio_is_perc(org, p)) {                  /* MODEL NOISE: the perc voice */
+        bio_perc_p_t pp;
+        bio_perc_params(p, &pp);
+        pp.texture = (uint8_t)bio_clamp(tex, 0, 100);
+        bio_perc_hit(&d->np, &pp, note_q8, vel, bio_level(p[P_LEVEL]), len, seed);
+        d->perc = 1;
+        d->awake = 1;
+        d->t = 0;
+        d->press_out = 0;
+        return;
+    }
+    d->perc = 0;
     d->t = 0;
     d->rnd = bio_hash(seed, org + 1u);
     d->awake = 1;
@@ -286,7 +313,7 @@ static void bio_drum_ctl(bio_drum_t *d, uint32_t org, int32_t drift, int32_t rot
 {
     uint32_t i;
     int32_t g;
-    if (!d->awake) return;
+    if (!d->awake || d->perc) return;
     if (d->bend) d->bend = bio_mul30(d->bend, d->bend_k);
     for (i = 0; i < d->nm; i++) {               /* MOTION: the modes drift apart a little while they ring */
         int32_t lf = d->m_lf[i] + d->bend + (int32_t)(((int64_t)drift * d->mot * (int32_t)(i + 1u)) >> 15);
@@ -304,11 +331,22 @@ static void bio_drum_ctl(bio_drum_t *d, uint32_t org, int32_t drift, int32_t rot
 }
 
 /* n samples of the drum organ, added to out[] (mono, Q15), its excitation added to rib[] */
-static void bio_drum_render(bio_drum_t *d, uint32_t org, int32_t *out, int32_t *rib, uint32_t n)
+static void bio_drum_render(bio_drum_t *d, uint32_t org, int32_t *out, int32_t *side, int32_t *rib, uint32_t n)
 {
     uint32_t k;
     int32_t pk = d->peak;
     if (!d->awake) return;
+    if (d->perc) {                              /* the perc voice (into the rib a little of it too) */
+        uint32_t j;
+        int32_t tmp[BIO_SB];
+        for (j = 0; j < n && j < BIO_SB; j++) tmp[j] = 0;
+        bio_perc_render(&d->np, tmp, side, n);
+        for (j = 0; j < n && j < BIO_SB; j++) { out[j] += tmp[j]; rib[j] += tmp[j] >> 4; }
+        d->awake = d->np.awake;
+        d->peak = d->np.peak;
+        d->t += n;
+        return;
+    }
     if (!d->exc) {                              /* the excitation is over: only the body (and the pitch body) rings */
         uint32_t i, subon = d->sub_env > (1 << 16);
         for (k = 0; k < n; k++) {
@@ -481,9 +519,7 @@ static void bio_tone_on(bio_tone_t *v, uint32_t org, uint32_t note, uint32_t vel
         bio_adsr_times(&v->env, bio_scale(bio_map_ms(p[P_A], 5, 230, 2000), o_dec), 300, p[P_S],
                        bio_scale(bio_map_ms(p[P_R], 30, 1100, 5000), o_dec));
         break;
-    default:                                    /* NOISE */
-        bio_adsr_times(&v->env, bio_scale(bio_map_ms(p[P_A], 10, 800, 3000), o_dec), 300, p[P_S],
-                       bio_scale(bio_map_ms(p[P_R], 20, 1600, 6000), o_dec));
+    default: break;
     }
     v->env.st = 1;
 }
@@ -516,7 +552,7 @@ static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const
     a = bio_mul15(bio_level(p[P_LEVEL]), v->vel);
     if (org == O_DRONE)                         /* HEART PRESSURE ducks the drone: up to -1.5 dB */
         a = bio_mul15(a, 32767 - bio_mul15(life->heart, 5200 * (int32_t)p[P_D4] / 50));
-    if (org == O_NOISE || org == O_VOICE)       /* BREATH lifts and lowers them */
+    if (org == O_VOICE)                         /* BREATH lifts and lowers it */
         a = bio_mul15(a, 26000 + bio_mul15(life->breath, 6700 * (int32_t)p[P_MOTION] / 50));
     step = (e1 - e0) / (int32_t)n;
     switch (org) {
@@ -663,30 +699,7 @@ static void bio_tone_render(bio_tone_t *v, uint32_t org, const uint8_t *p, const
         }
         break;
     }
-    default: {                                  /* NOISE: breath, scrape, steam */
-        uint32_t mode = p[P_D1] < 34u ? 1u : p[P_D1] < 67u ? 0u : 2u;   /* MODE: SCRAPE, BREATH (INIT), STEAM */
-        int32_t lfc = bio_map_lf(p[P_D2], 80, 1450, 12000) - ((int32_t)p[P_BODY] - 50) * 600 + (int32_t)(((int64_t)life->cv * p[P_MOTION]) >> 9);
-        int32_t rough = (int32_t)p[P_D4] * 30 / 100 + ((int32_t)p[P_TEXTURE] - 50) / 2;   /* 15 % at INIT */
-        uint32_t q10 = bio_lin(p[P_D3], 5, 90);
-        if (mode == 1u) q10 = q10 * 4u;
-        bio_svf_set(&v->f1, lfc, bio_q_k(q10 < 5u ? 5u : q10));
-        bio_op_set(&v->o1, bio_lf_hz(3000));
-        for (k = 0; k < n; k++) {
-            int32_t w = bio_noise(&v->rnd), pnk = bio_op_lp(&v->o1, w), o, bp, lp;
-            o = pnk + (w >> 3);
-            if (--v->gt <= 0) {                 /* roughness: grains, held 1-4 ms */
-                v->gt = 44 + (int32_t)bio_rndr(&v->rnd, 132u);
-                v->grain = 32767 - (int32_t)bio_rndr(&v->rnd, (uint32_t)bio_clamp(rough, 0, 100) * 300u + 1u);
-            }
-            o = bio_mul15(o, v->grain);
-            lp = bio_svf(&v->f1, o, &bp);
-            y = mode == 2u ? o - (int32_t)(((int64_t)v->f1.k * bp) >> 16) - lp : bp;
-            e0 += step;
-            y = bio_mul15(bio_mul15(y, e0), a);
-            out[k] += y;
-            if (bio_abs(y) > pk) pk = bio_abs(y);
-        }
-    }
+    default: break;
     }
     if (v->fade < 32767) {                      /* PANIC: out at once */
         v->env.v = 0;

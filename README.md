@@ -37,6 +37,15 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   - **TEETH** is a ratchet of metal teeth. The lower keys play it closed, the upper keys open.
   - **CLAW** is a gesture dragged through ribs, as long as you hold the key.
   - A shared **rib** resonator ties the four together.
+- **Noise as percussion.** NOISE is a percussion voice, and any drum organ can become one (its MODEL, or the SOUND
+  knob). A source (WHITE, PINK, DIGI and METAL shift-register noise, CRACKLE), grain, a resonant filter that morphs
+  low-pass, band-pass and high-pass and pings at high resonance, a sweep (a zap down, a rise up), bursts (a clap), a
+  click, an envelope that strikes or is held while the key is, drive, a crusher and stereo width.
+  - **Sixteen sounds to start from**: TICK, HISS, METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING,
+    THUMP, WASH, FLAM SNR, BIT HAT and LASER. SOUND (ENV, SHIFT, KNOB 1 on a drum) gives one to an organ; TISSUE gives
+    a drum its own body back.
+- **PUMP.** HEART ducks the other channels, a side-chain from the kick, back by the next eighth (MIX's sends,
+  SHIFT, KNOB 2).
 - **Four macros an organ.** BODY, TEXTURE, MOTION and DECAY are on the first page. The depth is behind them.
 - **The keys go into the memory.**
   - **LIVE REC**: press PLAY, then REC, and play.
@@ -56,9 +65,14 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   - It never moves or deletes what you played. FUSE writes its ghosts into the pattern, if you ask for it.
 - **Effects.** BLOOD DELAY (synced, darker on each echo, ping-pong), BILE REVERB (four modulated delay lines, a
   FREEZE) and MARROW CRUSH (a parallel drive, sample-rate and bit crusher). Each channel has its own sends.
-- **Four scenes in RAM.** RITUAL 00 THE AWAKENING (the idea document's start scene), 01 INFECTION, 02 MARROW and
-  03 EMPTY BODY. PRESETS switches between them on the next bar. Each scene is saved in two flash slots, so a save cut
-  off by a power cut leaves the last good one.
+- **Four scenes in RAM**, each its own world at first:
+  - RITUAL 00 THE AWAKENING, the idea document's start scene;
+  - 01 STATIC CULT, 132 BPM, noise as percussion, with PUMP;
+  - 02 SPLICE, 100 BPM, broken and glitched, ratchets and chances, a 12-step hat against 32 steps;
+  - 03 VOID, 70 BPM, slow and wide, held noise washes, crackle and a long reverb.
+  - PRESETS switches between them on the next bar. **SHIFT + PRESETS loads a factory ritual** into the scene that
+    plays (those four, INFECTION, EMPTY BODY); the one in flash stays until you SAVE.
+  - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
 ## Using it
 
@@ -67,12 +81,12 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 | **SELECT** | The focus: DRUM (the kit), or one organ (HEART … NOISE). The keys play it; REC writes to it. |
 | **SEL** (SELECT pushed) | SHIFT while held. A tap keeps the knobs' second row. |
 | **ALGORITHM** | The Turing's LOOP, from chaos to lock, on every page. |
-| **PRESETS** | The scene, RITUAL 00..03 (playing: on the next bar). |
+| **PRESETS** | The scene, RITUAL 00..03 (playing: on the next bar). SHIFT: a factory ritual into this scene. |
 | **KNOB 1..4** | The page's four parameters (SHIFT: the second four). |
 | **HOME** | MIX: the six channels' levels; again: the focused channel's sends. **Held:** white keys 1–6 mute the channels. |
 | **SEQ** | SEQ: the grid. **Held:** the white keys are the focused track's 16 steps: tap to set or clear; hold one and turn a knob for a p-lock; OCT± for the next 16. |
 | **EDIT** | SYN: BODY TEXTURE MOTION DECAY; again: the organ's own depth. |
-| **ENV** | The organ's envelope (drums: the gesture, tune, level, pan). |
+| **ENV** | The organ's envelope (drums: the gesture, tune, level, pan; SHIFT: SOUND, and a noise sound's GATE, WIDTH, RELEASE). |
 | **LFO** | MUT: the spine. **Held:** white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK. |
 | **FX** | Delay, reverb, crush; again: their times and colours. |
 | **GLO** | Tempo, swing, quantise and its strength; SHIFT: OVERDUB or REPLACE, the step length, the key LEDs, the MIDI channel. |
@@ -103,7 +117,7 @@ D5–G5. The middle key of each zone, which glows, plays the organ as it is set;
 
 **Try it without an FM-1:** *Play it here* on [the page](https://joakimskurk.github.io/fm1bioforge/#play), in any
 recent browser, phones too: the firmware itself compiled to WebAssembly, its sound, its screen and its keys' lights.
-The page also has seven demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
+The page also has eight demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
 
 **Install it from the browser:** [the page's installer](https://joakimskurk.github.io/fm1bioforge/#install), in Chrome
 or Edge on a computer, the FM-1 on USB. It always offers the latest build of `main` that passed its tests.

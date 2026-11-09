@@ -39,29 +39,34 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 BLOCKS, BLK, KEEP = 20, 0x30, 0x2F
 APP = {"build/web/bioforge.wasm": "bioforge.wasm", "web/app/worklet.js": "worklet.js", "web/app/play.js": "play.js"}
-SCREENS = ("seq", "syn", "mut", "mix", "fx", "voice")
+SCREENS = ("seq", "syn", "mut", "mix", "fx", "voice", "perc")
 DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each)
     ("1_awakening", "RITUAL 00 · THE AWAKENING",
      "The start scene, sixteen bars: HEART on the four, BONE on two and four, TEETH and CLAW between, the BASS "
      "sparingly in D Phrygian, the DRONE breathing under it all, SPASM's two nerve impulses, the VOICE held back."),
-    ("2_infection", "RITUAL 01 · INFECTION",
-     "The same body with its nerve unlocked: LOOP at 80 %, sixteen bits long, RATTLE on. Ghost teeth and claws come "
-     "and go; the HEART does not move."),
-    ("3_marrow", "RITUAL 02 · MARROW",
-     "Slower (96 BPM) and swung. The bass and SPASM go through MARROW CRUSH; WAIL picks SPASM's notes from the "
-     "register."),
-    ("4_dry", "DRY START",
-     "The awakening with every effect off and the Turing's depth at zero: only what the engine itself makes. The "
-     "drums should still not be a kick, a snare and a hat."),
-    ("5_body", "THE BODY, ORGAN BY ORGAN",
+    ("2_static", "RITUAL 01 · STATIC CULT",
+     "132 BPM, noise as percussion: a flam snare of noise, ticking sixteenths, metal off the beat, an open hiss, over "
+     "a tight HEART and a rolling bass. PUMP ducks the rest under the kick; for the last eight bars it goes to 90 %."),
+    ("3_splice", "RITUAL 02 · SPLICE",
+     "100 BPM, broken and glitched: a 32-step body, a crushed snare, grains and zaps in ratchets and chances, a bit-hat "
+     "on 12 steps against it, the bass gliding, the throat in stabs. After six bars LOOP goes to LOCK: it keeps what it "
+     "plays."),
+    ("4_void", "RITUAL 03 · VOID",
+     "70 BPM and wide: a huge HEART twice a bar with the drone breathing under it, noise washes held for bars, crackle "
+     "in the dark, the throat singing long notes, a long reverb."),
+    ("5_kit", "THE NOISE KIT, SOUND BY SOUND",
+     "STATIC CULT plays while TEETH's SOUND is turned one step a bar through the sixteen noise sounds: TICK, HISS, "
+     "METAL, DIGI SNR, CLAP, ZAP, RISE, CRUSH, CRACKLE, GRAIN, PING, THUMP, WASH, FLAM SNR, BIT HAT, LASER; then its "
+     "own body (TISSUE) again."),
+    ("6_body", "THE BODY, ORGAN BY ORGAN",
      "Played on the keys. The kit: HEART at three tunings, BONE, TEETH closed then open, CLAW short and dragged. "
      "Then BASS, a DRONE held, SPASM, the VOICE's throat, NOISE breathing."),
-    ("6_infection", "SLOW INFECTION, THEN UNWIND",
+    ("7_infection", "SLOW INFECTION, THEN UNWIND",
      "On MUT the LOOP is turned down from LOCK a little at a time and RATTLE comes in: the texture changes, the "
      "rhythm's anchors stay. Then RATTLE out and LOOP back to LOCK: a machine calming down."),
-    ("7_build", "FROM NOTHING TO A LOOP",
-     "RITUAL 03, an empty body. PLAY, REC: HEART and BONE played in, TEETH on the off-beats; a bass line in one bar; "
-     "then the nerve starts to move the texture, and is locked again. Every note went in from the keys."),
+    ("8_build", "FROM NOTHING TO A LOOP",
+     "An empty body. PLAY, REC: HEART and BONE played in, TEETH on the off-beats; then BONE becomes a CLAP and TEETH a "
+     "TICK, the same notes in noise; a bass line in one bar; then the nerve moves the texture, and is locked again."),
 ]
 SPEC_W, SPEC_H, SPEC_N = 1200, 160, 8192
 SPEC_LO, SPEC_HI, SPEC_DB = 40.0, 16000.0, 75.0

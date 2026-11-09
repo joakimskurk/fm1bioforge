@@ -1,9 +1,9 @@
-# A demo for the ears: THE AWAKENING for eight bars, then INFECTION (PRESETS, on the bar: the nerve slips and
-# rattles), then MARROW (slower, swung, the crusher, WAIL on SPASM), with LOOP turned down and up again on the way
+# A demo for the ears: THE AWAKENING for eight bars, then STATIC CULT (PRESETS, on the bar: noise as percussion,
+# 132 BPM), then SPLICE (broken, glitched, 100 BPM), with LOOP turned down and up again on the way
 300 btn 12
 16000 enc 6 1
 24000 enc 1 -10
-32000 enc 1 10
-33000 enc 6 1
+30000 enc 1 10
+31000 enc 6 1
 52000 btn 12
 55000 end

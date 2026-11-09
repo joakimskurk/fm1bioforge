@@ -16,7 +16,7 @@
 /* the mix and the effects' settings, 0..100 (written by the main loop) */
 typedef struct {
     uint8_t lvl[BIO_NCH], mute[BIO_NCH], sa[BIO_NCH], sb[BIO_NCH], sc[BIO_NCH];
-    uint8_t master, rib;
+    uint8_t master, rib, pump;                  /* pump: HEART ducks the other channels (a side-chain), 0 .. -18 dB */
 } bio_mix_t;
 typedef struct {
     uint8_t d_time, d_fb, d_tone, d_ping, d_mix, d_rev;   /* BLOOD DELAY: time (a division), feedback, tone, ping-pong, return, to the reverb */
@@ -34,7 +34,7 @@ typedef void (*bio_tick_fn)(bio_t *e, void *ctx);
 struct bio_s {
     /* the organs */
     bio_drum_t drum[4];
-    bio_tone_t tone[5];
+    bio_tone_t tone[4];                         /* BASS DRONE SPASM VOICE */
     uint8_t p[BIO_NORG][BIO_NP];                /* the parameters (the main loop writes them) */
     uint8_t lk[BIO_NORG][4];                    /* the macros locked by the note that sounds (BIO_NOLOCK: none) */
     bio_mix_t mix;
@@ -71,10 +71,12 @@ struct bio_s {
     /* the master */
     bio_dc_t mdc_l, mdc_r;
     int32_t lim_g;
+    int32_t duck, duck_to, duck_rel;            /* PUMP: the cut now and the hit's (Q15), its recovery a sub-block (Q30) */
     uint32_t fx_seen;                           /* the effects' settings last turned into coefficients */
     /* the meters (peak per channel, the last block), the load */
     int32_t meter[BIO_NCH];
-    int32_t ob[BIO_NORG][BIO_SB];
+    int32_t ob[BIO_NORG][BIO_SB], os[BIO_NORG][BIO_SB];   /* each organ's sub-block, and its side (width) */
+    bio_perc_t noise;                           /* the NOISE organ: the perc voice */
     /* the CPU rule (the idea document's 5.10): over budget, the drums not in focus ring on two modes, not four */
     volatile uint32_t shed, focus;
     /* the scope: an organ's own output, every fourth sample (the main loop draws it) */
@@ -87,7 +89,7 @@ struct bio_s {
 };
 
 static const bio_mix_t BIO_MIX_INIT = {{80, 70, 58, 62, 56, 46}, {0, 0, 0, 0, 0, 0}, {12, 8, 0, 18, 10, 0},
-                                       {18, 6, 30, 28, 34, 30}, {0, 10, 0, 20, 0, 12}, 75, 50};
+                                       {18, 6, 30, 28, 34, 30}, {0, 10, 0, 20, 0, 12}, 75, 50, 0};
 static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 40};
 
 static void bio_fx_coefs(bio_t *e);
@@ -104,7 +106,7 @@ static void bio_init(bio_t *e)
     e->fx = BIO_FX_INIT;
     e->rnd = 0x2545F491u;
     for (k = 0; k < 3u; k++) bio_mode_set(&e->rib[k], bio_lf_hz(RIB_F[k]), bio_tau40(RIB_D[k]));
-    for (k = 0; k < 5u; k++) e->tone[k].rnd = bio_hash(0xB10F0u, k);
+    for (k = 0; k < 4u; k++) e->tone[k].rnd = bio_hash(0xB10F0u, k);
     e->lim_g = 32767;
     e->beat_inc = 95u;                          /* 120 BPM until the sequencer sets the tempo */
     e->spb_q8 = 22050u << 8;
@@ -123,6 +125,17 @@ static void bio_trigger(bio_t *e, uint32_t org, int32_t note, uint32_t vel, uint
         e->lk[org][k] = locks ? locks[k] : BIO_NOLOCK;
         if (e->lk[org][k] != BIO_NOLOCK) p[k] = e->lk[org][k];
     }
+    if (org == O_NOISE) {                       /* noise as percussion (its texture moved by the nerve too) */
+        bio_perc_p_t pp;
+        bio_perc_params(p, &pp);
+        pp.texture = (uint8_t)bio_clamp((int32_t)pp.texture + e->nerve_tex, 0, 100);
+        bio_perc_hit(&e->noise, &pp, (note - 60) * 256, vel, bio_level(p[P_LEVEL]), len, seed);
+        return;
+    }
+    if (org == O_HEART && e->mix.pump) {         /* PUMP: the kick pushes the rest down; it comes back by the next 8th */
+        e->duck_to = bio_mul15((int32_t)(e->mix.pump > 100u ? 100u : e->mix.pump) * 285, (int32_t)(vel > 127u ? 127u : vel) * 258);
+        e->duck_rel = bio_decay(BIO_SB, (e->spb_q8 >> 8) / 6u);
+    }
     if (org < 4u) {
         int32_t rot = e->nerve_tex;
         bio_drum_hit(&e->drum[org], org, note * 256, vel, len, p, seed, rot);
@@ -134,13 +147,16 @@ static void bio_trigger(bio_t *e, uint32_t org, int32_t note, uint32_t vel, uint
 }
 static void bio_release(bio_t *e, uint32_t org, uint32_t note)
 {
-    if (org >= 4u && org < BIO_NORG) bio_tone_off(&e->tone[org - 4u], note);
+    if (org == O_NOISE) bio_perc_release(&e->noise);
+    else if (org < 4u) { if (e->drum[org].perc) bio_perc_release(&e->drum[org].np); }
+    else if (org < BIO_NORG) bio_tone_off(&e->tone[org - 4u], note);
 }
 static void bio_panic(bio_t *e)                 /* every organ to silence in a few ms; the patterns are not touched */
 {
     uint32_t k;
-    for (k = 0; k < 4u; k++) if (e->drum[k].awake) e->drum[k].fade = 32766;
-    for (k = 0; k < 5u; k++) {
+    for (k = 0; k < 4u; k++) if (e->drum[k].awake) { e->drum[k].fade = 32766; e->drum[k].np.fade = 32766; }
+    if (e->noise.awake) e->noise.fade = 32766;
+    for (k = 0; k < 4u; k++) {
         bio_tone_t *v = &e->tone[k];
         v->gate = 0;
         if (v->env.st) { v->env.st = 3; v->env.kr = bio_decay(BIO_SB, BIO_MS(1)); }
@@ -156,8 +172,8 @@ static int bio_busy(const bio_t *e)             /* anything sounding at all */
 {
     uint32_t k;
     for (k = 0; k < 4u; k++) if (e->drum[k].awake) return 1;
-    for (k = 0; k < 5u; k++) if (e->tone[k].awake) return 1;
-    return 0;
+    for (k = 0; k < 4u; k++) if (e->tone[k].awake) return 1;
+    return e->noise.awake ? 1 : 0;
 }
 
 /* the effects' coefficients from their settings (when they changed, and the delay's time on the tempo) */
@@ -238,26 +254,31 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         life.cv = e->nerve_cv;
         for (k = 0; k < BIO_SB; k++) e->rib_in[k] = 0;
         for (o = 0; o < BIO_NORG; o++)
-            for (k = 0; k < BIO_SB; k++) e->ob[o][k] = 0;
+            for (k = 0; k < BIO_SB; k++) e->ob[o][k] = e->os[o][k] = 0;
         /* the drums */
         for (o = 0; o < 4u; o++) {
             uint32_t nm = e->drum[o].nm;
             bio_drum_ctl(&e->drum[o], o, e->drift, o == O_CLAW ? e->nerve_scrape : o == O_TEETH ? e->nerve_metal : 0);
             if (e->shed && o != e->focus && nm > 2u) e->drum[o].nm = 2;   /* (the transients stay; the ring thins) */
-            bio_drum_render(&e->drum[o], o, e->ob[o], e->rib_in, BIO_SB);
+            bio_drum_render(&e->drum[o], o, e->ob[o], e->os[o], e->rib_in, BIO_SB);
             e->drum[o].nm = nm;
         }
         /* the tonal organs: their parameters with the note's locks and the nerve's ROT on TEXTURE */
-        for (o = 4u; o < BIO_NORG; o++) {
+        if (e->noise.awake) {                   /* NOISE: the perc voice; BREATH (D8) lifts and lowers a long one */
+            int32_t br = bio_sin(e->beat_q16 * (16384u / 4u)), depth = (int32_t)e->p[O_NOISE][P_D8] * 160, g;   /* (4 bars) */
+            bio_perc_render(&e->noise, e->ob[O_NOISE], e->os[O_NOISE], BIO_SB);
+            g = bio_clamp(32767 - bio_mul15(depth, (32767 - br) / 2), 0, 32767);
+            if (depth) for (k = 0; k < BIO_SB; k++) { e->ob[O_NOISE][k] = bio_mul15(e->ob[O_NOISE][k], g); e->os[O_NOISE][k] = bio_mul15(e->os[O_NOISE][k], g); }
+        }
+        for (o = 4u; o < O_NOISE; o++) {
             bio_tone_t *v = &e->tone[o - 4u];
             uint32_t bars;
             if (!v->awake) continue;
             for (k = 0; k < BIO_NP; k++) pe[k] = e->p[o][k];
             for (k = 0; k < 4u; k++) if (e->lk[o][k] != BIO_NOLOCK) pe[k] = e->lk[o][k];
             pe[P_TEXTURE] = (uint8_t)bio_clamp((int32_t)pe[P_TEXTURE] + e->nerve_tex, 0, 100);
-            /* BREATH: DRONE's over 1..32 bars (8 at INIT), NOISE's over 1/4..32 (4), VOICE's 4 */
+            /* BREATH: DRONE's over 1..32 bars (8 at INIT), the others' 4 */
             if (o == O_DRONE) bars = e->p[o][P_D5] <= 50u ? 1u + (uint32_t)e->p[o][P_D5] * 7u / 50u : 8u + ((uint32_t)e->p[o][P_D5] - 50u) * 24u / 50u;
-            else if (o == O_NOISE) bars = e->p[o][P_D5] <= 50u ? 1u + (uint32_t)e->p[o][P_D5] * 3u / 50u : 4u + ((uint32_t)e->p[o][P_D5] - 50u) * 28u / 50u;
             else bars = 4u;
             life.breath = bio_sin(e->beat_q16 * (16384u / bars));   /* a turn every 4 x bars beats */
             bio_tone_render(v, o, pe, &life, e->ob[o], BIO_SB);
@@ -285,9 +306,17 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
                 e->ob[O_HEART][k] += bio_mul15(r, rg);
             }
         }
+        /* PUMP: a 2 ms attack, then the recovery */
+        if (e->duck_to) {
+            e->duck += (e->duck_to - e->duck) / 2;
+            if (e->duck_to - e->duck < 400) { e->duck = e->duck_to; e->duck_to = 0; }
+        } else if (e->duck) {
+            e->duck = bio_mul30z(e->duck, e->duck_rel);
+        }
         /* the channels: pan, level, mute, the sends */
         for (o = 0; o < BIO_NCH; o++) {
             int32_t g = e->mix.mute[o] ? 0 : bio_fader(e->mix.lvl[o]);
+            if (o != CH_DRUM && e->duck) g = bio_mul15(g, 32767 - e->duck);
             chg[o] = g;
             ga[o] = bio_mul15(g, bio_fader(e->mix.sa[o]));
             gb[o] = bio_mul15(g, bio_fader(e->mix.sb[o]));
@@ -303,15 +332,15 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
                 for (o = 0; o < BIO_NORG; o++) {
                     uint32_t pan = e->p[o][P_PAN];
                     int32_t pl, pr, pk = 0;
-                    if (BIO_ORG_CH[o] != ch || !(o < 4u ? e->drum[o].awake || o == O_HEART : e->tone[o - 4u].awake)) continue;
+                    if (BIO_ORG_CH[o] != ch || !(o < 4u ? e->drum[o].awake || o == O_HEART : o == O_NOISE ? e->noise.awake : e->tone[o - 4u].awake)) continue;
                     any = 1;
                     pan = pan > 100u ? 100u : pan;
                     pl = bio_m15(BIO_SIN[256u + pan * 256u / 100u], chg[ch]);   /* cos */
                     pr = bio_m15(BIO_SIN[pan * 256u / 100u], chg[ch]);          /* sin */
                     for (k = 0; k < BIO_SB; k++) {
-                        int32_t x = bio_sat(e->ob[o][k]);
-                        dryl[k] += bio_m15(x, pl);
-                        dryr[k] += bio_m15(x, pr);
+                        int32_t x = bio_sat(e->ob[o][k]), sd = bio_m15(bio_sat(e->os[o][k]), chg[ch]);
+                        dryl[k] += bio_m15(x, pl) + sd;   /* (the side: + left, - right) */
+                        dryr[k] += bio_m15(x, pr) - sd;
                         chm[k] += x;
                         if (bio_abs(x) > pk) pk = bio_abs(x);
                     }

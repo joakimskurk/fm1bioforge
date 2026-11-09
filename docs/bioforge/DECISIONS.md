@@ -48,7 +48,7 @@ friction and the vent under -66 dB), only its modes and its pitch body run; it s
 sends summed per channel and the rib asleep when nothing strikes it: 2 400. Over 75 % of the interrupt, the drums out
 of focus ring on two modes (the document's rule: the transients and the clock stay).
 
-**D13 (2026-11-09) Four scenes from the document's situations.** RITUAL 00 THE AWAKENING is the document's start scene.
+**D13 (2026-11-09, replaced by D19) Four scenes from the document's situations.** RITUAL 00 THE AWAKENING is the document's start scene.
 01 INFECTION is its SLOW INFECTION (LOOP 80 %, DEPTH 30 %, RATTLE on). 02 MARROW is slower and swung, the bass and
 SPASM through the crusher, WAIL on SPASM. 03 EMPTY BODY is blank, for your own.
 
@@ -69,7 +69,29 @@ recording). The layout, the controls on each page and how much is on a screen fo
 **D17 (2026-11-09) The page: demos and the firmware to try.** The user asked for a page with demos and a firmware to
 test, like their other firmwares' pages. `web/` has BIOFORGE compiled to WebAssembly on a web FM-1 (after ORBITRIX's:
 the buttons can be held, so SEQ, LFO, ARP and HOME work as on the panel; the scenes' slots are kept in the browser),
-seven demos that are the firmware itself played by scripts (`tests/scripts/demo_*.txt`, rendered by
+seven (now eight, D19) demos that are the firmware itself played by scripts (`tests/scripts/demo_*.txt`, rendered by
 `tools/make_demos.sh`, never edited after), each with its spectrum, and the Web MIDI installer with the package CI
 built and tested. CI's site job builds it on `main`, checks the WebAssembly in Node first, and publishes it once
 GitHub Pages is switched on.
+
+**D18 (2026-11-09) Noise as percussion, and a more modern sound.** The user heard the page: the demos and the sounds
+were all the same, it sounded like a 1996 horror game; fine as a start, but they had hoped for something more modern
+in the noise: noise as percussion, and a much more versatile expression, with sound examples along the way. So:
+- NOISE is now a percussion voice (`bio_perc.h`) instead of a breath pad: a source of five kinds, grain, a morphing
+  resonant filter that keeps its loudness wherever it is put (a low-pass gains half an octave for each octave its
+  cutoff is under the source's top, a band-pass loses half of Q's), a sweep, bursts, a click, a struck or held
+  envelope, drive (at 0 dB still a soft knee), a crusher, width. About 110 instructions a sample while it sounds.
+- Any drum organ can become one (MODEL, D8), so the kit can be four noise sounds, or mixed with TISSUE. Sixteen
+  sounds to start from (`bio_kits.h`), on the SOUND knob; TISSUE gives a drum its own body back.
+- PUMP: the kick ducks the rest, the most recognisable modern mix move, one knob.
+- The old NOISE (breath, scrape, steam) is gone: the perc voice held with BREATH does what it did.
+- The scene's format is "BOF2" (the mix's PUMP): scenes saved by an earlier build are not read; the factory ones load.
+
+**D19 (2026-11-09) Four scenes, four worlds; factory rituals on SHIFT + PRESETS.** INFECTION and MARROW were the
+awakening with other knobs, which is why everything sounded the same. The four scenes at the start are now RITUAL 00
+THE AWAKENING (the document's), 01 STATIC CULT (132 BPM, noise as percussion, PUMP), 02 SPLICE (100 BPM, broken: 32
+steps, ratchets, chances, a 12-step hat against it, crushed, WAIL on both), 03 VOID (70 BPM, slow and wide: held
+washes, crackle, the drone under a huge HEART, a long reverb). `bio_rituals.h` builds them from step strings; SHIFT +
+PRESETS loads any of six (those, INFECTION, EMPTY BODY) into the scene that plays, the one in flash kept until SAVE.
+The demos follow: one each for the four, one turning TEETH's SOUND through the kit, the organ tour, SLOW INFECTION,
+and FROM NOTHING TO A LOOP, now with BONE turned into a CLAP and TEETH a TICK on the way.

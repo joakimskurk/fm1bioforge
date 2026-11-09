@@ -2,11 +2,14 @@
 /* BIOFORGE's engine and memory, tested on a computer (tests/run_bio.sh builds it twice: plain and under ASan/UBSan).
  * The idea document's testable demands (5.10, 10) where a computer can check them: the Turing's periods, WRITE and
  * RESET; the same start giving the same sound; a dry start that does not clip or drift; recording live and by step,
- * overdub, replace, erase, undo; quantise that keeps the performance; no hanging notes; the organs falling asleep. */
+ * overdub, replace, erase, undo; quantise that keeps the performance; no hanging notes; the organs falling asleep.
+ * And noise as percussion: every sound of the kit heard, unclipped, asleep after; MODEL NOISE on a drum; PUMP; the
+ * factory rituals each playing in range. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "bio_seq.h"
+#include "bio_rituals.h"
 
 static bio_t eng, eng2;
 static seq_t sq, sq2;
@@ -254,16 +257,18 @@ static void test_record(void)
     seq_play(&sq);
     run(&eng, 200, 0);
     seq_stop(&sq);
-    for (i = 0, ok = 1; i < 5u; i++) if (eng.tone[i].gate) ok = 0;
-    check(ok, "STOP: no tonal organ is left held");
+    for (i = 0, ok = 1; i < 4u; i++) if (eng.tone[i].gate) ok = 0;
+    if (eng.noise.gate) ok = 0;
+    check(ok, "STOP: no tonal organ is left held, nor NOISE");
     bio_panic(&eng);
     run(&eng, 40, 0);
     for (i = 0, ok = 1; i < 4u; i++) if (eng.drum[i].awake) ok = 0;
     check(ok, "PANIC: the drums silent within 0.25 s");
     peak = 0;
     run(&eng, 2000, 0);
-    for (i = 0, ok = 1; i < 5u; i++) if (eng.tone[i].awake) ok = 0;
-    check(ok, "and the tonal organs asleep (nothing renders: no CPU)");
+    for (i = 0, ok = 1; i < 4u; i++) if (eng.tone[i].awake) ok = 0;
+    if (eng.noise.awake) ok = 0;
+    check(ok, "and the tonal organs asleep, NOISE too (nothing renders: no CPU)");
     /* a note held over the loop's end: its length wraps */
     setup(&eng, &sq, scn, und, red);
     t = &scn[0].tr[O_BASS];
@@ -285,11 +290,109 @@ static void test_record(void)
     check(seq_undo(&sq) && scn[0].tr[O_TEETH].n + scn[0].tr[O_CLAW].n == n0, "and undone in one go");
 }
 
+static double rms_of(uint32_t blocks)       /* (a square root without libm) */
+{
+    double m = (double)sum2 / ((double)blocks * 512.0), r = m > 1 ? m : 1;
+    int j;
+    for (j = 0; j < 40; j++) r = 0.5 * (r + m / r);
+    return m > 0 ? r : 0;
+}
+
+static void test_perc(void)
+{
+    uint32_t i, ok_heard = 1, ok_clip = 1, ok_sleep = 1, ok_same = 1, ok_tissue;
+    static int16_t a[200 * 512], b[200 * 512];
+    /* each sound of the kit, on NOISE alone: heard, not clipped, asleep 3 s after (a held one after its release) */
+    for (i = 0; i < BIO_NPERC_KIT; i++) {
+        uint32_t held = BIO_PERC_KIT[i].p[P_D] != 0u;
+        setup(&eng, &sq, scn, und, red);
+        seq_sound(&sq);
+        eng.tick = 0;                           /* (no sequencer: the engine's parameters stay as set here) */
+        eng.fx.d_mix = eng.fx.r_mix = eng.fx.c_mix = 0;
+        eng.mix.lvl[CH_NOISE] = 100;
+        bio_preset_set(eng.p[O_NOISE], &BIO_PERC_KIT[i], O_NOISE);
+        eng.p[O_NOISE][P_D8] = 0;
+        peak = 0; sum = sum2 = 0; clipped = 0;
+        bio_trigger(&eng, O_NOISE, 60, 127, held ? 0xFFFFFFFFu : 0u, 0, 0x77u + i);
+        run(&eng, 60, 0);
+        if (held) bio_release(&eng, O_NOISE, 60);
+        run(&eng, 600, 0);
+        if (peak < 1600) { ok_heard = 0; printf("     %s: peak %d\n", BIO_PERC_KIT[i].name, (int)peak); }
+        if (clipped) ok_clip = 0;
+        if (eng.noise.awake) { ok_sleep = 0; printf("     %s: still awake\n", BIO_PERC_KIT[i].name); }
+    }
+    check(ok_heard, "the noise kit: each of its sounds heard at full velocity (its peak over -26 dBFS)");
+    check(ok_clip, "the noise kit: none of them clips");
+    check(ok_sleep, "the noise kit: each asleep 3.5 s after it was struck or let go (no CPU)");
+    /* the same seed: the same hit */
+    for (i = 0; i < 2u; i++) {
+        setup(&eng, &sq, scn, und, red);
+        seq_sound(&sq);
+        eng.tick = 0;
+        bio_preset_set(eng.p[O_NOISE], bio_preset_find("CLAP"), O_NOISE);
+        bio_trigger(&eng, O_NOISE, 60, 110, 0, 0, 0x4242u);
+        run(&eng, 200, i ? b : a);
+    }
+    for (i = 0; i < 200u * 512u; i++) if (a[i] != b[i]) ok_same = 0;
+    check(ok_same, "LOCKED BODY for noise too: the same seed, the same clap, sample for sample");
+    /* MODEL NOISE: a drum organ becomes a perc voice, and TISSUE again */
+    setup(&eng, &sq, scn, und, red);
+    seq_sound(&sq);
+    eng.tick = 0;
+    bio_preset_set(eng.p[O_TEETH], bio_preset_find("TICK"), O_TEETH);
+    bio_trigger(&eng, O_TEETH, 0, 110, 0, 0, 1u);
+    run(&eng, 2, 0);
+    check(eng.drum[O_TEETH].perc == 1u && eng.drum[O_TEETH].np.awake, "MODEL NOISE: TEETH given TICK strikes the perc voice");
+    for (i = 0; i < BIO_NP; i++) eng.p[O_TEETH][i] = BIO_P_INIT[O_TEETH][i];
+    run(&eng, 200, 0);
+    bio_trigger(&eng, O_TEETH, 0, 110, 0, 0, 2u);
+    ok_tissue = eng.drum[O_TEETH].perc == 0u && eng.drum[O_TEETH].awake;
+    check(ok_tissue, "and given its own body again (MODEL TISSUE) it rings its modes");
+    /* PUMP: HEART ducks the other channels, and they come back within the beat */
+    setup(&eng, &sq, scn, und, red);
+    seq_sound(&sq);
+    eng.tick = 0;
+    eng.mix.pump = 100;
+    bio_trigger(&eng, O_HEART, 0, 127, 0, 0, 3u);
+    run(&eng, 1, 0);
+    check(eng.duck > 26000, "PUMP 100: a HEART hit cuts the rest by more than 14 dB");
+    run(&eng, 86, 0);                           /* a beat at 120 BPM */
+    check(eng.duck < 1500, "and they are back within the beat (under 0.4 dB)");
+    /* the factory rituals: each plays, in range, and each is its own */
+    for (i = 0; i < BIO_NRITUAL; i++) {
+        double r;
+        setup(&eng, &sq, scn, und, red);
+        BIO_RITUAL[i](&scn[0]);
+        sq.tur_reset = 1;
+        seq_play(&sq);
+        peak = 0; sum = sum2 = 0; clipped = 0;
+        run(&eng, 1378, 0);
+        r = rms_of(1378);
+        if (i + 1u < BIO_NRITUAL) {             /* (the last one is the empty body) */
+            char what[96];
+            snprintf(what, sizeof what, "ritual %s, 8 s: not clipped, its RMS between -30 and -9 dBFS, no DC", BIO_RITUAL_NAME[i]);
+            check(clipped == 0u && r > 1000.0 && r < 12000.0 && llabs(sum) / (1378 * 512) < 60, what);
+        }
+    }
+    {
+        uint32_t j, ok = 1;
+        static seq_scene_t x, y;
+        for (i = 0; i < 4u; i++)
+            for (j = i + 1u; j < 4u; j++) {
+                BIO_RITUAL[i](&x);
+                BIO_RITUAL[j](&y);
+                if (x.bpm10 == y.bpm10 && !memcmp(x.p, y.p, sizeof x.p)) ok = 0;
+            }
+        check(ok, "the four start scenes: no two with the same tempo and the same sounds");
+    }
+}
+
 int main(void)
 {
     test_turing();
     test_sound();
     test_record();
+    test_perc();
     printf("%d of %d checks passed\n", checks - fails, checks);
     return fails ? 1 : 0;
 }
