@@ -1,0 +1,24 @@
+# D35: SHRINE (SEL held, PRESETS to 20): FX three times (SPACE, DUCK, WARP); MUT twice (WAIL, SCALE, RUPTURE); GLO
+# twice (E LYDIAN); ARP held, white key 9 (SCREW), then 10 (DROP)
+100 btndown 3
+200 enc 6 20
+300 btnup 3
+400 btn 12
+1200 btn 2
+1300 btn 2
+1400 btn 2
+1800 shot
+2200 btn 5
+2300 btn 5
+2700 shot
+3100 btn 7
+3200 btn 7
+3600 shot
+4000 btndown 10
+4200 keys 0x4000
+5200 shot
+5400 keys 0x8000
+5800 shot
+6200 keys 0
+6400 btnup 10
+8000 end

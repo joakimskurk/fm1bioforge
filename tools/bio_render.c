@@ -9,6 +9,7 @@
  *                         [arp=T:M:R:G:C:Q]       an ARP on track T (mode, rate, range, chord, gate as the knobs show)
  *                         [m=T:L] [a=T:V] [nowail] track T's MODEL a landscape L, its ATTACK V; WAIL off
  *                         [lvl=C:V]               channel C's level
+ *                         [warp=V] [rup=V]        WARP (the tape wavering) and RUPTURE (the register's cuts), 0..100
  *   build/bio_render scar N OUT.wav BARS M@B+L ...  ritual N with SCAR bursts (bio_scar.h): mode M (1 REPEAT 1/16,
  *                                                   2 REPEAT 1/8, 3 REVERSE, 4 SMEAR) held from beat B for L beats
  *   build/bio_render palette OUT.wav                the noise kit (bio_kits.h), each sound three times
@@ -89,8 +90,8 @@ int main(int argc, char **argv)
         if (r >= BIO_NRITUAL) r = 0;
         BIO_RITUAL[r](&scenes[0]);
         for (k = 5; k < (uint32_t)argc; k++) {
-            if (!strncmp(argv[k], "k=", 2)) scenes[0].tur.key = (uint8_t)((scenes[0].tur.key & 0x70u) | ((uint32_t)atoi(argv[k] + 2) % 12u));
-            else if (!strncmp(argv[k], "s=", 2)) scenes[0].tur.key = (uint8_t)((scenes[0].tur.key & 0x0Fu) | ((uint32_t)atoi(argv[k] + 2) & 7u) << 4);
+            if (!strncmp(argv[k], "k=", 2)) scenes[0].tur.key = (uint8_t)((scenes[0].tur.key & 0xF0u) | ((uint32_t)atoi(argv[k] + 2) % 12u));
+            else if (!strncmp(argv[k], "s=", 2)) scenes[0].tur.key = (uint8_t)((scenes[0].tur.key & 0x0Fu) | ((uint32_t)atoi(argv[k] + 2) & 15u) << 4);
             else if (!strncmp(argv[k], "arp=", 4)) {   /* arp=TRK:MODE:RATE:RANGE:CHORD:GATE (as the knobs show them) */
                 unsigned t, m, r, g, c, q;
                 if (sscanf(argv[k] + 4, "%u:%u:%u:%u:%u:%u", &t, &m, &r, &g, &c, &q) == 6 && t >= 4u && t < BIO_NORG) {
@@ -109,6 +110,8 @@ int main(int argc, char **argv)
                 if (sscanf(argv[k] + 2, "%u:%u", &t, &v) == 2 && t < BIO_NORG) scenes[0].p[t][P_A] = (uint8_t)v;
             }
             else if (!strcmp(argv[k], "nowail")) scenes[0].tur.wail = 0;
+            else if (!strncmp(argv[k], "warp=", 5)) scenes[0].mix.warp = (uint8_t)atoi(argv[k] + 5);
+            else if (!strncmp(argv[k], "rup=", 4)) scenes[0].tur.rupture = (uint8_t)atoi(argv[k] + 4);
             else if (!strncmp(argv[k], "lvl=", 4)) {   /* lvl=CH:LEVEL (a channel's) */
                 unsigned c, v;
                 if (sscanf(argv[k] + 4, "%u:%u", &c, &v) == 2 && c < BIO_NCH) scenes[0].mix.lvl[c] = (uint8_t)v;

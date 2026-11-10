@@ -1,0 +1,9 @@
+# Demo: MIRAGE (a factory ritual, D35): a loop chopped and screwed by the register. 64 BPM, C# Dorian: a choir's phrase, a
+# mass, a bell sparkling from the chord, a soft kick, a clap far off; the tape wavering hard, the register cutting it up
+# most of the time, and now and then a burst of crushed noise breaking in
+100 btndown 3
+200 enc 6 21
+300 btnup 3
+400 btn 12
+26650 btn 12
+31650 end

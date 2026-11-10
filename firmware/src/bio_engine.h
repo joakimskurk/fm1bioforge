@@ -24,6 +24,7 @@ typedef struct {
     uint8_t master, rib, pump;                  /* pump: HEART ducks the other channels (a side-chain), 0 .. -18 dB */
     uint8_t rumble;                             /* RUMBLE: HEART into a dark low tail of its own, ducked by it (D22) */
     uint8_t dark;                               /* DARK: the master's low-pass, off at 0, 18 kHz .. 1.2 kHz (D23) */
+    uint8_t warp;                               /* WARP (D35): the output through a wavering tape, off at 0 */
 } bio_mix_t;
 typedef struct {
     uint8_t d_time, d_fb, d_tone, d_ping, d_mix, d_rev;   /* BLOOD DELAY: time (a division), feedback, tone, ping-pong, return, to the reverb */
@@ -112,7 +113,7 @@ struct bio_s {
 };
 
 static const bio_mix_t BIO_MIX_INIT = {{80, 70, 58, 62, 56, 46}, {0, 0, 0, 0, 0, 0}, {12, 8, 0, 18, 10, 0},
-                                       {18, 6, 30, 28, 34, 30}, {0, 0, 0, 0, 0, 0}, 75, 50, 0, 0, 0};   /* (no crush: D22) */
+                                       {18, 6, 30, 28, 34, 30}, {0, 0, 0, 0, 0, 0}, 75, 50, 0, 0, 0, 0};   /* (no crush: D22) */
 static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 0,   0, 0};
 
 static void bio_fx_coefs(bio_t *e);
@@ -601,7 +602,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             e->lim_g = tg;
             /* SCAR: kept, and a BURST over it while one is held */
             bio_scar_grid(&e->scar, e->grid_on ? e->grid : 0u);
-            bio_scar_run(&e->scar, dryl, dryr, BIO_SB, e->spb_q8, e->grid_on);
+            bio_scar_run(&e->scar, dryl, dryr, BIO_SB, e->spb_q8, e->grid_on, e->mix.warp);
             for (k = 0; k < BIO_SB; k++) {
                 out[2u * (off + k)] += dryl[k];
                 out[2u * (off + k) + 1u] += dryr[k];

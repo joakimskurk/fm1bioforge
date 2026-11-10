@@ -50,6 +50,13 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
      "Dark ambient meets noise, 110 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
      "crackling, the reverb and the delay breathing with it; ticks of six squares off the beat, sparks in time; wide, "
      "drifting dub chords off the beat into a dark delay, a bass on the off-beats, a wide drone and a choir in a cave."),
+    ("21_shrine", "SHRINE",
+     "Sweetness, ruptured: E Lydian, no beat but a clock. Glass arped up and down a major ninth, a choir on the sharp "
+     "fourth, chimes; all of it through a wavering tape (WARP), and the nervous system cutting into it (RUPTURE): a "
+     "silence, a stutter, a bar screwed down an octave, the same cuts each time round."),
+    ("22_mirage", "MIRAGE",
+     "A loop chopped and screwed by the nervous system: 64 BPM, C# Dorian. A choir's phrase, a mass, a bell sparkling "
+     "from the chord; the tape wavering hard, cut up most of the time, and now and then crushed noise breaking in."),
     ("20_lament", "LAMENT",
      "A melody, 92 BPM, C harmonic minor: a choir sings four bars (i, iv, V with its raised seventh, i), glass arped up "
      "and down through each chord, the bass on the roots, a soft kick and a clap far off, a hall."),

@@ -732,6 +732,85 @@ static void test_arp(void)
     check(ok, "a scene made blank keeps no ARP of the one before");
 }
 
+/* D35: SCREW is the 8th just played at half speed (its zero crossings half as many); DROP is silence; WARP keeps the
+   loudness but not the samples; RUPTURE's cuts, with the register locked, come back where they were each time round */
+static void test_unorthodox(void)
+{
+    static int32_t ba[512], bb[512];
+    uint32_t b, k, za = 0, zb = 0, quiet = 1, n = 0, ev = 0, okr = 1, i;
+    int32_t pa = 0, pb = 0;
+    double ra = 0, rb = 0;
+    static uint32_t ev_t[64], ev_m[64];
+    setup(&eng, &sq, scn, und, red);
+    setup(&eng2, &sq2, scn2, und2, red2);
+    BIO_RITUAL[rit_index("ABYSS")](&scn[0]);
+    BIO_RITUAL[rit_index("ABYSS")](&scn2[0]);
+    sq.tur_reset = sq2.tur_reset = 1;
+    seq_play(&sq); seq_play(&sq2);
+    for (b = 0; b < 44100u * 6u / 256u; b++) {   /* SCREW 2.0 .. 3.0 s; DROP 4.0 .. 4.5 s */
+        uint32_t f = b * 256u;
+        eng2.scar.want = f >= 88200u && f < 132300u ? SCAR_SCREW : f >= 176400u && f < 198450u ? SCAR_DROP : SCAR_OFF;
+        memset(ba, 0, sizeof ba); memset(bb, 0, sizeof bb);
+        bio_render(&eng, ba, 256); bio_render(&eng2, bb, 256);
+        for (k = 0; k < 512u; k += 2u) {
+            if (f >= 100000u && f < 130000u && eng2.scar.mode == SCAR_SCREW && !eng2.scar.armed && eng2.scar.mix >= 32767) {
+                if ((ba[k] < 0) != (pa < 0)) za++;
+                if ((bb[k] < 0) != (pb < 0)) zb++;
+                n++;
+            }
+            if (f >= 180000u && f < 196000u && (bb[k] > 50 || bb[k] < -50)) quiet = 0;
+            pa = ba[k]; pb = bb[k];
+        }
+    }
+    check(n > 20000u && zb * 10u < za * 7u && zb * 10u > za * 3u, "SCAR SCREW: the 8th at half speed (half the zero crossings)");
+    check(quiet, "SCAR DROP: silence while held");
+    /* WARP: the same music, wavering */
+    setup(&eng, &sq, scn, und, red);
+    setup(&eng2, &sq2, scn2, und2, red2);
+    BIO_RITUAL[rit_index("ORBIT")](&scn[0]);
+    BIO_RITUAL[rit_index("ORBIT")](&scn2[0]);
+    scn2[0].mix.warp = 70;
+    seq_play(&sq); seq_play(&sq2);
+    clipped = 0;
+    for (b = 0; b < 44100u * 4u / 256u; b++) {
+        uint32_t d = 0;
+        memset(ba, 0, sizeof ba); memset(bb, 0, sizeof bb);
+        bio_render(&eng, ba, 256); bio_render(&eng2, bb, 256);
+        for (k = 0; k < 512u; k++) { ra += (double)ba[k] * ba[k]; rb += (double)bb[k] * bb[k]; d |= ba[k] != bb[k]; if (bb[k] > 32767 || bb[k] < -32767) clipped++; }
+        if (b > 100u && !d) okr = 0;
+    }
+    check(okr && rb > ra * 0.8 && rb < ra * 1.25 && !clipped, "WARP: the music wavering, as loud, not clipped");
+    /* RUPTURE: SHRINE's cuts (its register locked, 16 long, on 8ths: two bars round) in its second and third times round */
+    setup(&eng, &sq, scn, und, red);
+    BIO_RITUAL[rit_index("SHRINE")](&scn[0]);
+    sq.tur_reset = 1;
+    seq_play(&sq);
+    {
+        uint32_t P = 16u * 192u, last = 0;
+        for (b = 0; b < 44100u * 30u / 256u && sq.ticks < 3u * P + 400u; b++) {
+            memset(ba, 0, sizeof ba);
+            bio_render(&eng, ba, 256);
+            if (eng.scar.want_auto != last) {
+                if (eng.scar.want_auto && ev < 64u) { ev_t[ev] = sq.ticks; ev_m[ev++] = eng.scar.want_auto; }
+                last = eng.scar.want_auto;
+            }
+        }
+        {
+            uint32_t n2 = 0, n3 = 0;
+            for (i = 0; i < ev; i++) { if (ev_t[i] >= P && ev_t[i] < 2u * P) n2++; if (ev_t[i] >= 2u * P && ev_t[i] < 3u * P) n3++; }
+            if (!n2 || n2 != n3) okr = 0;
+            else for (i = 0; i < ev; i++)
+                if (ev_t[i] >= P && ev_t[i] < 2u * P) {
+                    uint32_t j, found = 0;
+                    for (j = 0; j < ev; j++)
+                        if (ev_m[j] == ev_m[i] && ev_t[j] >= ev_t[i] + P - 2u && ev_t[j] <= ev_t[i] + P + 2u) found = 1;
+                    if (!found) okr = 0;
+                }
+            check(okr, "RUPTURE: the register locked, its cuts come back where they were (two bars on)");
+        }
+    }
+}
+
 int main(void)
 {
     test_turing();
@@ -741,6 +820,7 @@ int main(void)
     test_scar();
     test_key();
     test_arp();
+    test_unorthodox();
     printf("%d of %d checks passed\n", checks - fails, checks);
     return fails ? 1 : 0;
 }

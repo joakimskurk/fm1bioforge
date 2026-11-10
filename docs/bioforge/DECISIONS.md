@@ -299,3 +299,21 @@ sings four bars, i iv V i, glass arped through each chord). LAMENT takes INFECTI
 with other register settings). The tempi now 60 .. 170 and none; six roots, five scales, 4/4 and 7/8. Each has a demo
 on the page. A scene made blank now clears its tracks' ARP too (a ritual loaded after TENDON kept its ARP: found by the
 tests). Their cost: 1 685 .. 1 938 instructions a frame.
+
+**D35 (2026-11-10) Unorthodox: tape, cuts, sweetness.** The user: make unorthodox choices, think Oneohtrix Point Never.
+Taken as a way of working, not a sound to copy (nothing of his is recreated): the music edited as it plays, ruptured,
+put through a tape that wavers, slowed loops, sweet chords set against violence.
+- **WARP** (FX, third page; the mix's): everything through a short tape (23 ms) whose speed wavers: a wow of 0.66 Hz
+  (to 6 ms either way), a flutter of 7.2 Hz, a drift that wanders; up to about 35 + 20 cents. Before SCAR keeps it, so a
+  burst plays the warped sound back. +64 instructions a frame while on (measured on SHRINE).
+- **SCAR SCREW** (ARP + white key 9): from the next 8th, the 8th just played at half speed, an octave down, darker,
+  again. **DROP** (key 10): a cut to silence, the music on underneath.
+- **RUPTURE** (MUT, second page; the register's): on each of its clocks the register's state, hashed, decides whether to
+  cut and how (a DROP, a REPEAT, a REVERSE, a SCREW, a SMEAR) and for how long. No chance in it: with LOOP locked, the
+  cuts come back where they were, a structure of their own; LOOP down, it changes. A key held comes first.
+- **Scales**: LYDIAN, MAJOR, DORIAN and HIRAJOSHI after the dark eight (the key byte's scale now four bits).
+- **SHRINE** (E LYDIAN, no beat but a clock: glass arped a major ninth over three octaves, a choir on the sharp fourth,
+  chimes, a sub, hiss; WARP 55, RUPTURE 30) and **MIRAGE** (C# DORIAN, 64 BPM: a choir's phrase, a mass, a bell, a soft
+  kick; WARP 85, RUPTURE 60, and one bar in eight a burst of crushed noise). Demos on the page.
+- The scene's format is "BOF8" (the mix's WARP, the register's RUPTURE): scenes saved before are not read (as at every
+  format before); the factory rituals sound as they did, sample for sample, WARP and RUPTURE off.

@@ -81,8 +81,12 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 - **Effects.** BLOOD DELAY (synced, darker on each echo, ping-pong), BILE REVERB (four modulated delay lines, a
   FREEZE) and MARROW CRUSH (a parallel drive, sample-rate and bit crusher). Each channel has its own sends.
 - **SCAR** keeps the last 0.37 s of what comes out, in stereo, and plays it back while you hold a BURST key: REPEAT 1/16
-  and 1/8 (on the grid, darker each time round), REVERSE (the 8th just played, backwards) and SMEAR (the buffer frozen,
-  grains crossing in it). The music goes on underneath, in time, for when you let go.
+  and 1/8 (on the grid, darker each time round), REVERSE (the 8th just played, backwards), SMEAR (the buffer frozen,
+  grains crossing in it), SCREW (the 8th just played at half speed, an octave down) and DROP (a cut to silence). The
+  music goes on underneath, in time, for when you let go.
+- **WARP** (FX, its third page) puts everything through a short tape whose speed wavers: a slow wow, a flutter, a
+  drift. **RUPTURE** (MUT, its second page) lets the register cut into the music itself: silences, stutters,
+  reversals, a bar screwed down; locked, the cuts come back where they were, a structure of their own.
 - **Four scenes in RAM**, each its own world at first:
   - RITUAL 00 THE AWAKENING, the idea document's start scene;
   - 01 RUST, grim dark industrial ambience with a pulse and a melody: a drone for a body, a smouldering rumble, a sub
@@ -96,7 +100,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
     percussion, with PUMP),
     SPLICE (broken, glitched), VOID (slow and wide), LAMENT (a melody, C harmonic minor), GRINDER (industrial techno,
     140 BPM, the hard end), SPINE (a half-time broken beat, 170 BPM), OSSUARY (no beat at all, C# Locrian), TENDON
-    (seven eighths) and EMPTY BODY. The one in flash stays until you SAVE.
+    (seven eighths), SHRINE (sweetness, ruptured: E Lydian through a wavering tape, the register cutting into it), MIRAGE
+    (a loop chopped and screwed by the register) and EMPTY BODY. The one in flash stays until you SAVE.
   - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
 ## Using it
@@ -115,8 +120,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 | **LFO** | MUT: the spine. **Held:** white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK. |
 | **FX** | Delay, reverb, crush; again: their times and colours; again: the reverb's SPACE. |
 | **GLO** | Tempo, swing, quantise and its strength; SHIFT: OVERDUB or REPLACE, the step length, the key LEDs, the MIDI channel. |
-| **GLO** again | The notes: KEY (D .. C#: the synths and NOISE move to it, the drums stay) and SCALE (PHRYGIAN, AEOLIAN, LOCRIAN, HARM MINOR, PHRYG DOM, WHOLE TONE, PENTA MIN, CHROMATIC: WAIL and the ARP pick from it); the focused synth's ARP (UP, DOWN, UP-DN, NERVE: the register picks) and its RATE; SHIFT: its RANGE (1 to 3 octaves), CHORD (TRIAD, 7TH, 9TH, SUS4, FIFTHS), GATE. |
-| **ARP** | **Held:** BURST on the white keys: STUTTER, INVERT (the register), FREEZE (the reverb), SPASM (a nerve burst); SCAR on keys 5 to 8: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR (the last pressed plays). |
+| **GLO** again | The notes: KEY (D .. C#: the synths and NOISE move to it, the drums stay) and SCALE (PHRYGIAN, AEOLIAN, LOCRIAN, HARM MINOR, PHRYG DOM, WHOLE TONE, PENTA MIN, CHROMATIC, LYDIAN, MAJOR, DORIAN, HIRAJOSHI: WAIL and the ARP pick from it); the focused synth's ARP (UP, DOWN, UP-DN, NERVE: the register picks) and its RATE; SHIFT: its RANGE (1 to 3 octaves), CHORD (TRIAD, 7TH, 9TH, SUS4, FIFTHS), GATE. |
+| **ARP** | **Held:** BURST on the white keys: STUTTER, INVERT (the register), FREEZE (the reverb), SPASM (a nerve burst); SCAR on keys 5 to 10: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR, SCREW, DROP (the last pressed plays). |
 | **SAVE** | The scene to flash (playing: when it stops). SHIFT: every edited scene. Left alone, stopped and quiet, a scene saves itself. |
 | **PLAY** | Start, stop. SHIFT + PLAY: PANIC (every voice silent, the memory kept). |
 | **REC** | Playing: LIVE REC on and off. Stopped: STEP REC. REC held + PLAY: record from the start. |

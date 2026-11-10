@@ -11,7 +11,7 @@
  *   HOME  MIX (again: the sends); held: white keys 1-6 mute     SEQ  SEQ; held: the white keys are the steps
  *   EDIT  SYN (again: deeper)      ENV   the organ's envelope    LFO  MUT; held: WRITE 0, WRITE 1, RESET, FUSE, LOCK
  *   FX    FX (again: deeper)       GLO   tempo, swing, quantise (again: KEY, SCALE)   ARP  held: BURST (STUTTER, INVERT, FREEZE, SPASM;
- *                                                                       SCAR: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR)
+ *                                                                       SCAR: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR, SCREW, DROP)
  *   SAVE  the scene to flash (SHIFT: every edited scene)
  *   PLAY  start / stop (SHIFT: PANIC)  REC  playing: LIVE REC; stopped: STEP REC (SHIFT: OVERDUB / REPLACE)
  *   OCT- OCT+  the keys' octave (SEQ held: the page of steps; SHIFT: UNDO, REDO)
@@ -87,7 +87,7 @@ static void touched(void) { ui.dirty[sq.cur] = 1; ui.dirty_draw |= D_STATUS; ui.
 enum { KT_NONE, KT_P, KT_LVL, KT_SA, KT_SB, KT_SC, KT_MASTER, KT_RIB, KT_TDEPTH, KT_TLEN, KT_TCLK, KT_TRATTLE,
        KT_TROUTE, KT_TWAIL, KT_TSCALE, KT_FX, KT_BPM, KT_SWING, KT_QUANT, KT_QSTR, KT_RECMODE, KT_STEPLEN, KT_KEYLED,
        KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE, KT_PUMP, KT_KIT,
-       KT_RUMBLE, KT_DARK, KT_KEY, KT_SCALEM, KT_ARP, KT_ARATE, KT_ARANGE, KT_ACHORD, KT_AGATE };
+       KT_RUMBLE, KT_DARK, KT_KEY, KT_SCALEM, KT_ARP, KT_ARATE, KT_ARANGE, KT_ACHORD, KT_AGATE, KT_WARP, KT_RUPTURE };
 typedef struct { uint8_t type, idx; const char *name; } knob_t;
 
 static const char *const DRUM_DEEP[8] = {"PRESS", "FRACT", "FRIC", "VENT", "RESO", "MATTER", "DRIVE", "MODEL"};
@@ -180,6 +180,7 @@ static knob_t knob_for(uint32_t k)
         } else {
             if (k == 0u) { n.type = KT_TWAIL; n.name = "WAIL"; }
             if (k == 1u) { n.type = KT_TSCALE; n.name = "SCALE"; }
+            if (k == 2u) { n.type = KT_RUPTURE; n.name = "RUPTURE"; }   /* (D35: the register cuts in) */
         }
         break;
     case PG_FX: {
@@ -191,7 +192,8 @@ static knob_t knob_for(uint32_t k)
         else if (ui.sub == 1u) { n.idx = sh ? IB1[k] : IA1[k]; n.name = sh ? B1[k] : A1[k]; }
         else {                                  /* FX again: the room, and the kick ducking the returns (D25) */
             n.idx = (uint8_t)(16u + k);
-            n.name = k == 0u ? "SPACE" : k == 1u ? "DUCK" : "";
+            n.name = k == 0u ? "SPACE" : k == 1u ? "DUCK" : k == 2u ? "WARP" : "";
+            if (k == 2u) n.type = KT_WARP;      /* (D35: the tape wavers) */
             if (!n.name[0]) n.type = KT_NONE;
         }
         break;
@@ -238,6 +240,8 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
     case KT_PUMP: return sc->mix.pump;
     case KT_RUMBLE: return sc->mix.rumble;
     case KT_DARK: return sc->mix.dark;
+    case KT_WARP: return sc->mix.warp;
+    case KT_RUPTURE: return sc->tur.rupture;
     case KT_KIT:                                /* (the kicks a drum organ's only) */
         *lo = o == O_NOISE ? 1 : 0;
         *hi = (int32_t)(o == O_NOISE ? BIO_NPERC_KIT - BIO_NKICK_KIT : BIO_NPERC_KIT);
@@ -325,6 +329,8 @@ static void knob_turn(knob_t n, int32_t d)
     case KT_PUMP: sc->mix.pump = (uint8_t)nv; break;
     case KT_RUMBLE: sc->mix.rumble = (uint8_t)nv; break;
     case KT_DARK: sc->mix.dark = (uint8_t)nv; break;
+    case KT_WARP: sc->mix.warp = (uint8_t)nv; break;
+    case KT_RUPTURE: sc->tur.rupture = (uint8_t)nv; break;
     case KT_KIT: {                              /* a sound into the organ (its PAN kept); 0: the drum's own body again */
         uint8_t pan = sc->p[o][P_PAN];
         uint32_t i;
@@ -347,7 +353,7 @@ static void knob_turn(knob_t n, int32_t d)
     case KT_TSCALE: sc->tur.scale = (uint8_t)nv; break;
     case KT_FX: fx[n.idx] = (uint8_t)nv; break;
     case KT_BPM: sc->bpm10 = (uint16_t)nv; break;
-    case KT_KEY: sc->tur.key = (uint8_t)((sc->tur.key & 0x70u) | (uint32_t)nv); break;
+    case KT_KEY: sc->tur.key = (uint8_t)((sc->tur.key & 0xF0u) | (uint32_t)nv); break;
     case KT_ARP: t->arp = (uint8_t)nv; break;
     case KT_ARATE: t->arp_rr = (uint8_t)((t->arp_rr & 0xF0u) | ((uint32_t)nv + 4u) % 6u); break;
     case KT_ARANGE: t->arp_rr = (uint8_t)((t->arp_rr & 0x0Fu) | (((uint32_t)nv + 1u) % 3u) << 4); break;
@@ -433,7 +439,7 @@ static void knob_text(knob_t n, char *s)
     case KT_TCLK: str_cat(s, BIO_TUR_CLK_NAME[v & 3]); return;
     case KT_TWAIL: { static const char *const W[4] = {"OFF", "SPASM", "VOICE", "BOTH"}; str_cat(s, W[v & 3]); return; }
     case KT_TRATTLE: if (!v) { str_cat(s, "OFF"); return; } break;
-    case KT_DARK: case KT_RUMBLE: case KT_PUMP: if (!v) { str_cat(s, "OFF"); return; } break;
+    case KT_DARK: case KT_RUMBLE: case KT_PUMP: case KT_WARP: case KT_RUPTURE: if (!v) { str_cat(s, "OFF"); return; } break;
     case KT_FX:
         if (n.idx == 0u) { str_cat(s, BIO_DIV_NAME[v < 10 ? v : 4]); return; }
         if (n.idx == 3u) { str_cat(s, v ? "ON" : "OFF"); return; }
@@ -446,7 +452,7 @@ static void knob_text(knob_t n, char *s)
     case KT_ARANGE: p = u2s(s, (uint32_t)v); str_cat(p, " OCT"); return;
     case KT_ACHORD: str_cat(s, SEQ_CHORD_NAME[(uint32_t)v % SEQ_NCHORD]); return;
     case KT_AGATE: p = u2s(s, (uint32_t)v * 10u); str_cat(p, "%"); return;
-    case KT_SCALEM: str_cat(s, BIO_SCALE_NAME[(uint32_t)v & 7u]); return;
+    case KT_SCALEM: str_cat(s, BIO_SCALE_NAME[(uint32_t)v < BIO_NSCALE ? (uint32_t)v : 0u]); return;
     case KT_QUANT: str_cat(s, SEQ_QNAME[v < 5 ? v : 0]); return;
     case KT_RECMODE: str_cat(s, v ? "REPLACE" : "OVERDUB"); return;
     case KT_KEYLED: str_cat(s, v ? "OFF" : "ON"); return;
@@ -554,7 +560,7 @@ static void keys_in(void)
                 ui.note_on[k] = K_MODE;
                 continue;
             }
-            if (arph && w < 8u) {               /* BURST; 5 .. 8: SCAR (the last pressed plays) */
+            if (arph && w < 10u) {              /* BURST; 5 .. 10: SCAR (the last pressed plays; 9, 10: SCREW, DROP) */
                 ui.burst |= 1u << w;
                 if (w == 0u) ui.stutter_at = sq.ticks / SEQ_TPS * SEQ_TPS;
                 if (w == 1u) sq.tur.invert = 1;
@@ -592,12 +598,12 @@ static void keys_in(void)
             }
             if (ui.note_on[k] == K_MODE) {
                 if (w == 0u || w == 1u) sq.tur.write = 0;
-                if (w < 8u && (ui.burst >> w & 1u)) {
+                if (w < 10u && (ui.burst >> w & 1u)) {
                     ui.burst &= ~(1u << w);
                     if (w == 1u) sq.tur.invert = 0;
                     if (w == 2u) eng.freeze = 0;
                     if (w >= 4u && eng.scar.want == SCAR_REP16 + (w - 4u)) {   /* back to another still held, or off */
-                        uint32_t h = ui.burst >> 4 & 15u, j = 4;
+                        uint32_t h = ui.burst >> 4 & 63u, j = 6;
                         while (j && !(h >> (j - 1u) & 1u)) j--;
                         eng.scar.want = j ? SCAR_REP16 + j - 1u : SCAR_OFF;
                     }
@@ -1039,7 +1045,10 @@ static void draw_mut(void)
         cv_t5(10, 116, s, sc->tur.rattle ? COL_RED : COL_DIM, 1);
         p = str_cat(s, "WAIL ");
         str_cat(p, sc->tur.wail == 0u ? "OFF" : sc->tur.wail == 1u ? "SPASM" : sc->tur.wail == 2u ? "VOICE" : "BOTH");
-        cv_t5(120, 116, s, sc->tur.wail ? COL_GREEN : COL_DIM, 1);
+        cv_t5(88, 116, s, sc->tur.wail ? COL_GREEN : COL_DIM, 1);
+        p = str_cat(s, "RUPTURE ");             /* (D35) */
+        if (sc->tur.rupture) u2s(p, sc->tur.rupture); else str_cat(p, "OFF");
+        cv_t5(160, 116, s, sc->tur.rupture ? COL_RED : COL_DIM, 1);
     }
     cv_out();
 }
@@ -1072,7 +1081,13 @@ static void draw_fx(void)
     p = str_cat(p, "  FOLD "); u2s(p, sc->fx.c_fold);
     cv_t5(10, 104, s, COL_BONE, 1);
     cv_rect(10, 114, sc->fx.c_mix * 2, 3, COL_FLESH);
-    cv_t5(10, 122, "SENDS A B C: HOME, HOME AGAIN", COL_DIM, 1);
+    if (sc->mix.warp) {                         /* (D35) */
+        p = str_cat(s, "WARP "); u2s(p, sc->mix.warp);
+        cv_t5(10, 122, s, COL_FLESH, 1);
+        cv_t5(80, 122, "THE TAPE WAVERS", COL_DIM, 1);
+    } else {
+        cv_t5(10, 122, "SENDS A B C: HOME, HOME AGAIN", COL_DIM, 1);
+    }
     cv_out();
 }
 
@@ -1174,8 +1189,8 @@ static void leds(void)
             on = st == ph || (ui.held_steps >> w & 1u);
             glow = st < L && seq_step_events(&sq, o, st) != 0u;
         } else if (lfoh || arph) {              /* the page's keys */
-            glow = w < (lfoh ? 5u : 8u);
-            on = arph && w < 8u && (ui.burst >> w & 1u);
+            glow = w < (lfoh ? 5u : 10u);
+            on = arph && w < 10u && (ui.burst >> w & 1u);
         } else if (!set.keyled) {               /* the keys held; the playhead's white key; the kit's middles */
             on = fm1_in.notes >> k & 1u;
             glow = ph != 999u && w == ph % 16u;

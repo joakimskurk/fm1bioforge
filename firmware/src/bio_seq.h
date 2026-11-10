@@ -21,8 +21,8 @@
 #define SEQ_MAXLEN 64u
 #define SEQ_NSCENE 4u
 #define SEQ_BAR (16u * SEQ_TPS)
-#define SEQ_MAGIC 0x37464F42u                   /* "BOF7": the scene's format (2: PUMP; 3: 24 parameters; 4: SPACE; 5: RUMBLE;
-                                                   6: DARK; 7: DUCK) */
+#define SEQ_MAGIC 0x38464F42u                   /* "BOF8": the scene's format (2: PUMP; 3: 24 parameters; 4: SPACE; 5: RUMBLE;
+                                                   6: DARK; 7: DUCK; 8: WARP, RUPTURE) */
 #define SEQ_NUNDO 16u
 #define SEQ_NREDO 8u
 
@@ -100,6 +100,7 @@ typedef struct {
     /* the ARP (D33): on its own clock (the transport's ticks while playing, its own while stopped: a held key still
        arps), a track's held note played as its chord in the scale */
     uint32_t aclk, afrac, alast;
+    uint32_t rup_end;                           /* RUPTURE's cut: its end (ticks since PLAY; 0: none) */
     uint8_t arp_on[BIO_NORG], arp_note[BIO_NORG], arp_vel[BIO_NORG], arp_step[BIO_NORG], arp_snd[BIO_NORG];
     uint32_t arp_end[BIO_NORG], arp_next[BIO_NORG], arp_off[BIO_NORG], arp_n[BIO_NORG];
 } seq_t;
@@ -384,6 +385,21 @@ static void seq_tick(bio_t *e, void *ctx)
         uint32_t div = BIO_TUR_DIV[sc->tur.clock & 3u], c;
         for (c = (t0 + div - 1u) / div * div; c < t1 || (t0 == 0u && c == 0u && t1 == 0u); c += div) {
             bio_tur_clock(&s->tur, &sc->tur);
+            if (sc->tur.rupture && !s->rup_end && c) {   /* RUPTURE (D35): the register's own bits cut into the music
+                                                   (no chance in it: locked, the cuts come back where they were) */
+                uint32_t r = (s->tur.invert ? ~(uint32_t)s->tur.r : s->tur.r) & 0xFFFFu, h = bio_hash(r, 0x52u);
+                if ((h >> 24) * 100u < (uint32_t)(sc->tur.rupture > 100u ? 100u : sc->tur.rupture) * 90u) {   /* (the
+                                                   register's state, hashed: each state its own chance, the same each
+                                                   time it comes round) */
+                    r = h;
+                    static const uint8_t WHAT[8] = {SCAR_DROP, SCAR_DROP, SCAR_REP16, SCAR_REP8, SCAR_REV, SCAR_SCREW,
+                                                    SCAR_SCREW, SCAR_SMEAR};
+                    uint32_t m = WHAT[r >> 8 & 7u], more = r >> 12 & 1u;
+                    uint32_t d = m == SCAR_DROP || m == SCAR_REP16 ? div * (1u + more) : (div > 192u ? div : 192u) * (2u + more);
+                    s->e->scar.want_auto = m;
+                    s->rup_end = c + d;
+                }
+            }
             if (sc->tur.rattle) {               /* RATTLE: bit 3 AND NOT bit 1 -> TEETH; bit 5 AND bit 0 -> CLAW */
                 uint32_t vel = 30u + (uint32_t)sc->tur.rattle * 50u / 100u, st = c / SEQ_TPS;
                 if (s->ghosts_step != st) { s->ghosts_step = st; }
@@ -455,6 +471,7 @@ static void seq_tick(bio_t *e, void *ctx)
         }
     }
     seq_arp(s, t0, t1);
+    if (s->rup_end && t1 >= s->rup_end) { s->rup_end = 0; s->e->scar.want_auto = 0; }   /* (RUPTURE's cut over) */
     /* the notes' ends, the ratchets */
     for (trk = 0; trk < BIO_NORG; trk++) {
         if (s->off_t[trk] && s->off_t[trk] <= t1 + 1u) {
@@ -526,6 +543,8 @@ static void seq_play(seq_t *s)
     s->ticks = s->frac = 0;
     s->bar = 0;
     s->nghost = 0;
+    s->rup_end = 0;
+    s->e->scar.want_auto = 0;
     for (k = 0; k < BIO_NORG; k++) { s->cursor[k] = 0; s->ver_seen[k] = ~0u; s->off_t[k] = 0; s->rat_left[k] = 0; }
     seq_noise_clear(s);                         /* (the same start, the same noise) */
     s->nrng = bio_hash(s->sc[s->cur].seed, 0x2A2Au);
@@ -564,6 +583,8 @@ static void seq_stop(seq_t *s)
     for (k = 0; k < BIO_NORG; k++) seq_close_open(s, k, s->ticks % ((uint32_t)s->sc[s->cur].tr[k].len * SEQ_TPS));
     s->playing = 0;
     for (k = 0; k < BIO_NORG; k++) { s->off_t[k] = 0; s->rat_left[k] = 0; s->arp_on[k] = 0; s->arp_snd[k] = 0; }
+    s->rup_end = 0;
+    s->e->scar.want_auto = 0;
     SEQ_UNLOCK();
     for (k = 0; k < BIO_NORG; k++) bio_release(s->e, k, 255u);   /* (safe from here: one store each) */
 }

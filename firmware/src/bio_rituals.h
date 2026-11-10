@@ -624,7 +624,7 @@ static void rit_arp(seq_scene_t *sc, uint32_t trk, uint32_t mode, uint32_t rate,
     t->arp_rr = (uint8_t)((rate + 4u) % 6u | ((range + 1u) % 3u) << 4);
     t->arp_cg = (uint8_t)(chord % SEQ_NCHORD | ((gate + 4u) % 10u) << 4);
 }
-static void rit_key(seq_scene_t *sc, uint32_t root, uint32_t scale) { sc->tur.key = (uint8_t)(root % 12u | (scale & 7u) << 4); }
+static void rit_key(seq_scene_t *sc, uint32_t root, uint32_t scale) { sc->tur.key = (uint8_t)(root % 12u | (scale & 15u) << 4); }
 
 /* RITUAL: GRINDER (D34). Industrial techno, 140 BPM, E PHRYGIAN DOMINANT: a hard driven kick on the four, a crushed snare
    on two and four, metal hats in 16ths, a rolling bass between the kicks, an iron stab, slices of metal noise locked,
@@ -836,13 +836,97 @@ static void rit_lament(seq_scene_t *sc)
     sc->mix.pump = 20; sc->mix.dark = 20; sc->mix.master = 82;
     sc->tur.loop = 100; sc->tur.depth = 8;
 }
+/* RITUAL: SHRINE (D35). Sweetness, ruptured: 78 BPM, E LYDIAN, no beat but a clock. Glass arped up and down a major
+   ninth over three octaves (I, then II: the Lydian lift), a choir held on its sharp fourth, chimes the register picks,
+   a sub on the roots, tape hiss swelling each bar; all of it through a wavering tape (WARP), and the register cutting
+   into it (RUPTURE): a silence, a stutter, a bar screwed down an octave, the same cuts each time round */
+static void rit_shrine(seq_scene_t *sc)
+{
+    uint32_t k;
+    seq_scene_blank(sc, 0x5A12Eu);
+    rit_name(sc, "SHRINE");
+    rit_key(sc, 2, 8);
+    sc->bpm10 = 780;
+    for (k = 0; k < BIO_NORG; k++) sc->tr[k].len = 32;
+    rit_model(sc, O_DRONE, L_GLASS, 30, 60, 40, 50);
+    sc->p[O_DRONE][P_A] = 0; sc->p[O_DRONE][P_R] = 40;
+    rit_arp(sc, O_DRONE, ARP_UPDN, 2, 3, 2, 6);
+    seq_put(sc, O_DRONE, 0, 16 * 96 - 6, 50, 84, 0);
+    seq_put(sc, O_DRONE, 16, 16 * 96 - 6, 52, 84, 0);
+    rit_model(sc, O_VOICE, L_CHOIR, 50, 20, 50, 60);
+    sc->p[O_VOICE][P_A] = 70; sc->p[O_VOICE][P_R] = 80;
+    seq_put(sc, O_VOICE, 0, 15 * 96, 66, 80, 0);
+    seq_put(sc, O_VOICE, 16, 15 * 96, 68, 80, 0);
+    rit_model(sc, O_SPASM, L_BELL, 30, 40, 30, 50);
+    rit_steps(sc, O_SPASM, "x.......x...x.........x....x....", 74, 70, 48);
+    sc->tur.wail = 1; sc->tur.scale = 80;
+    sc->p[O_BASS][P_D1] = 20; sc->p[O_BASS][P_A] = 40; sc->p[O_BASS][P_D] = 80;
+    seq_put(sc, O_BASS, 0, 16 * 96 - 6, 26, 90, 0);
+    seq_put(sc, O_BASS, 16, 16 * 96 - 6, 28, 90, 0);
+    rit_perc(sc, O_NOISE, "WASH", 50);
+    rit_steps(sc, O_NOISE, "x...............x...............", 60, 60, 16 * 96 - 6);
+    rit_perc(sc, O_TEETH, "TICK", 64);
+    sc->p[O_TEETH][P_LEVEL] = 50;
+    rit_steps(sc, O_TEETH, "..x...x...x...x...x...x...x...x.", 60, 60, 24);
+    sc->mix.lvl[CH_DRONE] = 62; sc->mix.lvl[CH_VOICE] = 60; sc->mix.lvl[CH_SPASM] = 50; sc->mix.lvl[CH_BASS] = 70;
+    sc->mix.lvl[CH_NOISE] = 40; sc->mix.lvl[CH_DRUM] = 60;
+    sc->mix.sb[CH_DRONE] = 60; sc->mix.sa[CH_DRONE] = 40; sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_SPASM] = 80;
+    sc->mix.sa[CH_SPASM] = 50; sc->mix.sb[CH_NOISE] = 50;
+    sc->fx.d_time = 6; sc->fx.d_fb = 50; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 50;
+    sc->fx.r_space = 4; sc->fx.r_mix = 50; sc->fx.r_decay = 80; sc->fx.r_size = 90; sc->fx.r_damp = 30; sc->fx.c_mix = 0;
+    sc->mix.warp = 55; sc->mix.dark = 10; sc->mix.master = 84;
+    sc->tur.loop = 100; sc->tur.len_i = 7; sc->tur.clock = 2; sc->tur.depth = 10; sc->tur.rupture = 30;
+}
+
+/* RITUAL: MIRAGE (D35). A loop chopped and screwed by the register: 64 BPM, C# DORIAN. A choir's phrase, a mass under
+   it, a bell sparkling from the chord, a soft kick and a clap far off in a big room; the tape wavering hard (WARP), the
+   register cutting it up most of the time (RUPTURE: silences, stutters, reversals, the loop an octave down), and now
+   and then a burst of crushed noise breaking in */
+static void rit_mirage(seq_scene_t *sc)
+{
+    static const uint8_t PH[6][3] = {{0, 6, 62}, {6, 2, 64}, {8, 4, 65}, {12, 2, 64}, {14, 2, 60}, {0, 0, 0}};
+    uint32_t k;
+    seq_scene_blank(sc, 0x313A6Eu);
+    rit_name(sc, "MIRAGE");
+    rit_key(sc, 11, 10);
+    sc->bpm10 = 640;
+    rit_model(sc, O_VOICE, L_CHOIR, 60, 30, 70, 60);
+    sc->p[O_VOICE][P_A] = 20; sc->p[O_VOICE][P_R] = 60;
+    for (k = 0; PH[k][1]; k++) seq_put(sc, O_VOICE, PH[k][0], (uint32_t)PH[k][1] * 96u - 8u, PH[k][2], 90, 0);
+    rit_model(sc, O_DRONE, L_MASS, 40, 30, 60, 60);
+    sc->p[O_DRONE][P_A] = 50; sc->p[O_DRONE][P_R] = 60;
+    seq_put(sc, O_DRONE, 0, 16 * 96 - 6, 38, 80, 0);
+    rit_model(sc, O_SPASM, L_BELL, 40, 30, 20, 40);
+    sc->p[O_SPASM][P_A] = 0;
+    rit_arp(sc, O_SPASM, ARP_NERVE, 2, 2, 1, 4);
+    seq_put(sc, O_SPASM, 0, 16 * 96 - 6, 62, 70, 0);
+    rit_perc(sc, O_HEART, "DUB KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 80;
+    rit_steps(sc, O_HEART, "x.......x.....x.", 60, 100, 96);
+    rit_perc(sc, O_BONE, "CLAP", 40);
+    rit_steps(sc, O_BONE, "....x.......x...", 60, 80, 48);
+    rit_perc(sc, O_NOISE, "CRUSH", 50);
+    rit_steps(sc, O_NOISE, "...............?", 60, 110, 96);
+    sc->tr[O_NOISE].ev[0].fl = 7u << EV_CH_SH;  /* (now and then: one bar in eight) */
+    sc->mix.lvl[CH_VOICE] = 70; sc->mix.lvl[CH_DRONE] = 50; sc->mix.lvl[CH_SPASM] = 44; sc->mix.lvl[CH_DRUM] = 76;
+    sc->mix.lvl[CH_NOISE] = 64;
+    sc->mix.sb[CH_VOICE] = 60; sc->mix.sa[CH_VOICE] = 40; sc->mix.sb[CH_SPASM] = 70; sc->mix.sb[CH_DRUM] = 50;
+    sc->mix.sc[CH_NOISE] = 80;
+    sc->fx.c_mix = 40; sc->fx.c_drive = 80; sc->fx.c_bits = 50; sc->fx.c_rate = 40;
+    sc->fx.d_time = 7; sc->fx.d_fb = 55; sc->fx.d_mix = 40; sc->fx.d_ping = 1; sc->fx.d_rev = 60; sc->fx.d_tone = 35;
+    sc->fx.r_space = 0; sc->fx.r_mix = 46; sc->fx.r_decay = 70; sc->fx.r_size = 80;
+    sc->mix.warp = 85; sc->mix.dark = 25; sc->mix.master = 84;
+    sc->tur.loop = 100; sc->tur.len_i = 6; sc->tur.clock = 2; sc->tur.depth = 10; sc->tur.rupture = 60;
+}
 static void rit_empty(seq_scene_t *sc) { seq_scene_blank(sc, 0x7E3u); rit_name(sc, "EMPTY BODY"); }
 /* (the first four are the scenes before anything is saved: the document's start, then rhythm made of noise, D20) */
 static const rit_fn BIO_RITUAL[] = {rit_awaken, rit_rust, rit_abyss, rit_ash, rit_frozen, rit_stream, rit_wall, rit_data,
                                     rit_embers, rit_foundry, rit_orbit, rit_innards, rit_static, rit_splice, rit_void,
-                                    rit_lament, rit_grinder, rit_spine, rit_ossuary, rit_tendon, rit_empty};
+                                    rit_lament, rit_grinder, rit_spine, rit_ossuary, rit_tendon, rit_shrine, rit_mirage,
+                                    rit_empty};
 static const char *const BIO_RITUAL_NAME[] = {"AWAKENING", "RUST", "ABYSS", "ASH", "FROZEN", "STREAM", "WALL", "DATA",
                                               "EMBERS", "FOUNDRY", "ORBIT", "INNARDS", "STATIC CULT", "SPLICE", "VOID",
-                                              "LAMENT", "GRINDER", "SPINE", "OSSUARY", "TENDON", "EMPTY BODY"};
+                                              "LAMENT", "GRINDER", "SPINE", "OSSUARY", "TENDON", "SHRINE", "MIRAGE",
+                                              "EMPTY BODY"};
 #define BIO_NRITUAL (sizeof BIO_RITUAL / sizeof BIO_RITUAL[0])
 #endif

@@ -1,0 +1,9 @@
+# Demo: SHRINE (a factory ritual, D35): sweetness, ruptured. 78 BPM, E Lydian, no beat but a clock: glass arped up and
+# down a major ninth over three octaves, a choir on the sharp fourth, chimes, a sub; through a wavering tape (WARP), the
+# register cutting into it (RUPTURE): a silence, a stutter, a bar screwed down an octave, the same cuts each time round
+100 btndown 3
+200 enc 6 20
+300 btnup 3
+400 btn 12
+25016 btn 12
+30016 end
