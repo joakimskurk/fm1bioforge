@@ -1,0 +1,9 @@
+# Demo: GRINDER (a factory ritual, D34): industrial techno, 140 BPM, E Phrygian dominant. A hard driven kick on the four,
+# a crushed snare, metal hats in 16ths, a rolling bass between the kicks, an iron stab, metal slices locked, the mains
+# humming; the crusher on: the hard, bright end
+100 btndown 3
+200 enc 6 16
+300 btnup 3
+400 btn 12
+17540 btn 12
+21040 end

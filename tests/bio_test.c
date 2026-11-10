@@ -726,6 +726,10 @@ static void test_arp(void)
     seq_live(&sq, O_SPASM, 50, 0, 0);
     run(&eng, 40, 0);
     check(ok && !eng.tone[2].gate && !sq.arp_on[O_SPASM], "ARP stopped: a held key arps, and ends when let go");
+    BIO_RITUAL[rit_index("TENDON")](&scn[1]);
+    seq_scene_blank(&scn[1], 0x77u);
+    for (ok = 1, i = 0; i < BIO_NORG; i++) if (scn[1].tr[i].arp || scn[1].tr[i].arp_rr || scn[1].tr[i].arp_cg) ok = 0;
+    check(ok, "a scene made blank keeps no ARP of the one before");
 }
 
 int main(void)

@@ -287,3 +287,15 @@ slips), at 1/32 .. 1/4 (triplets too), each note GATE long, on its rate's grid. 
 transport stands, so a held key arps stopped. The KEY moves what it plays; what is recorded is the note held. Kept in
 the track's three spare bytes (each 0 its default: a scene from before has none, and every ritual sounds as it did,
 sample for sample). Control-rate only: no CPU to speak of.
+
+**D34 (2026-11-10) Five themes in the gaps.** With KEY, SCALE, the ARP and the wide synths, the rituals that were
+missing: **GRINDER** (industrial techno, 140 BPM, E PHRYG DOM: a hard driven kick, a crushed snare, metal hats, a
+rolling bass, an iron stab, the crusher on: the hard, bright end), **SPINE** (a broken beat in half time, 170 BPM, G
+AEOLIAN: a sub kick, the snare on three, ghosts and breaks, a wet sub bass, a bell the register picks from the chord in
+triplets), **OSSUARY** (no beat at all, C# LOCRIAN: a mass, a cluster rising under it, glass, a choir the register leads
+through the chord a quarter at a time, bones creaking), **TENDON** (seven eighths, 126 BPM, A HARM MINOR: every track 14
+16ths long, a bell arped in threes against it, noise in sevens), **LAMENT** (a melody, 92 BPM, C HARM MINOR: a choir
+sings four bars, i iv V i, glass arped through each chord). LAMENT takes INFECTION's place (INFECTION was THE AWAKENING
+with other register settings). The tempi now 60 .. 170 and none; six roots, five scales, 4/4 and 7/8. Each has a demo
+on the page. A scene made blank now clears its tracks' ARP too (a ritual loaded after TENDON kept its ARP: found by the
+tests). Their cost: 1 685 .. 1 938 instructions a frame.

@@ -1,0 +1,9 @@
+# Demo: SPINE (a factory ritual, D34): a broken beat in half time, 170 BPM, G Aeolian. A sub kick, the snare on three,
+# ghosts and breaks, hats of six squares; a wet sub bass gliding, a dark cluster, a bell the register picks from the
+# chord in eighth-note triplets (the ARP), a cave
+100 btndown 3
+200 enc 6 17
+300 btnup 3
+400 btn 12
+20168 btn 12
+23668 end

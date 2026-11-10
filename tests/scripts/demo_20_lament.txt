@@ -1,0 +1,8 @@
+# Demo: LAMENT (a factory ritual, D34): a melody, 92 BPM, C harmonic minor. A choir sings four bars (i, iv, V, i); glass
+# arped up and down through each chord (the ARP); the bass on the roots; a soft kick, a clap far off; a hall
+100 btndown 3
+200 enc 6 15
+300 btnup 3
+400 btn 12
+21270 btn 12
+25270 end

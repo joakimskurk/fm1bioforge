@@ -1,0 +1,9 @@
+# Demo: OSSUARY (a factory ritual, D34): no beat at all, C# Locrian. A mass of octaves on the root, a cluster rising under
+# it in the third bar, glass high and slow, a choir the register leads through the chord a quarter at a time (the ARP),
+# bones creaking now and then; a vast room
+100 btndown 3
+200 enc 6 18
+300 btnup 3
+400 btn 12
+24400 btn 12
+30400 end

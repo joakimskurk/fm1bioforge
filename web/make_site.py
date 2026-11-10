@@ -50,6 +50,21 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
      "Dark ambient meets noise, 110 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
      "crackling, the reverb and the delay breathing with it; ticks of six squares off the beat, sparks in time; wide, "
      "drifting dub chords off the beat into a dark delay, a bass on the off-beats, a wide drone and a choir in a cave."),
+    ("20_lament", "LAMENT",
+     "A melody, 92 BPM, C harmonic minor: a choir sings four bars (i, iv, V with its raised seventh, i), glass arped up "
+     "and down through each chord, the bass on the roots, a soft kick and a clap far off, a hall."),
+    ("16_grinder", "GRINDER",
+     "Industrial techno, 140 BPM, E Phrygian dominant: a hard driven kick, a crushed snare, metal hats, a rolling bass "
+     "between the kicks, an iron stab, slices of metal noise locked; the crusher on. The hard, bright end."),
+    ("17_spine", "SPINE",
+     "A broken beat in half time, 170 BPM, G Aeolian: a sub kick, the snare on three, ghosts and breaks; a wet sub bass "
+     "gliding, a dark cluster, a bell the nervous system picks from the chord in triplets (the ARP)."),
+    ("19_tendon", "TENDON",
+     "Seven eighths, 126 BPM, A harmonic minor: the kick in two, two and three, a bell arped up its triad in 16ths (three "
+     "against seven), slices of noise in seven 16ths against the fourteen."),
+    ("18_ossuary", "OSSUARY",
+     "No beat at all, C# Locrian: a mass of octaves on the root, a cluster rising under it, glass high and slow, a choir "
+     "the nervous system leads through the chord a quarter at a time, bones creaking; a vast room."),
     ("15_scar", "SCAR · ABYSS PLAYED",
      "ABYSS with SCAR, the output's last 0.37 s kept: ARP held, four white keys play it back while held. A roll of 16ths "
      "into the bar, darker each time round; the 8th just played, backwards; a repeat of 8ths; a bar smeared into "

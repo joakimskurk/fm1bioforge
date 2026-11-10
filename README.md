@@ -94,7 +94,9 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
     plays: those four, FROZEN (slices of noise locked into a groove), STREAM (one noise, gated), WALL (a riff of pitched noise), DATA (clicks, bursts, digital noise,
     stutters), EMBERS (crackle), FOUNDRY (industry), ORBIT (cosmic), INNARDS (the body), STATIC CULT (noise as
     percussion, with PUMP),
-    SPLICE (broken, glitched), VOID (slow and wide), INFECTION and EMPTY BODY. The one in flash stays until you SAVE.
+    SPLICE (broken, glitched), VOID (slow and wide), LAMENT (a melody, C harmonic minor), GRINDER (industrial techno,
+    140 BPM, the hard end), SPINE (a half-time broken beat, 170 BPM), OSSUARY (no beat at all, C# Locrian), TENDON
+    (seven eighths) and EMPTY BODY. The one in flash stays until you SAVE.
   - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
 ## Using it

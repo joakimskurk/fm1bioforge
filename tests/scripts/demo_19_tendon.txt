@@ -1,0 +1,9 @@
+# Demo: TENDON (a factory ritual, D34): seven eighths, 126 BPM, A harmonic minor. The kick in two, two and three, a clap,
+# hats in 16ths, a bass on the groups; a bell arped up its triad in 16ths (three against seven), slices of noise in
+# seven 16ths (against fourteen), a glass pad
+100 btndown 3
+200 enc 6 19
+300 btnup 3
+400 btn 12
+20400 btn 12
+23900 end

@@ -786,6 +786,7 @@ static void seq_track_clear(seq_track_t *t, uint32_t len)
     t->quant = 2;                               /* 1/16 */
     t->qstr = 75;                               /* at 75 % */
     t->mute = 0;
+    t->arp = t->arp_rr = t->arp_cg = 0;         /* (no ARP: D33) */
     for (i = 0; i < SEQ_MAXLEN; i++) for (k = 0; k < 4u; k++) t->lock[i][k] = BIO_NOLOCK;
 }
 static void seq_scene_blank(seq_scene_t *sc, uint32_t seed)
