@@ -6,6 +6,7 @@
 #ifndef BIO_ENGINE_H
 #define BIO_ENGINE_H
 #include "bio_organs.h"
+#include "bio_scar.h"
 
 #define BIO_DLY_N 32768u                        /* the delay: 0.74 s a side */
 #define BIO_REV_L 3400u                         /* the reverb's four lines (at 22.05 kHz) */
@@ -92,6 +93,9 @@ struct bio_s {
     int32_t duck, duck_to, duck_rel;            /* the kick's side-chain: its envelope now and the hit's (Q15, all of it:
                                                    PUMP and DUCK take their share), its recovery a sub-block (Q30) */
     uint32_t fx_seen;                           /* the effects' settings last turned into coefficients */
+    /* SCAR (D29): the output's last 0.37 s, and the BURST that plays it back; the grid from the sequencer */
+    bio_scar_t scar;
+    uint32_t grid, grid_on;                     /* bit j: the j-th division (16th, 8th, quarter) began this sub-block */
     /* the meters (peak per channel, the last block), the load */
     int32_t meter[BIO_NCH];
     int32_t ob[BIO_NORG][BIO_SB], os[BIO_NORG][BIO_SB];   /* each organ's sub-block, and its side (width) */
@@ -590,16 +594,18 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
                                                    the peak clipped) */
             gstep = (tg - e->lim_g) / (int32_t)BIO_SB;
             for (k = 0; k < BIO_SB; k++) {
-                int32_t l, r;
                 e->lim_g += gstep;
-                l = bio_mul15(dryl[k], e->lim_g);
-                r = bio_mul15(dryr[k], e->lim_g);
-                l = bio_clamp(l, -32767, 32767);
-                r = bio_clamp(r, -32767, 32767);
-                out[2u * (off + k)] += l;
-                out[2u * (off + k) + 1u] += r;
+                dryl[k] = bio_clamp(bio_mul15(dryl[k], e->lim_g), -32767, 32767);
+                dryr[k] = bio_clamp(bio_mul15(dryr[k], e->lim_g), -32767, 32767);
             }
             e->lim_g = tg;
+            /* SCAR: kept, and a BURST over it while one is held */
+            bio_scar_grid(&e->scar, e->grid_on ? e->grid : 0u);
+            bio_scar_run(&e->scar, dryl, dryr, BIO_SB, e->spb_q8, e->grid_on);
+            for (k = 0; k < BIO_SB; k++) {
+                out[2u * (off + k)] += dryl[k];
+                out[2u * (off + k) + 1u] += dryr[k];
+            }
         }
         e->frames += BIO_SB;
     }

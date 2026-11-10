@@ -225,3 +225,24 @@ before; its SPASM sends 76 to it and 64 to the reverb. D>REV (FX, the delay's re
 RAM ~78 KB of which ~60 KB can be spent with the stack kept safe: ~90 KB, ~1 s mono at 44.1 kHz in 16 bits, ~2 s at
 22 kHz, ~4 s in 8 bits; the delay's 128 KB could also be shared with a new effect. Not built until the user says what
 it is for.
+
+**D29 (2026-11-10) SCAR: a buffer of the output, and four BURSTs that play it.** The user asked whether there is
+memory for an audio buffer for effects, then (on the four uses offered: beat repeat, reverse, a granular freeze, a
+longer loop) said to go on; the three that fit a buffer of under half a second were built, as examples first.
+`bio_scar.h` keeps the output's last 0.37 s in stereo, 16 bits (16 384 frames a side, 64 KB), recorded after the
+limiter (it never clips) and always; ARP held, the white keys 5 .. 8 play it back in the output's place while held,
+the music going on underneath, in time, for when the key is let go (the tests: identical again, sample for sample):
+- **REPEAT 1/16, REPEAT 1/8** on the nearest grid point (pressed in a division's second half, it waits for the next:
+  the beat that was meant, its hit in it), half an octave darker and 0.3 dB down each time round (to 1.4 kHz).
+- **REVERSE** from the next 8th: the 8th just played, backwards, again. A quarter would need 0.56 s at 110 BPM.
+- **SMEAR**: the buffer frozen; two grains of 186 ms, a sine's half each, crossing (their powers add to one) at random
+  places in it; in and out over 46 ms.
+- A loop's seam crossfades over 6 ms with what lies beyond it (forward: the frames before its start; backward: those
+  after), so it never clicks; a burst comes in and goes out over 6 ms. The sequencer marks the sub-blocks a 16th, an
+  8th, a quarter began on (the grid); stopped, the press is the grid. The last key pressed plays; let go, another
+  still held takes over.
+- Memory: the scenes and the undo moved from the pool to RAM (63 KB) so the engine, with SCAR, stays in the pool: RAM
+  82.9 of 96 KB, the pool 309.8 of 336 KB. Half the rate for twice the time was not taken (duller than what it repeats);
+  0.56 s would leave ~17 KB free in all.
+- CPU: the recording 11 instructions a frame; held, REVERSE +17, SMEAR +33, REPEAT +57 (the worst case with every
+  organ: 3 313, with REPEAT 3 370).

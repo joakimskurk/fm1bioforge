@@ -557,12 +557,66 @@ static void test_perc(void)
     }
 }
 
+/* SCAR (D29): with no burst it changes nothing; a burst leaves the music underneath in time (identical again once let
+   go); REVERSE is the 8th just played, backwards; REPEAT pressed early waits for its beat; SMEAR keeps the loudness */
+static int16_t sc_a[2u * 44100u * 9u], sc_b[2u * 44100u * 9u];
+static void test_scar(void)
+{
+    const uint32_t B = 44100u * 9u / 256u;      /* 9 s */
+    uint32_t b, i, k, ident_before = 1, ident_after = 1, differ = 0, rev_ok = 1, rev_n = 0, armed_ok = 0, start_ok = 0;
+    uint32_t p1 = 0, L = 0, clip2 = 0;
+    double ra = 0, rb = 0;
+    static int32_t ba[512], bb[512];
+    setup(&eng, &sq, scn, und, red);
+    setup(&eng2, &sq2, scn2, und2, red2);
+    BIO_RITUAL[rit_index("ABYSS")](&scn[0]);
+    BIO_RITUAL[rit_index("ABYSS")](&scn2[0]);
+    sq.tur_reset = sq2.tur_reset = 1;
+    seq_play(&sq);
+    seq_play(&sq2);
+    for (b = 0; b < B; b++) {                   /* (eng and eng2 side by side: eng2 with bursts) REVERSE from 2.0 s to
+                                                   3.0 s, REPEAT 1/16 from 4.06 s (3/4 into a 16th) to 5.0, SMEAR 6.0 .. 7.5 */
+        uint32_t f = b * 256u;
+        uint32_t w = f >= 88200u && f < 132300u ? SCAR_REV : f >= 178944u && f < 220500u ? SCAR_REP16 :
+                     f >= 264600u && f < 330750u ? SCAR_SMEAR : SCAR_OFF;
+        eng2.scar.want = w;
+        memset(ba, 0, sizeof ba);
+        memset(bb, 0, sizeof bb);
+        bio_render(&eng, ba, 256);
+        bio_render(&eng2, bb, 256);
+        if (w == SCAR_REV && !p1 && eng2.scar.mode == SCAR_REV && !eng2.scar.armed) { p1 = eng2.scar.a + 1u; L = eng2.scar.len; }
+        if (w == SCAR_REP16 && eng2.scar.armed) armed_ok = 1;
+        if (w == SCAR_REP16 && !eng2.scar.armed && eng2.scar.mode == SCAR_REP16 && !start_ok)
+            start_ok = eng2.scar.a == eng2.scar.grid[0] || eng2.scar.a + eng2.scar.t == eng2.scar.now ? 1u : 2u;
+        for (k = 0; k < 512u; k++) {
+            sc_a[(f * 2u + k) % (sizeof sc_a / 2u)] = (int16_t)ba[k];
+            sc_b[(f * 2u + k) % (sizeof sc_b / 2u)] = (int16_t)bb[k];
+            if (bb[k] > 32767 || bb[k] < -32767) clip2++;
+            if (f < 88200u && ba[k] != bb[k]) ident_before = 0;
+            if (f >= 334000u && ba[k] != bb[k]) ident_after = 0;   /* (let go at 7.5 s, out by 50 ms) */
+            if (f >= 264600u && f < 330750u) { ra += (double)ba[k] * ba[k]; rb += (double)bb[k] * bb[k]; }
+            if (bb[k] != ba[k]) differ++;
+        }
+    }
+    for (i = p1 + BIO_SCAR_X + 64u; p1 && i + BIO_SCAR_X < p1 + L; i++) {   /* the reversed pass, at its full share */
+        int32_t got = sc_b[2u * i], want = sc_a[2u * (p1 - 1u - (i - p1))];
+        rev_n++;
+        if (got - want > 2 || want - got > 2) rev_ok = 0;
+    }
+    check(ident_before && differ > 44100u, "SCAR: nothing changed before a burst; a burst changes the sound");
+    check(ident_after, "SCAR: let go, the music is the same again (it went on underneath, in time)");
+    check(p1 && rev_ok && rev_n > 8000u && (p1 - 88200u) < L + 512u, "SCAR REVERSE: on the next 8th, the 8th just played, backwards");
+    check(armed_ok && start_ok == 1u, "SCAR REPEAT 1/16: pressed in a 16th's second half, it waits for the next");
+    check(clip2 == 0u && rb > ra / 4.0 && rb < ra * 4.0, "SCAR SMEAR: not clipped, its loudness within 6 dB of the music's");
+}
+
 int main(void)
 {
     test_turing();
     test_sound();
     test_record();
     test_perc();
+    test_scar();
     printf("%d of %d checks passed\n", checks - fails, checks);
     return fails ? 1 : 0;
 }

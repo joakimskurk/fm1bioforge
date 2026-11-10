@@ -10,7 +10,8 @@
  *   KNOB 1..4    the page's four (SHIFT, or SEL tapped: the second four)
  *   HOME  MIX (again: the sends); held: white keys 1-6 mute     SEQ  SEQ; held: the white keys are the steps
  *   EDIT  SYN (again: deeper)      ENV   the organ's envelope    LFO  MUT; held: WRITE 0, WRITE 1, RESET, FUSE, LOCK
- *   FX    FX (again: deeper)       GLO   tempo, swing, quantise  ARP  held: BURST (STUTTER, INVERT, FREEZE, SPASM)
+ *   FX    FX (again: deeper)       GLO   tempo, swing, quantise  ARP  held: BURST (STUTTER, INVERT, FREEZE, SPASM;
+ *                                                                       SCAR: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR)
  *   SAVE  the scene to flash (SHIFT: every edited scene)
  *   PLAY  start / stop (SHIFT: PANIC)  REC  playing: LIVE REC; stopped: STEP REC (SHIFT: OVERDUB / REPLACE)
  *   OCT- OCT+  the keys' octave (SEQ held: the page of steps; SHIFT: UNDO, REDO)
@@ -41,8 +42,8 @@ static uint32_t app_ticks(void) { return fm1_ticks(); }
 
 /* ---- the state */
 static bio_t eng BIO_POOL;
-static seq_scene_t scenes[SEQ_NSCENE] BIO_POOL;
-static seq_undo_t undo_buf[SEQ_NUNDO] BIO_POOL, redo_buf[SEQ_NREDO] BIO_POOL;
+static seq_scene_t scenes[SEQ_NSCENE];          /* (in RAM: the pool keeps the engine, SCAR's 64 KB in it, D29) */
+static seq_undo_t undo_buf[SEQ_NUNDO], redo_buf[SEQ_NREDO];
 static seq_t sq;
 static volatile uint32_t eng_off, isr_load, t_audio;
 
@@ -521,11 +522,12 @@ static void keys_in(void)
                 ui.note_on[k] = K_MODE;
                 continue;
             }
-            if (arph && w < 4u) {               /* BURST */
+            if (arph && w < 8u) {               /* BURST; 5 .. 8: SCAR (the last pressed plays) */
                 ui.burst |= 1u << w;
                 if (w == 0u) ui.stutter_at = sq.ticks / SEQ_TPS * SEQ_TPS;
                 if (w == 1u) sq.tur.invert = 1;
                 if (w == 2u) eng.freeze = 1;
+                if (w >= 4u) { eng.scar.want = SCAR_REP16 + (w - 4u); say(BIO_SCAR_NAME[SCAR_REP16 + (w - 4u)]); }
                 ui.note_on[k] = K_MODE;
                 continue;
             }
@@ -558,10 +560,15 @@ static void keys_in(void)
             }
             if (ui.note_on[k] == K_MODE) {
                 if (w == 0u || w == 1u) sq.tur.write = 0;
-                if (w < 4u && (ui.burst >> w & 1u)) {
+                if (w < 8u && (ui.burst >> w & 1u)) {
                     ui.burst &= ~(1u << w);
                     if (w == 1u) sq.tur.invert = 0;
                     if (w == 2u) eng.freeze = 0;
+                    if (w >= 4u && eng.scar.want == SCAR_REP16 + (w - 4u)) {   /* back to another still held, or off */
+                        uint32_t h = ui.burst >> 4 & 15u, j = 4;
+                        while (j && !(h >> (j - 1u) & 1u)) j--;
+                        eng.scar.want = j ? SCAR_REP16 + j - 1u : SCAR_OFF;
+                    }
                 }
                 ui.note_on[k] = 0;
                 continue;
@@ -1091,8 +1098,8 @@ static void leds(void)
             on = st == ph || (ui.held_steps >> w & 1u);
             glow = st < L && seq_step_events(&sq, o, st) != 0u;
         } else if (lfoh || arph) {              /* the page's keys */
-            glow = w < (lfoh ? 5u : 4u);
-            on = arph && w < 4u && (ui.burst >> w & 1u);
+            glow = w < (lfoh ? 5u : 8u);
+            on = arph && w < 8u && (ui.burst >> w & 1u);
         } else if (!set.keyled) {               /* the keys held; the playhead's white key; the kit's middles */
             on = fm1_in.notes >> k & 1u;
             glow = ph != 999u && w == ph % 16u;

@@ -1,0 +1,22 @@
+# SCAR (D29): ABYSS playing; ARP held, the white keys 5 .. 8: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR (the message, the
+# keys' LEDs), each let go again; then two held at once (the last pressed plays, the other when it is let go)
+200 enc 6 2
+400 btn 12
+4000 btndown 10
+4300 keys 0x80
+4500 shot
+5200 keys 0
+5800 keys 0x200
+6900 keys 0
+7600 keys 0x800
+7800 shot
+8700 keys 0
+9400 keys 0x1000
+9700 shot
+11500 keys 0
+12200 keys 0x80
+12600 keys 0x1080
+13800 keys 0x80
+14600 keys 0
+14800 btnup 10
+16000 end

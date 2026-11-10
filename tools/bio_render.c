@@ -6,6 +6,8 @@
  *   build/bio_render dry OUT.wav [BARS]             the awakening with no effects and no Turing (DRY START)
  *   build/bio_render ritual N OUT.wav [BARS] [SOLO] a factory ritual (bio_rituals.h: 0 AWAKENING, 1 STATIC CULT,
  *                                                   2 SPLICE, 3 VOID, 4 INFECTION, 5 EMPTY BODY); SOLO: one organ
+ *   build/bio_render scar N OUT.wav BARS M@B+L ...  ritual N with SCAR bursts (bio_scar.h): mode M (1 REPEAT 1/16,
+ *                                                   2 REPEAT 1/8, 3 REVERSE, 4 SMEAR) held from beat B for L beats
  *   build/bio_render palette OUT.wav                the noise kit (bio_kits.h), each sound three times
  *   build/bio_render perf                           instructions: see tests/run_bio.sh (callgrind) */
 #include <stdio.h>
@@ -37,6 +39,8 @@ static double dbfs(int32_t peak)                 /* (no libm: from the engine's 
     return peak > 0 ? 6.0206 * ((double)bio_log2((uint32_t)peak) / 65536.0 - 14.99996) : -999.0;
 }
 
+static uint32_t sch_n, sch_mode[16], sch_at[16], sch_end[16];   /* SCAR's bursts, in frames */
+
 static int render(const char *path, uint32_t frames)
 {
     FILE *f = fopen(path, "wb");
@@ -48,6 +52,11 @@ static int render(const char *path, uint32_t frames)
     wav_hdr(f, frames);
     while (done < frames) {
         memset(buf, 0, sizeof buf);
+        if (sch_n) {                            /* the bursts held now (the last listed wins) */
+            uint32_t j, m = 0;
+            for (j = 0; j < sch_n; j++) if (done >= sch_at[j] && done < sch_end[j]) m = sch_mode[j];
+            eng.scar.want = m;
+        }
         bio_render(&eng, buf, 256);
         for (k = 0; k < 512u; k++) {
             int32_t v = buf[k];
@@ -83,6 +92,24 @@ int main(int argc, char **argv)
         sq.tur_reset = 1;
         seq_play(&sq);
         return render(argv[3], bars * 4u * (uint32_t)(44100u * 60u / (scenes[0].bpm10 / 10u)) + 88200u);
+    }
+    if (!strcmp(argv[1], "scar") && argc > 4) {   /* a ritual, and SCAR's bursts on it */
+        uint32_t r = (uint32_t)atoi(argv[2]), bars = (uint32_t)atoi(argv[4]), spb;
+        int i;
+        if (r >= BIO_NRITUAL) r = 0;
+        BIO_RITUAL[r](&scenes[0]);
+        spb = 26460000u / scenes[0].bpm10;
+        for (i = 5; i < argc && sch_n < 16u; i++) {
+            unsigned m = 0;
+            double b = 0, l = 0;
+            if (sscanf(argv[i], "%u@%lf+%lf", &m, &b, &l) != 3) { fprintf(stderr, "%s: M@B+L\n", argv[i]); return 2; }
+            sch_mode[sch_n] = m; sch_at[sch_n] = (uint32_t)(b * spb); sch_end[sch_n] = (uint32_t)((b + l) * spb);
+            printf("%-11s %6.2f s .. %6.2f s\n", BIO_SCAR_NAME[m < BIO_NSCAR ? m : 0], b * spb / 44100.0, (b + l) * spb / 44100.0);
+            sch_n++;
+        }
+        sq.tur_reset = 1;
+        seq_play(&sq);
+        return render(argv[3], bars * 4u * spb + 88200u);
     }
     if (!strcmp(argv[1], "lands") && argc > 2) {   /* the landscapes (bio_land.h), each 3 s on an organ it suits */
         static const uint8_t ORG[BIO_NLAND] = {0, O_DRONE, O_DRONE, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_BASS, O_VOICE, O_BASS, O_SPASM,

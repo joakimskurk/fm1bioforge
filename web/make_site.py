@@ -50,6 +50,10 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
      "Dark ambient meets noise, 110 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
      "crackling, the reverb and the delay breathing with it; ticks of six squares off the beat, sparks in time; wide, "
      "drifting dub chords off the beat into a dark delay, a bass on the off-beats, a wide drone and a choir in a cave."),
+    ("15_scar", "SCAR · ABYSS PLAYED",
+     "ABYSS with SCAR, the output's last 0.37 s kept: ARP held, four white keys play it back while held. A roll of 16ths "
+     "into the bar, darker each time round; the 8th just played, backwards; a repeat of 8ths; a bar smeared into "
+     "crossing grains; let go, the music is where it would have been."),
     ("4_ash", "RITUAL 03 · ASH",
      "The ambient side, 116 BPM: a sub kick with a big rumble, a fire held and wood creaking, sparks in time, glass "
      "beating under a choir, minor-ninth dub chords far apart into the delay; a vast space."),

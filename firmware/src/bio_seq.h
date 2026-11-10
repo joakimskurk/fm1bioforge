@@ -239,12 +239,23 @@ static void seq_tick(bio_t *e, void *ctx)
     }
     if (!s->playing) {
         s->ticks = s->frac = 0;
+        s->e->grid_on = 0;
         goto nerve;
     }
     t0 = s->ticks;
     s->frac += s->inc32;
     t1 = t0 + (s->frac >> 16);
     s->frac &= 0xFFFFu;
+    {                                           /* the grid for SCAR (D29): a 16th, an 8th, a quarter begun on this
+                                                   sub-block (their hits play from its start) */
+        uint32_t j, g = 0;
+        for (j = 0; j < 3u; j++) {
+            uint32_t d = SEQ_TPS << j;
+            if ((t0 + d - 1u) / d * d < t1) g |= 1u << j;
+        }
+        s->e->grid = g;
+        s->e->grid_on = 1;
+    }
     /* the next scene, on the bar */
     if (s->next != s->cur && t1 / SEQ_BAR != t0 / SEQ_BAR) {
         uint32_t o;

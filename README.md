@@ -80,6 +80,9 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   - It never moves or deletes what you played. FUSE writes its ghosts into the pattern, if you ask for it.
 - **Effects.** BLOOD DELAY (synced, darker on each echo, ping-pong), BILE REVERB (four modulated delay lines, a
   FREEZE) and MARROW CRUSH (a parallel drive, sample-rate and bit crusher). Each channel has its own sends.
+- **SCAR** keeps the last 0.37 s of what comes out, in stereo, and plays it back while you hold a BURST key: REPEAT 1/16
+  and 1/8 (on the grid, darker each time round), REVERSE (the 8th just played, backwards) and SMEAR (the buffer frozen,
+  grains crossing in it). The music goes on underneath, in time, for when you let go.
 - **Four scenes in RAM**, each its own world at first:
   - RITUAL 00 THE AWAKENING, the idea document's start scene;
   - 01 RUST, grim dark industrial ambience with a pulse and a melody: a drone for a body, a smouldering rumble, a sub
@@ -110,7 +113,7 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 | **LFO** | MUT: the spine. **Held:** white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK. |
 | **FX** | Delay, reverb, crush; again: their times and colours; again: the reverb's SPACE. |
 | **GLO** | Tempo, swing, quantise and its strength; SHIFT: OVERDUB or REPLACE, the step length, the key LEDs, the MIDI channel. |
-| **ARP** | **Held:** BURST on the white keys: STUTTER, INVERT (the register), FREEZE (the reverb), SPASM (a nerve burst). |
+| **ARP** | **Held:** BURST on the white keys: STUTTER, INVERT (the register), FREEZE (the reverb), SPASM (a nerve burst); SCAR on keys 5 to 8: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR (the last pressed plays). |
 | **SAVE** | The scene to flash (playing: when it stops). SHIFT: every edited scene. Left alone, stopped and quiet, a scene saves itself. |
 | **PLAY** | Start, stop. SHIFT + PLAY: PANIC (every voice silent, the memory kept). |
 | **REC** | Playing: LIVE REC on and off. Stopped: STEP REC. REC held + PLAY: record from the start. |

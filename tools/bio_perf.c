@@ -2,7 +2,7 @@
 /* The engine's cost on a computer (tests/run_bio.sh runs it under callgrind, built -Os as the chip's build is):
  * BLOCKS blocks of the awakening, or of everything at once (every organ sounding, every effect on: the worst case),
  * or the worst with the four drums as noise (MODEL NOISE, every 16th, driven and crushed), or a factory ritual.
- *   build/bio_perf awaken|worst|perc|ritualN BLOCKS */
+ *   build/bio_perf awaken|worst|perc|ritualN BLOCKS [SCAR]   (SCAR: a burst held all along, bio_scar.h's 1 .. 4) */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,7 +41,11 @@ int main(int argc, char **argv)
     }
     seq_attach(&sq, &eng, sc, u, r);
     seq_play(&sq);
-    for (b = 0; b < n; b++) { memset(buf, 0, sizeof buf); bio_render(&eng, buf, 256); }
+    for (b = 0; b < n; b++) {
+        if (argc > 3 && b == 4u) eng.scar.want = (uint32_t)atoi(argv[3]);   /* (once it has something to play) */
+        memset(buf, 0, sizeof buf);
+        bio_render(&eng, buf, 256);
+    }
     printf("%u blocks, %u frames\n", n, n * 256u);
     return 0;
 }

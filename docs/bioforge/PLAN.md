@@ -46,7 +46,7 @@ screen. One AC791N core, no FPU: integers only; the audio interrupt gets 256 fra
 | **LFO** | MUT: the Turing spine. **Held:** the white keys are WRITE 0, WRITE 1, RESET, FUSE |
 | **FX** | FX: delay, reverb, crush (again: their times and colours) |
 | **GLO** | GLOBAL: tempo, swing, quantise, record mode, count-in |
-| **ARP** | **Held:** BURST, the performance mutations on the white keys (STUTTER, INVERT, FREEZE, SPASM) |
+| **ARP** | **Held:** BURST, the performance mutations on the white keys (STUTTER, INVERT, FREEZE, SPASM; SCAR: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR, D29) |
 | **SAVE** | the scene to flash (playing: when it stops) |
 | **PLAY** | start, stop. SHIFT + PLAY: PANIC (every voice off, the memory kept) |
 | **REC** | playing: LIVE REC on the focused track, on and off. Stopped: STEP REC. SHIFT + REC: OVERDUB / REPLACE |
@@ -157,6 +157,11 @@ slow cycle in bars: the DRONE's filter, NOISE, VOICE), NERVE DRIFT (a slow rando
   0.25–12 s, at half rate. FREEZE (BURST): feedback 0.998, input closed.
 - **MARROW CRUSH**: a parallel send: asymmetric drive, then sample-rate and bit reduction, a fold. Meant for SPASM,
   NOISE, BASS and the drums; never on all by itself.
+- **SCAR** (D29): the output's last 0.37 s in stereo (64 KB in the pool), recorded after the limiter; while a BURST key
+  is held it takes the output's place (6 ms in and out, 46 ms for SMEAR) and the music goes on underneath. REPEAT 1/16
+  and 1/8 on the nearest grid point, half an octave darker and 0.3 dB down each time round; REVERSE from the next 8th,
+  the 8th just played backwards; SMEAR, two crossing grains of 186 ms at random places in the frozen buffer. A loop's
+  seam crossfades with what lies beyond it. 11 instructions a frame recording, 17 .. 57 more while one plays.
 - Sends A (delay), B (reverb), C (crush) per channel. The dry signal stays.
 - **Master**: −6 dB at INIT, a DC block, a soft peak limiter near −1 dBFS.
 - PARASITE CHORUS and NECRO GATE from the document: not in v0.1 (§7).
@@ -260,7 +265,7 @@ A red pulse runs along the top frame while notes are actually being written; gre
 | 1–64 steps, pattern bank | 4 scenes of nine tracks, each 1–64 steps | flash: each scene has two slots (A/B) of the eight |
 | PARASITE CHORUS, NECRO GATE | later | the CPU first for TISSUE (§5.10 of the document) |
 | MIX scenes A/B, FLESH MIX crossfade, XFADE curves | later | one scene at a time; switching on the bar |
-| BURST page (MORPH TISSUE CHAIN SPASM) | ARP held: STUTTER, INVERT, FREEZE, SPASM | the same idea in four keys |
+| BURST page (MORPH TISSUE CHAIN SPASM) | ARP held: STUTTER, INVERT, FREEZE, SPASM (and SCAR's four, D29) | the same idea in four keys |
 | Microtiming ±20 ms cap, FRITID/RAW mode | the raw time is kept; quantise decides | simpler and non-destructive |
 | Count-in | one bar, on or off | |
 | Project export / import | later | the platform keeps SysEx for its updater |

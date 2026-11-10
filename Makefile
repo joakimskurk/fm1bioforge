@@ -22,6 +22,8 @@ perf:
 	mkdir -p build && cc -Os -Wall -Wno-unused-function -Ifirmware/src -Ifirmware/gen -o build/bio_perf tools/bio_perf.c
 	for m in awaken worst perc ritual1 ritual2 ritual3 ritual4 ritual9 ritual10; do valgrind --tool=callgrind --callgrind-out-file=build/cg.$$m.out build/bio_perf $$m 690 2>&1 | \
 	    sed -n 's/.*Collected : \([0-9]*\)/\1/p' | awk -v m=$$m '{ printf "%s: %d instructions a frame\n", m, $$1 / 176640 }'; done
+	for s in 1 3 4; do valgrind --tool=callgrind --callgrind-out-file=build/cg.scar$$s.out build/bio_perf worst 690 $$s 2>&1 | \
+	    sed -n 's/.*Collected : \([0-9]*\)/\1/p' | awk -v m=$$s '{ printf "worst, SCAR %s held: %d instructions a frame\n", m, $$1 / 176640 }'; done
 fw:
 	BOARD=smk37 PYTHON=$(PY) sh build.sh
 	PYTHON=$(PY) sh build.sh

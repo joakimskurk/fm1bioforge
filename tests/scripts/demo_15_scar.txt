@@ -1,0 +1,23 @@
+# Demo: SCAR (D29) on ABYSS: ARP held, the white keys 5 .. 8 play the output's last 0.37 s back while held: a REPEAT
+# 1/16 roll into the bar, the 8th just played REVERSEd, a REPEAT 1/8, a bar SMEARed into grains, a REVERSE and a last
+# roll; let go, ABYSS is where it would have been
+200 enc 6 2
+400 btn 12
+8000 btndown 10
+8552 keys 0x80
+9127 keys 0
+10982 keys 0x800
+11855 keys 0
+12915 keys 0x200
+13491 keys 0
+17855 keys 0x1000
+20036 keys 0
+21613 keys 0x80
+22218 keys 0
+24073 keys 0x800
+24400 keys 0
+26006 keys 0x80
+26946 keys 0
+27300 btnup 10
+33127 btn 12
+37127 end
