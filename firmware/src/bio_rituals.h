@@ -173,8 +173,8 @@ static void rit_void(seq_scene_t *sc)
    Low slices of noise on the downbeats (HEART as noise). 128 BPM, dry */
 static void rit_frozen(seq_scene_t *sc)
 {
-    static const uint8_t SL[BIO_NP] = NC(38, 20, 50, 40,  6, 30, 50, 0, 0, 20, 0,  0, 100, 20, 0,  24, 100, 50,  100, 0, 0);
-    static const uint8_t LO[BIO_NP] = NC(4, 10, 50, 34,  6, 35, 0, 0, 0, 25, 0,  0, 100, 0, 0,  24, 100, 50,  25, 0, 0);
+    static const uint8_t SL[BIO_NP] = NC(38, 20, 50, 40,  4, 30, 50, 0, 0, 20, 0,  0, 100, 20, 0,  24, 100, 50,  100, 0, 0);
+    static const uint8_t LO[BIO_NP] = NC(4, 10, 50, 34,  4, 35, 0, 0, 0, 25, 0,  0, 100, 0, 0,  24, 100, 50,  25, 0, 0);
     seq_scene_blank(sc, 0xF2023Eu);
     rit_name(sc, "FROZEN");
     sc->bpm10 = 1280;
@@ -196,9 +196,9 @@ static void rit_stream(seq_scene_t *sc)
 {
     static const uint8_t G[32] = {4, 0, 2, 2, 4, 1, 0, 3, 4, 0, 2, 0, 4, 1, 1, 1,   4, 0, 2, 2, 4, 1, 0, 3, 4, 2, 0, 2, 9, 9, 9, 9};
     static const uint8_t ACC[16] = {1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0};
-    static const uint8_t ST[BIO_NP] = NC(40, 66, 50, 70,  18, 34, 50, 0, 0, 35, 0,  0, 100, 30, 0,  24, 100, 46,  0, 0, 50);
-    static const uint8_t LO[BIO_NP] = NC(2, 10, 50, 80,  6, 20, 0, 0, 0, 10, 0,  0, 100, 0, 40,  24, 100, 50,  0, 0, 0);
-    static const uint8_t HI[BIO_NP] = NC(88, 10, 50, 40,  6, 10, 100, 0, 0, 0, 0,  0, 100, 40, 10,  24, 70, 75,  0, 0, 0);
+    static const uint8_t ST[BIO_NP] = NC(40, 66, 50, 70,  13, 34, 50, 0, 0, 35, 0,  0, 100, 30, 0,  24, 100, 46,  0, 0, 50);
+    static const uint8_t LO[BIO_NP] = NC(2, 10, 50, 80,  4, 20, 0, 0, 0, 10, 0,  0, 100, 0, 40,  24, 100, 50,  0, 0, 0);
+    static const uint8_t HI[BIO_NP] = NC(88, 10, 50, 40,  4, 10, 100, 0, 0, 0, 0,  0, 100, 40, 10,  24, 70, 75,  0, 0, 0);
     uint32_t i;
     seq_scene_blank(sc, 0x57E4A3u);
     rit_name(sc, "STREAM");
@@ -233,8 +233,8 @@ static void rit_stream(seq_scene_t *sc)
 static void rit_wall(seq_scene_t *sc)
 {
     static const uint8_t RIFF[16] = {38, 38, 41, 38, 50, 39, 38, 45, 38, 38, 41, 43, 50, 46, 45, 39};
-    static const uint8_t WA[BIO_NP] = NC(75, 10, 50, 48,  6, 92, 50, 0, 0, 30, 0,  0, 4, 40, 10,  24, 100, 40,  0, 70, 0);
-    static const uint8_t WI[BIO_NP] = NC(60, 10, 50, 60,  43, 30, 60, 0, 0, 0, 0,  0, 100, 20, 5,  24, 70, 70,  0, 0, 0);
+    static const uint8_t WA[BIO_NP] = NC(75, 10, 50, 48,  4, 92, 50, 0, 0, 30, 0,  0, 4, 40, 10,  24, 100, 40,  0, 70, 0);
+    static const uint8_t WI[BIO_NP] = NC(60, 10, 50, 60,  32, 30, 60, 0, 0, 0, 0,  0, 100, 20, 5,  24, 70, 70,  0, 0, 0);
     uint32_t i;
     seq_scene_blank(sc, 0x3A11Eu);
     rit_name(sc, "WALL");
@@ -260,9 +260,9 @@ static void rit_data(seq_scene_t *sc)
 {
     static const char *const P[4] = {"c.b.d..c.bd.c.s.", "c.b.d.cc.b..d.bc", "c..bd..cdb..c.s.", "cbcb.d.c..bdd..s"};
     static const uint8_t DN[4] = {48, 60, 67, 79};
-    static const uint8_t CK[BIO_NP] = NC(84, 10, 50, 2,  6, 95, 50, 0, 100, 0, 0,  0, 0, 0, 0,  24, 100, 14,  0, 0, 0);
-    static const uint8_t BU[BIO_NP] = NC(75, 10, 50, 5,  6, 12, 85, 0, 30, 0, 0,  0, 100, 0, 0,  24, 100, 50,  60, 0, 0);
-    static const uint8_t DG[BIO_NP] = NC(46, 10, 50, 70,  31, 10, 10, 0, 0, 0, 0,  0, 100, 0, 0,  24, 100, 80,  0, 0, 0);
+    static const uint8_t CK[BIO_NP] = NC(84, 10, 50, 2,  4, 95, 50, 0, 100, 0, 0,  0, 0, 0, 0,  24, 100, 14,  0, 0, 0);
+    static const uint8_t BU[BIO_NP] = NC(75, 10, 50, 5,  4, 12, 85, 0, 30, 0, 0,  0, 100, 0, 0,  24, 100, 50,  60, 0, 0);
+    static const uint8_t DG[BIO_NP] = NC(46, 10, 50, 70,  22, 10, 10, 0, 0, 0, 0,  0, 100, 0, 0,  24, 100, 80,  0, 0, 0);
     uint32_t b, i;
     seq_scene_blank(sc, 0xDA7Au);
     rit_name(sc, "DATA");
@@ -336,7 +336,7 @@ static void rit_model(seq_scene_t *sc, uint32_t org, uint32_t model, uint32_t bo
    into a groove (NOISE), a hinge, a deep HEART; in a room of metal */
 static void rit_foundry(seq_scene_t *sc)
 {
-    static const uint8_t SL[BIO_NP] = NC(70, 20, 50, 34,  43, 40, 70, 0, 0, 30, 20,  0, 100, 30, 0,  24, 90, 60,  70, 0, 0);
+    static const uint8_t SL[BIO_NP] = NC(70, 20, 50, 34,  32, 40, 70, 0, 0, 30, 20,  0, 100, 30, 0,  24, 90, 60,  70, 0, 0);
     seq_scene_blank(sc, 0xF0D41u);
     rit_name(sc, "FOUNDRY");
     sc->bpm10 = 1120;
@@ -373,8 +373,8 @@ static void rit_foundry(seq_scene_t *sc)
    far apart (SPASM), ice crackling in the cold and creaking now and then; in a vast space */
 static void rit_orbit(seq_scene_t *sc)
 {
-    static const uint8_t ICE[BIO_NP] = NC(80, 30, 50, 30,  56, 30, 70, 0, 0, 0, 0,  0, 0, 60, 30,  24, 100, 50,  60, 0, 0);
-    static const uint8_t WIND[BIO_NP] = NC(80, 25, 50, 80,  56, 20, 80, 0, 0, 0, 0,  40, 100, 30, 70,  24, 72, 50,  0, 0, 0);   /* (ice, not wind: D24) */
+    static const uint8_t ICE[BIO_NP] = NC(80, 30, 50, 30,  41, 30, 70, 0, 0, 0, 0,  0, 0, 60, 30,  24, 100, 50,  60, 0, 0);
+    static const uint8_t WIND[BIO_NP] = NC(80, 25, 50, 80,  41, 20, 80, 0, 0, 0, 0,  40, 100, 30, 70,  24, 72, 50,  0, 0, 0);   /* (ice, not wind: D24) */
     seq_scene_blank(sc, 0x0B17u);
     rit_name(sc, "ORBIT");
     sc->bpm10 = 760;
@@ -415,7 +415,7 @@ static void rit_orbit(seq_scene_t *sc)
    fry gated in and out (NOISE); in a cave */
 static void rit_innards(seq_scene_t *sc)
 {
-    static const uint8_t BR[BIO_NP] = NC(40, 40, 50, 60,  81, 30, 30, 0, 0, 10, 0,  10, 100, 20, 40,  24, 84, 50,  0, 0, 0);
+    static const uint8_t BR[BIO_NP] = NC(40, 40, 50, 60,  59, 30, 30, 0, 0, 10, 0,  10, 100, 20, 40,  24, 84, 50,  0, 0, 0);
     seq_scene_blank(sc, 0x1AA4D5u);
     rit_name(sc, "INNARDS");
     sc->bpm10 = 920;
@@ -455,8 +455,8 @@ static void rit_innards(seq_scene_t *sc)
    dark delay, a bass on the off-beats, the drone and a choir in a cave */
 static void rit_abyss(seq_scene_t *sc)
 {
-    static const uint8_t TK[BIO_NP] = NC(72, 10, 50, 30,  6, 15, 90, 0, 0, 0, 0,  0, 0, 30, 20,  24, 78, 62,  25, 0, 0);
-    static const uint8_t CL[BIO_NP] = NC(32, 20, 52, 55,  6, 30, 50, 80, 0, 10, 0,  0, 0, 40, 30,  24, 74, 46,  0, 0, 0);
+    static const uint8_t TK[BIO_NP] = NC(76, 30, 50, 30,  87, 15, 90, 0, 0, 0, 0,  0, 0, 30, 20,  24, 80, 62,  25, 0, 0);
+    static const uint8_t CL[BIO_NP] = NC(32, 20, 52, 55,  4, 30, 50, 80, 0, 10, 0,  0, 0, 40, 30,  24, 74, 46,  0, 0, 0);
     seq_scene_blank(sc, 0xAB7550u);
     rit_name(sc, "ABYSS");
     sc->bpm10 = 1220;
@@ -500,8 +500,9 @@ static void rit_abyss(seq_scene_t *sc)
     sc->mix.sb[CH_DRONE] = 40; sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_NOISE] = 34; sc->mix.sb[CH_BASS] = 0;
     sc->mix.sa[CH_BASS] = 0; sc->mix.sa[CH_VOICE] = 20;
     sc->mix.pump = 55; sc->mix.rumble = 62; sc->mix.master = 80;
+    sc->fx.r_duck = 40;
     sc->fx.d_time = 4; sc->fx.d_fb = 56; sc->fx.d_tone = 28; sc->fx.d_mix = 34; sc->fx.d_rev = 20; sc->fx.d_ping = 1;
-    sc->fx.r_space = 2; sc->fx.r_mix = 36; sc->fx.r_decay = 60; sc->fx.r_size = 80; sc->fx.r_damp = 30; sc->fx.c_mix = 0;
+    sc->fx.r_space = 2; sc->fx.r_mix = 40; sc->fx.r_decay = 76; sc->fx.r_size = 88; sc->fx.r_damp = 20; sc->fx.c_mix = 0;
     sc->tur.loop = 97; sc->tur.depth = 10; sc->tur.rattle = 15;
 }
 
@@ -546,8 +547,9 @@ static void rit_ash(seq_scene_t *sc)
     sc->mix.sa[CH_SPASM] = 80; sc->mix.sb[CH_SPASM] = 50; sc->mix.sb[CH_DRUM] = 26; sc->mix.sa[CH_DRUM] = 0;
     sc->mix.sb[CH_DRONE] = 50; sc->mix.sb[CH_VOICE] = 80; sc->mix.sb[CH_NOISE] = 40;
     sc->mix.pump = 60; sc->mix.rumble = 80; sc->mix.master = 80;
+    sc->fx.r_duck = 40;
     sc->fx.d_time = 7; sc->fx.d_fb = 62; sc->fx.d_tone = 24; sc->fx.d_mix = 36; sc->fx.d_rev = 30; sc->fx.d_ping = 1;
-    sc->fx.r_space = 4; sc->fx.r_mix = 44; sc->fx.r_decay = 70; sc->fx.r_size = 90; sc->fx.r_damp = 26; sc->fx.c_mix = 0;
+    sc->fx.r_space = 4; sc->fx.r_mix = 46; sc->fx.r_decay = 82; sc->fx.r_size = 94; sc->fx.r_damp = 16; sc->fx.c_mix = 0;
     sc->tur.loop = 97; sc->tur.depth = 10;
 }
 
@@ -560,9 +562,9 @@ static void rit_ash(seq_scene_t *sc)
    from the scale (WAIL), slipping slowly, into a dark delay. DARK rolls the top off */
 static void rit_rust(seq_scene_t *sc)
 {
-    static const uint8_t SL[BIO_NP] = NC(26, 10, 50, 30,  6, 30, 10, 0, 0, 10, 0,  2, 100, 10, 10,  24, 70, 54,  35, 0, 0);
-    static const uint8_t MW[BIO_NP] = NC(52, 30, 50, 80,  81, 15, 30, 0, 0, 0, 0,  20, 100, 30, 60,  24, 58, 40,  0, 0, 0);
-    static const uint8_t RB[BIO_NP] = NC(22, 10, 50, 80,  68, 20, 10, 0, 0, 10, 0,  20, 100, 0, 60,  24, 100, 50,  0, 0, 0);
+    static const uint8_t SL[BIO_NP] = NC(30, 40, 50, 30,  78, 30, 10, 0, 0, 10, 0,  2, 100, 10, 10,  24, 76, 54,  35, 0, 0);
+    static const uint8_t MW[BIO_NP] = NC(52, 30, 50, 80,  59, 15, 30, 0, 0, 0, 0,  20, 100, 30, 60,  24, 58, 40,  0, 0, 0);
+    static const uint8_t RB[BIO_NP] = NC(22, 10, 50, 80,  50, 20, 10, 0, 0, 10, 0,  20, 100, 0, 60,  24, 100, 50,  0, 0, 0);
     seq_scene_blank(sc, 0x2057u);
     rit_name(sc, "RUST");
     sc->bpm10 = 1080;
@@ -602,10 +604,12 @@ static void rit_rust(seq_scene_t *sc)
     sc->mix.lvl[CH_DRONE] = 78; sc->mix.lvl[CH_VOICE] = 58; sc->mix.lvl[CH_NOISE] = 70; sc->mix.lvl[CH_DRUM] = 86;
     sc->mix.lvl[CH_SPASM] = 62; sc->mix.lvl[CH_BASS] = 0;
     sc->mix.sa[CH_SPASM] = 60; sc->mix.sb[CH_SPASM] = 50; sc->mix.sb[CH_DRUM] = 30; sc->mix.sa[CH_DRUM] = 0;
-    sc->mix.sb[CH_DRONE] = 30; sc->mix.sb[CH_VOICE] = 50; sc->mix.sb[CH_NOISE] = 30; sc->mix.sa[CH_VOICE] = 10;
-    sc->mix.pump = 30; sc->mix.rumble = 45; sc->mix.dark = 0; sc->mix.master = 96;
+    sc->mix.sb[CH_DRONE] = 56; sc->mix.sb[CH_VOICE] = 66; sc->mix.sb[CH_NOISE] = 30; sc->mix.sa[CH_VOICE] = 10;
+    sc->mix.sb[CH_SPASM] = 64;
+    sc->mix.pump = 20; sc->mix.rumble = 45; sc->mix.dark = 0; sc->mix.master = 96;
+    sc->fx.r_duck = 35;                         /* (the kick ducks the reverb's return a little: D25) */
     sc->fx.d_time = 6; sc->fx.d_fb = 50; sc->fx.d_tone = 25; sc->fx.d_mix = 30; sc->fx.d_rev = 25; sc->fx.d_ping = 1;
-    sc->fx.r_space = 2; sc->fx.r_mix = 46; sc->fx.r_decay = 65; sc->fx.r_size = 85; sc->fx.r_damp = 25; sc->fx.c_mix = 0;
+    sc->fx.r_space = 2; sc->fx.r_mix = 54; sc->fx.r_decay = 82; sc->fx.r_size = 92; sc->fx.r_damp = 18; sc->fx.c_mix = 0;
 }
 
 /* the factory list (SHIFT + PRESETS) */

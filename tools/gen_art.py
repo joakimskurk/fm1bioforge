@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 """BIOFORGE's pictures: firmware/gen/bio_art.h (Pillow). Drawn here, at four times the size and brought down, from
-shapes and numbers only: no image of anyone else's goes in. The look is the idea document's palette: almost black,
-burgundy flesh, bone, a little poison green.
+shapes and numbers only: no image of anyone else's goes in. The look (D26): biomechanical, after the feel of the
+pictures the user gave (chrome and graphite, ribbed hoses, vertebrae, smooth capsules, airbrushed light), in the dark;
+a pale green the only colour for sound, a dark blood red for recording.
 
   python3 tools/gen_art.py           write firmware/gen/bio_art.h (and build/art/*.png to look at)
   python3 tools/gen_art.py --check   fail if it differs
@@ -21,13 +22,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "firmware" / "gen" / "bio_art.h"
 S = 4                                           # drawn at 4x
 
-BLACK = (10, 6, 7)
-PANEL = (15, 9, 10)
-FLESH = [(46, 16, 22), (78, 30, 38), (112, 52, 60), (150, 84, 88)]
-BONE = [(92, 76, 70), (150, 128, 118), (196, 182, 160), (226, 216, 190)]
-METAL = (52, 44, 44)
-GREEN = (140, 255, 42)
-RED = (212, 36, 48)
+BLACK = (5, 5, 6)
+METAL = [(18, 18, 20), (40, 40, 44), (78, 78, 84), (132, 132, 138), (196, 196, 202), (236, 236, 240)]   # graphite to chrome
+ON = (176, 214, 150)                            # sound: a pale green (bio_ui.h's COL_GREEN)
 
 # the screen's areas (1x): what the firmware draws into
 TOP = (1, 1, 239, 26)
@@ -119,198 +116,190 @@ def catmull(pts, n=24):
     return out
 
 
-def tube(d, pts, w, cols, rnd):
-    """a tube: dark rim, flesh, a highlight along one side, rings now and then (a trachea, a hose)"""
-    path = catmull(pts)
-    for i, (x, y) in enumerate(path):
-        r = w / 2
-        d.ellipse([x - r - S, y - r - S, x + r + S, y + r + S], fill=BLACK)
-    for i, (x, y) in enumerate(path):
-        r = w / 2
-        d.ellipse([x - r, y - r, x + r, y + r], fill=cols[0])
-    for i, (x, y) in enumerate(path):
-        r = w / 2 * 0.72
-        d.ellipse([x - r - w * 0.08, y - r - w * 0.08, x + r - w * 0.08, y + r - w * 0.08], fill=cols[1])
-    for i, (x, y) in enumerate(path):
-        r = w * 0.12
-        d.ellipse([x - r - w * 0.22, y - r - w * 0.22, x + r - w * 0.22, y + r - w * 0.22], fill=cols[2])
-    step = max(6, int(w * 0.9))
-    for i in range(0, len(path) - 1, step):    # rings
+def shade(t):                                   # 0 dark .. 1 bright along the metal ramp
+    t = max(0.0, min(1.0, t)) * (len(METAL) - 1)
+    i = min(int(t), len(METAL) - 2)
+    return lerp(METAL[i], METAL[i + 1], t - i)
+
+
+def hose(d, pts, w, rnd, bright=1.0):
+    """a ribbed hose: a dark rim, its body lit from the top left, a highlight, and ribs all along it"""
+    path = catmull(pts, 40)
+    for x, y in path:
+        r = w / 2 + S
+        d.ellipse([x - r, y - r, x + r, y + r], fill=BLACK)
+    for layer, (k, off, t) in enumerate(((1.0, 0.0, 0.16), (0.84, 0.06, 0.30), (0.6, 0.13, 0.50), (0.3, 0.22, 0.78), (0.12, 0.27, 1.0))):
+        for x, y in path:
+            r = w / 2 * k
+            d.ellipse([x - r - w * off, y - r - w * off, x + r - w * off, y + r - w * off], fill=shade(t * bright))
+    step = max(4, int(w * 0.42))
+    for i in range(0, len(path) - 1, step):    # the ribs: a dark groove and a lit edge
         (x0, y0), (x1, y1) = path[i], path[min(i + 1, len(path) - 1)]
         a = math.atan2(y1 - y0, x1 - x0) + math.pi / 2
         dx, dy = math.cos(a) * w / 2, math.sin(a) * w / 2
-        d.line([(x0 - dx, y0 - dy), (x0 + dx, y0 + dy)], fill=lerp(cols[0], BLACK, 0.5), width=max(2, S))
+        d.line([(x0 - dx, y0 - dy), (x0 + dx, y0 + dy)], fill=lerp(shade(0.1), BLACK, 0.5), width=max(2, int(S * 1.2)))
+        d.line([(x0 - dx + S, y0 - dy), (x0 + dx * 0.4 + S, y0 + dy * 0.4)], fill=shade(0.62 * bright), width=max(1, S // 2))
 
 
-def bone_frame(d, box, rnd):
-    """a frame of bone: segments with notches, as vertebrae laid along the edge"""
-    x0, y0, x1, y1 = [v * S for v in box]
-    d.rounded_rectangle([x0, y0, x1, y1], radius=5 * S, fill=PANEL, outline=BONE[0], width=3 * S)
-    d.rounded_rectangle([x0 + S, y0 + S, x1 - S, y1 - S], radius=4 * S, outline=BONE[1], width=S)
-    seg = 13 * S
-    for x in range(x0 + 6 * S, x1 - 6 * S, seg):   # notches top and bottom
-        for y in (y0, y1):
-            d.rectangle([x, y - S, x + S, y + S], fill=BONE[2 if rnd.random() < 0.5 else 1])
-    for y in range(y0 + 6 * S, y1 - 6 * S, seg):
-        for x in (x0, x1):
-            d.rectangle([x - S, y, x + S, y + S], fill=BONE[2 if rnd.random() < 0.5 else 1])
+def spine(d, pts, size, rnd):
+    """vertebrae along a curve: rounded bodies with a lit top, small processes"""
+    path = catmull(pts, 60)
+    step = int(size * 0.9)
+    for i in range(0, len(path) - 1, max(1, step // 2)):
+        x, y = path[i]
+        x1, y1 = path[min(i + 1, len(path) - 1)]
+        a = math.atan2(y1 - y, x1 - x)
+        r = size / 2
+        d.ellipse([x - r - S, y - r - S, x + r + S, y + r + S], fill=BLACK)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=shade(0.35))
+        d.ellipse([x - r * 0.7 - S, y - r * 0.7 - S, x + r * 0.5, y + r * 0.5], fill=shade(0.6))
+        d.ellipse([x - r * 0.35 - 2 * S, y - r * 0.35 - 2 * S, x - r * 0.05, y - r * 0.05], fill=shade(0.9))
+        px, py = x + math.cos(a + math.pi / 2) * r * 1.5, y + math.sin(a + math.pi / 2) * r * 1.5
+        d.line([(x, y), (px, py)], fill=shade(0.45), width=max(2, int(size * 0.18)))
 
 
-def flesh_texture(rnd, W):
-    """living tissue, dark: soft lobes of burgundy, veins over them, a grain"""
-    im = Image.new("RGB", (W, W), FLESH[0])
-    d = ImageDraw.Draw(im)
-    for _ in range(260):                        # lobes
-        x, y, r = rnd.uniform(0, W), rnd.uniform(0, W), rnd.uniform(8, 40) * S
-        d.ellipse([x - r, y - r, x + r, y + r], fill=lerp(FLESH[0], FLESH[1], rnd.uniform(0.0, 0.9)))
-    im = im.filter(ImageFilter.GaussianBlur(6 * S))
-    d = ImageDraw.Draw(im)
-    for _ in range(90):                         # veins: dark, branching a little
-        x, y = rnd.uniform(0, W), rnd.uniform(0, W)
-        a = rnd.uniform(0, 2 * math.pi)
-        wid = rnd.choice((1, 1, 2)) * S
-        pts = [(x, y)]
-        for k in range(rnd.randint(4, 9)):
-            a += rnd.uniform(-0.8, 0.8)
-            x += math.cos(a) * 10 * S
-            y += math.sin(a) * 10 * S
-            pts.append((x, y))
-        d.line(pts, fill=lerp(FLESH[0], BLACK, 0.6), width=wid)
-        d.line([(px - S * 0.6, py - S * 0.6) for px, py in pts], fill=lerp(FLESH[1], FLESH[2], 0.4), width=max(1, wid // 2))
-    return im
+def dome(d, x, y, r):
+    """a smooth dome, a skull's or a capsule's: lit from the top left, two dark hollows"""
+    for k in range(int(r), 0, -S):
+        t = k / r
+        d.ellipse([x - k - (1 - t) * r * 0.35, y - k - (1 - t) * r * 0.35, x + k - (1 - t) * r * 0.35, y + k - (1 - t) * r * 0.35],
+                  fill=shade(0.18 + (1 - t) * 0.75))
+    d.arc([x - r * 0.9, y - r * 0.2, x + r * 0.9, y + r * 1.1], 20, 160, fill=BLACK, width=int(2 * S))   # a seam
+
+
+def ribs(d, x, y, rx, ry, n):
+    for k in range(n):
+        f = 1 - k * 0.12
+        box = [x - rx * f, y - ry * f, x + rx * f, y + ry * f]
+        d.arc(box, 200, 340, fill=BLACK, width=int(5 * S))
+        d.arc(box, 200, 340, fill=shade(0.55), width=int(3 * S))
+        d.arc([box[0] + S, box[1] + S, box[2] + S, box[3] + S], 210, 300, fill=shade(0.85), width=S)
 
 
 def background(rnd):
     W = 240 * S
-    im = flesh_texture(rnd, W)
+    im = Image.new("RGB", (W, W), BLACK)
     d = ImageDraw.Draw(im)
-    for _ in range(16):                         # tubes between the panels
-        x, y = rnd.uniform(-60, W + 60), rnd.uniform(-60, W + 60)
-        a = rnd.uniform(0, 2 * math.pi)
-        pts = []
+    for y in range(0, W, S):                    # an airbrushed ground: soft horizontal bands, ribbed, very dark
+        t = 0.10 + 0.06 * math.sin(y / (9 * S)) + 0.04 * math.sin(y / (37 * S) + 1.3)
+        d.line([(0, y), (W, y)], fill=shade(t))
+    im = im.filter(ImageFilter.GaussianBlur(2 * S)); d = ImageDraw.Draw(im)
+    for _ in range(7):                          # ribs (a cage)
+        ribs(d, rnd.uniform(0, W), rnd.uniform(0, W), rnd.uniform(40, 110) * S, rnd.uniform(20, 60) * S, rnd.randint(3, 6))
+    for _ in range(40):                         # hoses, thick and thin, crossing
+        x, y = rnd.uniform(-80, W + 80), rnd.uniform(-80, W + 80); a = rnd.uniform(0, 2 * math.pi); pts = []
         for k in range(7):
-            pts.append((x, y))
-            a += rnd.uniform(-0.9, 0.9)
-            x += math.cos(a) * rnd.uniform(60, 160)
-            y += math.sin(a) * rnd.uniform(60, 160)
-        shade = rnd.random()
-        cols = [lerp(FLESH[1], FLESH[2], shade), lerp(FLESH[2], FLESH[3], shade), lerp(FLESH[3], BONE[2], shade * 0.5)]
-        if rnd.random() < 0.3:
-            cols = [METAL, lerp(METAL, BONE[0], 0.5), lerp(METAL, BONE[1], 0.7)]
-        tube(d, pts, rnd.uniform(10, 26), cols, rnd)
-    # the panels: dark recesses of the same tissue, framed in bone
-    dark = im.point(lambda v: int(v * 0.30))
-    for box in (TOP, STATUS, MAIN, KNOBS):
+            pts.append((x, y)); a += rnd.uniform(-0.7, 0.7)
+            x += math.cos(a) * rnd.uniform(70, 170); y += math.sin(a) * rnd.uniform(70, 170)
+        hose(d, pts, rnd.uniform(7, 24) * S / 2, rnd, bright=rnd.uniform(0.6, 1.0))
+    for _ in range(5):                          # spines
+        x, y = rnd.uniform(0, W), rnd.uniform(0, W); a = rnd.uniform(0, 2 * math.pi); pts = []
+        for k in range(6):
+            pts.append((x, y)); a += rnd.uniform(-0.5, 0.5); x += math.cos(a) * 120; y += math.sin(a) * 120
+        spine(d, pts, rnd.uniform(7, 12) * S, rnd)
+    for _ in range(6):                          # domes, half hidden
+        dome(d, rnd.uniform(0, W), rnd.uniform(0, W), rnd.uniform(9, 20) * S)
+    for _ in range(24):                         # more hoses over them
+        x, y = rnd.uniform(-80, W + 80), rnd.uniform(-80, W + 80); a = rnd.uniform(0, 2 * math.pi); pts = []
+        for k in range(6):
+            pts.append((x, y)); a += rnd.uniform(-0.8, 0.8)
+            x += math.cos(a) * rnd.uniform(60, 140); y += math.sin(a) * rnd.uniform(60, 140)
+        hose(d, pts, rnd.uniform(5, 14) * S / 2, rnd, bright=rnd.uniform(0.7, 1.0))
+    im = im.point(lambda v: int(v * 0.72))      # the whole of it in the dark
+    dark = im.point(lambda v: int(v * 0.34))
+    for box in (TOP, STATUS, MAIN, KNOBS):   # the panels: recesses, a chrome bevel, rivets
         x0, y0, x1, y1 = [v * S for v in box]
         m = Image.new("L", (W, W), 0)
-        ImageDraw.Draw(m).rounded_rectangle([x0 + 2 * S, y0 + 2 * S, x1 - 2 * S, y1 - 2 * S], radius=4 * S, fill=255)
+        ImageDraw.Draw(m).rounded_rectangle([x0 + 2 * S, y0 + 2 * S, x1 - 2 * S, y1 - 2 * S], radius=6 * S, fill=255)
         im.paste(dark, (0, 0), m)
     d = ImageDraw.Draw(im)
     for box in (TOP, STATUS, MAIN, KNOBS):
         x0, y0, x1, y1 = [v * S for v in box]
-        d.rounded_rectangle([x0, y0, x1, y1], radius=5 * S, outline=BLACK, width=S)
-        d.rounded_rectangle([x0 + S, y0 + S, x1 - S, y1 - S], radius=5 * S, outline=BONE[1], width=2 * S)
-        d.rounded_rectangle([x0 + S, y0 + S, x1 - S, y1 - S], radius=5 * S, outline=BONE[2], width=S)
-        x = x0 + 7 * S                          # vertebrae along the top and the bottom edge
-        while x < x1 - 10 * S:
-            ln = rnd.choice((9, 11, 13)) * S
-            for y in (y0 + S, y1 - 3 * S):
-                d.rectangle([x, y, x + S, y + 2 * S], fill=BONE[0])
-            x += ln
+        d.rounded_rectangle([x0, y0, x1, y1], radius=7 * S, outline=BLACK, width=2 * S)
+        d.rounded_rectangle([x0 + S, y0 + S, x1 - S, y1 - S], radius=6 * S, outline=shade(0.55), width=2 * S)
+        d.arc([x0 + S, y0 + S, x0 + 13 * S, y0 + 13 * S], 180, 270, fill=shade(0.95), width=S)
+        d.line([(x0 + 7 * S, y0 + S), (x1 - 7 * S, y0 + S)], fill=shade(0.85), width=S)        # lit from above
+        d.line([(x0 + 7 * S, y1 - S), (x1 - 7 * S, y1 - S)], fill=shade(0.25), width=S)
+        for x in range(x0 + 9 * S, x1 - 8 * S, 4 * S):   # the frame ribbed, a hose laid round the panel
+            for y in (y0 + S, y1 - S):
+                d.line([(x, y - S), (x, y + S)], fill=BLACK, width=max(1, S // 2))
+        for y in range(y0 + 9 * S, y1 - 8 * S, 4 * S):
+            for x in (x0 + S, x1 - S):
+                d.line([(x - S, y), (x + S, y)], fill=BLACK, width=max(1, S // 2))
+        for cx, cy in ((x0 + 5 * S, y0 + 5 * S), (x1 - 5 * S, y0 + 5 * S), (x0 + 5 * S, y1 - 5 * S), (x1 - 5 * S, y1 - 5 * S)):
+            if y1 - y0 > 30 * S:
+                d.ellipse([cx - 2 * S, cy - 2 * S, cx + 2 * S, cy + 2 * S], fill=shade(0.4), outline=BLACK, width=S // 2)
+                d.ellipse([cx - S, cy - S, cx, cy], fill=shade(0.9))
     return im.resize((240, 240), Image.LANCZOS)
 
 
-def eye(rnd):
-    """an eye for a knob: a bone socket, a red iris with veins, a slit pupil, a wet highlight"""
-    N = 26 * S
-    im = Image.new("RGBA", (N, N), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    c = N / 2
-    d.ellipse([0, 0, N - 1, N - 1], fill=BONE[0] + (255,))
-    d.ellipse([2 * S, 2 * S, N - 2 * S, N - 2 * S], fill=(24, 10, 12, 255))
-    r0 = int(9.5 * S)
-    for k in range(r0, 0, -S):                  # the iris: dark at its rim, red, darker in
-        t = k / r0
-        col = lerp((70, 8, 14), (196, 40, 52), 1 - abs(t - 0.6) * 1.6)
-        d.ellipse([c - k, c - k, c + k, c + k], fill=col + (255,))
-    for _ in range(20):                         # veins
-        a = rnd.uniform(0, 2 * math.pi)
-        r1, r2 = rnd.uniform(2, 4) * S, rnd.uniform(6.5, 9.5) * S
-        d.line([(c + math.cos(a) * r1, c + math.sin(a) * r1), (c + math.cos(a + 0.2) * r2, c + math.sin(a + 0.2) * r2)],
-               fill=(90, 6, 14, 255), width=S)
-    d.ellipse([c - 1.6 * S, c - 8 * S, c + 1.6 * S, c + 8 * S], fill=(4, 2, 2, 255))   # the slit
-    d.ellipse([c - 4.5 * S, c - 6.5 * S, c - 1.5 * S, c - 4 * S], fill=(255, 236, 220, 200))   # wet
+def knob():
+    """a valve: a ribbed chrome ring, a dark socket, a closed eye of steel in it"""
+    N = 26 * S; im = Image.new("RGBA", (N, N), (0, 0, 0, 0)); d = ImageDraw.Draw(im); c = N / 2
+    for k in range(int(12.8 * S), int(8 * S), -1):
+        t = (k - 8 * S) / (4.8 * S)
+        d.ellipse([c - k, c - k, c + k, c + k], fill=shade(0.25 + 0.6 * math.sin(t * math.pi)) + (255,))
+    for i in range(24):                         # the ribbed bezel
+        a = i * math.pi / 12
+        d.line([(c + math.cos(a) * 9 * S, c + math.sin(a) * 9 * S), (c + math.cos(a) * 12.4 * S, c + math.sin(a) * 12.4 * S)],
+               fill=shade(0.12) + (255,), width=S)
+    d.ellipse([c - 8 * S, c - 8 * S, c + 8 * S, c + 8 * S], fill=BLACK + (255,))
+    for k in range(int(6.5 * S), 0, -1):        # the eyeball: steel, lit at the top
+        t = k / (6.5 * S)
+        d.ellipse([c - k, c - k - (1 - t) * 2 * S, c + k, c + k - (1 - t) * 2 * S], fill=shade(0.2 + (1 - t) * 0.6) + (255,))
+    d.chord([c - 6.6 * S, c - 6.6 * S, c + 6.6 * S, c + 6.6 * S], 180, 360, fill=shade(0.45) + (255,))   # the lid, closed
+    d.arc([c - 6.6 * S, c - 3 * S, c + 6.6 * S, c + 3 * S], 0, 180, fill=BLACK + (255,), width=S)
+    d.ellipse([c - 4 * S, c - 5.5 * S, c - 1.5 * S, c - 4 * S], fill=shade(1.0) + (210,))
     return im.resize((26, 26), Image.LANCZOS)
 
 
-def cell(on, rnd):
-    N = 12 * S
-    im = Image.new("RGBA", (N, N), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    c = N / 2
-    for k in range(int(5.6 * S), 0, -S):        # a membrane sphere
-        t = k / (5.6 * S)
-        col = lerp((96, 24, 34), (40, 10, 14), t) if not on else lerp((40, 70, 20), (18, 26, 10), t)
-        d.ellipse([c - k - S * 0.6, c - k - S * 0.6, c + k - S * 0.6, c + k - S * 0.6], fill=col + (255,))
-    d.ellipse([c - 5.6 * S, c - 5.6 * S, c + 5.6 * S, c + 5.6 * S], outline=(20, 6, 8, 255), width=S)
-    if on:                                      # a green four-pointed star, glowing
-        pts = []
-        for k in range(8):
-            a = k * math.pi / 4
-            r = 5.4 * S if k % 2 == 0 else 1.6 * S
-            pts.append((c + math.cos(a) * r, c + math.sin(a) * r))
-        d.polygon(pts, fill=GREEN + (255,))
-        d.ellipse([c - 1.6 * S, c - 1.6 * S, c + 1.6 * S, c + 1.6 * S], fill=(230, 255, 200, 255))
-    else:
-        d.ellipse([c - 3.4 * S, c - 3.6 * S, c - 1.4 * S, c - 1.8 * S], fill=(170, 90, 96, 160))
+def cell(on):
+    N = 12 * S; im = Image.new("RGBA", (N, N), (0, 0, 0, 0)); d = ImageDraw.Draw(im); c = N / 2
+    d.ellipse([c - 5.6 * S, c - 5.6 * S, c + 5.6 * S, c + 5.6 * S], fill=BLACK + (255,))
+    for k in range(int(5 * S), 0, -1):
+        t = k / (5 * S)
+        col = shade(0.12 + (1 - t) * 0.5) if not on else lerp(ON, (255, 255, 255), (1 - t) * 0.7) if t < 0.6 else lerp(shade(0.3), ON, 1 - t)
+        d.ellipse([c - k - S * 0.5, c - k - S * 0.5, c + k - S * 0.5, c + k - S * 0.5], fill=col + (255,))
+    if not on:
+        d.ellipse([c - 3 * S, c - 3.2 * S, c - 1.2 * S, c - 1.6 * S], fill=shade(0.8) + (180,))
     return im.resize((12, 12), Image.LANCZOS)
 
 
 def vertebra(on):
-    """a vertebra of the Turing's spine: a bone body with its processes, its core lit green when the bit is 1"""
-    W, H = 12 * S, 20 * S
-    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    d.polygon([(W / 2, 0), (W / 2 + 2 * S, 4 * S), (W / 2 - 2 * S, 4 * S)], fill=BONE[1] + (255,))   # the spinous process
-    d.rounded_rectangle([1.5 * S, 3 * S, W - 1.5 * S, H - 2 * S], radius=3 * S, fill=BONE[1] + (255,), outline=BONE[0] + (255,), width=S)
-    d.line([(1.5 * S, 7 * S), (W - 1.5 * S, 7 * S)], fill=BONE[2] + (255,), width=S)
-    d.line([(1.5 * S, H - 6 * S), (W - 1.5 * S, H - 6 * S)], fill=BONE[0] + (255,), width=S)
-    core = GREEN if on else (40, 26, 24)
-    d.rounded_rectangle([3.5 * S, 8.5 * S, W - 3.5 * S, H - 7.5 * S], radius=1.5 * S, fill=core + (255,))
+    W, H = 12 * S, 20 * S; im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.polygon([(W / 2, 0), (W / 2 + 2 * S, 4 * S), (W / 2 - 2 * S, 4 * S)], fill=shade(0.6) + (255,))
+    d.rounded_rectangle([1.5 * S, 3 * S, W - 1.5 * S, H - 2 * S], radius=3 * S, fill=shade(0.45) + (255,), outline=BLACK + (255,), width=S)
+    d.line([(2 * S, 4 * S), (W - 3 * S, 4 * S)], fill=shade(0.95) + (255,), width=S)
+    for yy in (7, 11, 15):
+        d.line([(2 * S, yy * S), (W - 2 * S, yy * S)], fill=shade(0.2) + (255,), width=max(1, S // 2))
+    core = ON if on else shade(0.08)
+    d.rounded_rectangle([3.5 * S, 8 * S, W - 3.5 * S, H - 7 * S], radius=1.5 * S, fill=core + (255,))
     if on:
-        d.rectangle([4.5 * S, 9 * S, 5.5 * S, H - 8 * S], fill=(225, 255, 200, 255))
+        d.rectangle([4.5 * S, 8.5 * S, 5.5 * S, H - 7.5 * S], fill=(240, 255, 240, 255))
     return im.resize((12, 20), Image.LANCZOS)
 
 
-def logo(rnd):
-    """BIOFORGE in the 5 x 7 font at twice its size, bone fading to flesh, dark edged, with drips"""
-    text = "BIOFORGE"
-    W, H = len(text) * 12 + 2, 22
-    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    px = im.load()
+def logo():
+    text = "BIOFORGE"; W, H = len(text) * 12 + 2, 22
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); px = im.load()
     mask = [[0] * W for _ in range(H)]
     for i, ch in enumerate(text):
-        g = F5[ch]
-        for gy, row in enumerate(g):
+        for gy, row in enumerate(F5[ch]):
             for gx, v in enumerate(row):
                 if v == '#':
                     for sy in range(2):
                         for sx in range(2):
                             mask[1 + gy * 2 + sy][1 + i * 12 + gx * 2 + sx] = 1
-    for x in range(W):                          # drips from the bottom row
-        if mask[14][x] and rnd.random() < 0.35:
-            ln = rnd.randint(1, 6)
-            for y in range(15, min(H - 1, 15 + ln)):
-                mask[y][x] = 2
     for y in range(H):
         for x in range(W):
             if mask[y][x]:
-                t = y / 14
-                col = lerp(BONE[3], (170, 70, 78), min(1, t)) if mask[y][x] == 1 else (150, 30, 40)
-                px[x, y] = col + (255,)
+                t = (y - 1) / 13                # chrome: bright, a dark band at the horizon, bright again under it
+                v = 0.95 - 0.7 * math.exp(-((t - 0.55) / 0.12) ** 2) - 0.25 * t
+                px[x, y] = shade(v) + (255,)
             elif any(0 <= y + dy < H and 0 <= x + dx < W and mask[y + dy][x + dx] for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
-                px[x, y] = (20, 6, 8, 230)
+                px[x, y] = BLACK + (230,)
     return im
+
 
 
 def rgb565(c):
@@ -334,13 +323,13 @@ def sprite_c(name, im):
 
 
 def main():
-    rnd = random.Random(0xB10F0)
+    rnd = random.Random(0x61E7)
     bg = background(rnd)
     q = bg.quantize(colors=64, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-    pal = q.getpalette()[:64 * 3]
+    pal = [max(v, 8) for v in q.getpalette()[:64 * 3]]   # (no colour quite black: a drawn screen has none at 0)
     idx = list(q.get_flattened_data()) if hasattr(q, 'get_flattened_data') else list(q.getdata())
-    sprites = {"EYE": eye(random.Random(7)), "CELL_OFF": cell(False, rnd), "CELL_ON": cell(True, rnd),
-               "VERT_OFF": vertebra(False), "VERT_ON": vertebra(True), "LOGO": logo(random.Random(3))}
+    sprites = {"EYE": knob(), "CELL_OFF": cell(False), "CELL_ON": cell(True),
+               "VERT_OFF": vertebra(False), "VERT_ON": vertebra(True), "LOGO": logo()}
     out = ["/* SPDX-License-Identifier: GPL-3.0-only */\n/* generated by tools/gen_art.py: never edit (run it again) */\n",
            "#ifndef BIO_ART_H\n#define BIO_ART_H\n#include <stdint.h>\n\n"]
     out.append("static const uint16_t BG_PAL[64] = {" + ",".join(str(rgb565(pal[i * 3:i * 3 + 3])) for i in range(64)) + "};\n")

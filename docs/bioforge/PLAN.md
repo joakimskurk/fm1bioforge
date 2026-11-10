@@ -21,8 +21,9 @@ document, `DECISIONS.md` says why.
   (notes from a pool). It never deletes or moves what the user played.
 - **The awakening.** RITUAL 00 at power-on: 120 BPM, D Phrygian, the document's grid, the Turing in an eight-step
   locked texture loop.
-- **The look.** Almost black, bone, oxidised metal, burgundy flesh, a little poison-green light. Green is active
-  sound, red is recording or mutation, bone and grey are structure. Big fields, little text, one level at a time.
+- **The look** (D26). Chrome and graphite in the dark, a biomechanical relief (hoses, vertebrae, ribs), after the feel
+  of Giger's pictures. A pale green is active sound, a dark blood red recording or mutation, steel and grey structure.
+  Big fields, little text, one level at a time.
 
 ## 2. The FM-1 as BIOFORGE's body
 
@@ -244,7 +245,7 @@ anyone's art), only what changed redrawn.
 | Page | First screen | Under it |
 | --- | --- | --- |
 | **MIX** | six channel strips: organ, level, meter, mute | the focused channel's level and sends A B C |
-| **SEQ** | nine tracks x 16 steps of membrane cells, the playhead, the cursor; REC state, mode, quantise, page | the cursor's length, velocity, chance, ratchet |
+| **SEQ** | nine tracks x 16 steps of rivets, the playhead, the cursor; REC state, mode, quantise, page | the cursor's length, velocity, chance, ratchet |
 | **SYN** | the focused organ, a picture of its state (the modes ringing, the excitation), BODY TEXTURE MOTION DECAY | its own four or eight; tune, level, pan |
 | **MUT** | the spine: 16 vertebrae (R's bits), the LOOP's value large, L, CLOCK, CV8 | the routes' depths, WAIL's scale |
 | **FX** | BLOOD DELAY, BILE REVERB, MARROW CRUSH: their mixes | times, feedback, decay, damping, crush |

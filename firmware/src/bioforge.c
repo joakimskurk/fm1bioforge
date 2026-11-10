@@ -188,7 +188,11 @@ static knob_t knob_for(uint32_t k)
         n.type = KT_FX;
         if (ui.sub == 0u) { n.idx = sh ? IB0[k] : IA0[k]; n.name = sh ? B0[k] : A0[k]; }
         else if (ui.sub == 1u) { n.idx = sh ? IB1[k] : IA1[k]; n.name = sh ? B1[k] : A1[k]; }
-        else { n.idx = 16; n.name = k == 0u ? "SPACE" : ""; if (!n.name[0]) n.type = KT_NONE; }   /* FX again: the room */
+        else {                                  /* FX again: the room, and the kick ducking the returns (D25) */
+            n.idx = (uint8_t)(16u + k);
+            n.name = k == 0u ? "SPACE" : k == 1u ? "DUCK" : "";
+            if (!n.name[0]) n.type = KT_NONE;
+        }
         break;
     }
     default: {                                  /* GLO */
@@ -753,7 +757,7 @@ static void draw_knobs(void)
         v = knob_get(n, &lo, &hi);
         cv_t5c(cx, 3, n.name, ui.shift || ui.latched ? COL_FLESH : COL_BONE, 1);
         SPR(cx - 13, 12, EYE, 16);
-        cv_arc(cx, 25, 16, hi > lo && v >= lo ? (uint32_t)((v - lo) * 100 / (hi - lo)) : 0u, COL_GREEN, RGB(44, 26, 26));
+        cv_arc(cx, 25, 16, hi > lo && v >= lo ? (uint32_t)((v - lo) * 100 / (hi - lo)) : 0u, COL_GREEN, COL_GROOVE);
         knob_text(n, s);
         cv_t5c(cx, 43, s, COL_GREEN, 1);
     }
@@ -811,7 +815,7 @@ static void draw_mix(void)
         uint16_t nc = BIO_ORG_CH[cur_org()] == ch ? COL_GREEN : COL_BONE;
         cv_t5c(x + 17, 4, CH_NAME[ch], sc->mix.mute[ch] ? COL_DIM : nc, 1);
         seg = m > 64 ? (bio_log2((uint32_t)m) - (6 << 16)) / 37000 : 0;   /* 16 segments, -54 .. 0 dB */
-        for (j = 0; j < 16; j++) cv_rect(x + 4, 103 - j * 5, 8, 4, j < seg ? (j > 13 ? COL_RED : COL_GREEN) : RGB(34, 18, 20));
+        for (j = 0; j < 16; j++) cv_rect(x + 4, 103 - j * 5, 8, 4, j < seg ? (j > 13 ? COL_RED : COL_GREEN) : COL_GROOVE);
         cv_rect(x + 22, 24, 2, 82, COL_BONE_D);   /* the fader: a bone track, a flesh handle */
         for (j = 0; j < 82; j += 8) cv_rect(x + 19, 24 + j, 8, 1, COL_DIM);
         {
@@ -849,7 +853,7 @@ static void draw_syn(void)
         uint32_t w = eng.scope_w;
         int32_t px = -1, py = 0, x;
         cv_fillb(6, 24, 228, 54, RGB(0, 0, 0), 90);
-        cv_rect(6, 51, 228, 1, RGB(44, 26, 26));
+        cv_rect(6, 51, 228, 1, COL_GROOVE);
         for (x = 0; x < 228; x++) {
             int32_t v = eng.scope[(w - 228u + (uint32_t)x) & 255u], y = 51 - bio_clamp(v * 26 / 10000, -26, 26);
             if (px >= 0) cv_line(px, py, 6 + x, y, COL_GREEN);
@@ -979,7 +983,7 @@ static void draw_mut(void)
     p = str_cat(s, "DEPTH "); p = u2s(p, sc->tur.depth); str_cat(p, "%");
     cv_t5(140, 64, s, COL_BONE, 1);
     cv_t5(140, 78, "CV8", COL_BONE_D, 1);
-    cv_rect(162, 78, 64, 6, RGB(34, 18, 20));
+    cv_rect(162, 78, 64, 6, COL_GROOVE);
     cv_rect(162, 78, (int32_t)bio_tur_cv8(&sq.tur) / 4, 6, COL_GREEN);
     {
         static const char *const RN[4] = {"SCRAPE", "METAL", "AIR", "ROT"};
@@ -988,7 +992,7 @@ static void draw_mut(void)
         for (i = 0; i < 4u; i++) {
             int32_t x = 10 + (int32_t)i * 57;
             cv_t5(x, 96, RN[i], rv[i] ? COL_BONE : COL_DIM, 1);
-            cv_rect(x, 105, 44, 2, RGB(34, 18, 20));
+            cv_rect(x, 105, 44, 2, COL_GROOVE);
             cv_rect(x, 105, (int32_t)rv[i] * 44 / 100, 2, COL_GREEN_D);
         }
         p = str_cat(s, "RATTLE ");

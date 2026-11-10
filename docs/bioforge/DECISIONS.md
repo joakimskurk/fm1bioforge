@@ -185,3 +185,26 @@ WIDTH, which added a hiss of its own to the side. Now:
 - The washes are gone from the rituals: RUST's became electricity frying, ORBIT's wind ice crackling, INNARDS' breath
   a wet fry, WALL's wind a machine's shift-register noise, VOID's washes embers; ABYSS's and ASH's fires stay put.
 - A medley of fourteen rituals (two minutes, from RUST to THE AWAKENING) went to the user as a survey of the range.
+
+**D25 (2026-11-10) A longer, darker reverb, the kick ducking its return; noise that is not a generator's.** The user:
+the synths are hard, which is fine, but they belong in a good, fairly long reverb, the kick ducking its return a
+little; the noise must not sound like a plain white-noise generator, perhaps something of Nyquist's distortion; watch
+the CPU all the way; ask along the way. Asked with examples (the reverb before and after; five prototypes of noise
+through the real voice), they chose a longer and darker reverb, and ALIAS, SIX and BYTE:
+- **The reverb** has four diffusers in (two more) and an allpass in each line (67, 101, 139, 173 at half rate): its tail
+  thickens fast and stays smooth. +60 instructions a frame. The dark rituals put the synths in it, long (RUST ~9.6 s,
+  ASH and ABYSS longer and darker than before).
+- **DUCK** (FX, a third page, KNOB 2): the kick ducks the delay's and the reverb's returns, apart from PUMP (which now
+  ducks only the channels); RUMBLE keeps its own duck.
+- **ALIAS** (FM so deep its sidebands fold back past Nyquist, TEXTURE its depth), **SIX** (six squares at a cymbal's
+  ratios, not band-limited: their sum to their ring), **BYTE** (a byte of a formula on a counter at the note, four
+  formulas): sources 9 to 11 of the noise core, each tied to the note; SOURCE is now in elevenths (the scenes' values
+  moved with it). Kit sounds ALIAS, SIX HAT, SIX RING, CIRCUIT; RUST's slices are ALIAS, ABYSS's ticks SIX.
+- CHAOS and MIRROR were tried and left out.
+
+**D26 (2026-11-10) The look: chrome and graphite, after Giger's feel.** The user sent five pictures (Giger's) for a
+darker look; D16 holds (their mood, not their layout). Three palettes were drawn as mock-ups (chrome, a green tint, sepia)
+and the user chose chrome and graphite. `tools/gen_art.py` now draws a biomechanical relief (ribbed hoses, chains of
+vertebrae, arcs of ribs, smooth capsules, airbrushed light) very dark under recessed panels framed in ribbed chrome
+with rivets; the knobs are ribbed steel valves with a closed eye; the cells rivets that glow; the spine's vertebrae
+steel; the logo chrome. Sound is a pale green (176, 214, 150), recording a dark blood red, the text steel.

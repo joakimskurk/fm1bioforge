@@ -12,6 +12,9 @@
 #define BIO_PRE_N 2700u                         /* its pre-delay: 120 ms */
 #define BIO_AP1 113u
 #define BIO_AP2 337u
+#define BIO_AP3 199u                            /* (D25: two more diffusers in, one in each line: a denser tail) */
+#define BIO_AP4 457u
+#define BIO_LAP 256u                            /* (a power of two: the lines' allpasses wrap by a mask) */
 #define BIO_RUM_N 512u                          /* the rumble's two lines, at an eighth of the rate (93 ms) */
 
 /* the mix and the effects' settings, 0..100 (written by the main loop) */
@@ -26,6 +29,7 @@ typedef struct {
     uint8_t r_size, r_decay, r_damp, r_pre, r_mix;        /* BILE REVERB */
     uint8_t c_drive, c_rate, c_bits, c_fold, c_mix;       /* MARROW CRUSH */
     uint8_t r_space;                                      /* the reverb's SPACE (D21): HALL ROOM CAVE METAL VAST */
+    uint8_t r_duck;                                       /* the kick ducks the returns (D25), apart from PUMP */
 } bio_fxp_t;
 #define BIO_NSPACE 5u
 static const char *const BIO_SPACE_NAME[BIO_NSPACE] = {"HALL", "ROOM", "CAVE", "METAL", "VAST"};
@@ -64,8 +68,8 @@ struct bio_s {
     int32_t dtime, dtime_to;                    /* samples, Q8 */
     bio_op_t dtl, dtr;
     /* the reverb */
-    int16_t rv[4][BIO_REV_L], pre[BIO_PRE_N], ap1[BIO_AP1], ap2[BIO_AP2];
-    uint32_t rw, pw, a1w, a2w, rlen[4], rpre;
+    int16_t rv[4][BIO_REV_L], pre[BIO_PRE_N], ap1[BIO_AP1], ap2[BIO_AP2], ap3[BIO_AP3], ap4[BIO_AP4], lap[4][BIO_LAP];
+    uint32_t rw, pw, a1w, a2w, a3w, a4w, law, rlen[4], rpre;
     int32_t rg[4], rhalf, rprev_l, rprev_r, rout_l, rout_r;
     uint32_t rlfo;
     bio_op_t rdamp[4];
@@ -85,7 +89,8 @@ struct bio_s {
     int32_t lim_g;
     bio_op_t dk[4];                             /* DARK: two poles a side */
     uint32_t dark_seen;
-    int32_t duck, duck_to, duck_rel;            /* PUMP: the cut now and the hit's (Q15), its recovery a sub-block (Q30) */
+    int32_t duck, duck_to, duck_rel;            /* the kick's side-chain: its envelope now and the hit's (Q15, all of it:
+                                                   PUMP and DUCK take their share), its recovery a sub-block (Q30) */
     uint32_t fx_seen;                           /* the effects' settings last turned into coefficients */
     /* the meters (peak per channel, the last block), the load */
     int32_t meter[BIO_NCH];
@@ -104,7 +109,7 @@ struct bio_s {
 
 static const bio_mix_t BIO_MIX_INIT = {{80, 70, 58, 62, 56, 46}, {0, 0, 0, 0, 0, 0}, {12, 8, 0, 18, 10, 0},
                                        {18, 6, 30, 28, 34, 30}, {0, 0, 0, 0, 0, 0}, 75, 50, 0, 0, 0};   /* (no crush: D22) */
-static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 0,   0};
+static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 0,   0, 0};
 
 static void bio_fx_coefs(bio_t *e);
 
@@ -147,8 +152,9 @@ static void bio_trigger(bio_t *e, uint32_t org, int32_t note, uint32_t vel, uint
         bio_perc_hit(&e->noise, &pp, (note - 60) * 256, vel, bio_level(p[P_LEVEL]), len, seed);
         return;
     }
-    if (org == O_HEART && e->mix.pump) {         /* PUMP: the kick pushes the rest down; it comes back by the next 8th */
-        e->duck_to = bio_mul15((int32_t)(e->mix.pump > 100u ? 100u : e->mix.pump) * 285, (int32_t)(vel > 127u ? 127u : vel) * 258);
+    if (org == O_HEART && (e->mix.pump || e->fx.r_duck || e->mix.rumble)) {   /* the side-chain: the kick pushes down
+                                                   the rest (PUMP), the returns (DUCK); back by the next 8th */
+        e->duck_to = (int32_t)(vel > 127u ? 127u : vel) * 258;
         e->duck_rel = bio_decay(BIO_SB, (e->spb_q8 >> 8) / 6u);
     }
     if (org < 4u) {
@@ -263,7 +269,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
     }
     for (off = 0; off + BIO_SB <= n; off += BIO_SB) {
         int32_t dryl[BIO_SB], dryr[BIO_SB], sa[BIO_SB], sb[BIO_SB], sc[BIO_SB];
-        int32_t chg[BIO_NCH], ga[BIO_NCH], gb[BIO_NCH], gc[BIO_NCH], peak = 0, tg, gstep, br4;
+        int32_t chg[BIO_NCH], ga[BIO_NCH], gb[BIO_NCH], gc[BIO_NCH], peak = 0, tg, gstep, br4, rduck;
         uint32_t bar4;
         bio_life_t life;
         uint8_t pe[BIO_NP];
@@ -358,7 +364,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         /* the channels: pan, level, mute, the sends */
         for (o = 0; o < BIO_NCH; o++) {
             int32_t g = e->mix.mute[o] ? 0 : bio_fader(e->mix.lvl[o]);
-            if (o != CH_DRUM && e->duck) g = bio_mul15(g, 32767 - e->duck);
+            if (o != CH_DRUM && e->duck && e->mix.pump) g = bio_mul15(g, 32767 - bio_mul15(e->duck, (int32_t)(e->mix.pump > 100u ? 100u : e->mix.pump) * 285));
             chg[o] = g;
             ga[o] = bio_mul15(g, bio_fader(e->mix.sa[o]));
             gb[o] = bio_mul15(g, bio_fader(e->mix.sb[o]));
@@ -397,9 +403,10 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             }
             (void)used;
         }
+        rduck = 32767 - bio_mul15(e->duck, (int32_t)(e->fx.r_duck > 100u ? 100u : e->fx.r_duck) * 285);
         /* BLOOD DELAY: stereo, darker each time round, ping-pong, a send on into the reverb */
         {
-            int32_t fb = (int32_t)(e->fx.d_fb > 85u ? 85u : e->fx.d_fb) * 327, ret = bio_mul15(bio_fader(e->fx.d_mix), 32767 - e->duck);
+            int32_t fb = (int32_t)(e->fx.d_fb > 85u ? 85u : e->fx.d_fb) * 327, ret = bio_mul15(bio_fader(e->fx.d_mix), rduck);
             int32_t torev = (int32_t)(e->fx.d_rev > 35u ? 35u : e->fx.d_rev) * 327;
             e->dtime_to = bio_dly_time(e);
             if (!e->dtime) e->dtime = e->dtime_to;
@@ -425,7 +432,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         }
         /* BILE REVERB: FDN4 at half rate, two diffusers, damping, a slow modulation; FREEZE */
         {
-            int32_t ret = bio_mul15(bio_fader(e->fx.r_mix), 32767 - e->duck);   /* (PUMP: the returns breathe too) */
+            int32_t ret = bio_mul15(bio_fader(e->fx.r_mix), rduck);   /* (DUCK: the returns breathe with the kick) */
             uint32_t fz = e->freeze;
             int32_t m0 = (int32_t)(bio_sin(e->rlfo) >> 11), m2 = (int32_t)(bio_sin(e->rlfo * 3u + 0x5000000u) >> 11);
             e->rlfo += 64000u * (BIO_SB / 2u);  /* ~0.33 Hz: its movement once a sub-block */
@@ -453,6 +460,16 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
                         e->ap2[e->a2w] = (int16_t)bio_sat(v);
                         x = z + (v >> 1);
                         if (++e->a2w >= BIO_AP2) e->a2w = 0;
+                        z = e->ap3[e->a3w];
+                        v = x - (z >> 1);
+                        e->ap3[e->a3w] = (int16_t)bio_sat(v);
+                        x = z + (v >> 1);
+                        if (++e->a3w >= BIO_AP3) e->a3w = 0;
+                        z = e->ap4[e->a4w];
+                        v = x - (z >> 1);
+                        e->ap4[e->a4w] = (int16_t)bio_sat(v);
+                        x = z + (v >> 1);
+                        if (++e->a4w >= BIO_AP4) e->a4w = 0;
                     }
                     for (j = 0; j < 4u; j++) {
                         int32_t dd = (int32_t)e->rlen[j] << 8;
@@ -465,7 +482,14 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
                             y[j] = e->rv[j][i0] + (((e->rv[j][i1] - e->rv[j][i0]) * fr) >> 8);
                         }
                         y[j] = bio_op_lp(&e->rdamp[j], y[j]);
+                        {                       /* an allpass in each line (67, 101, 139, 173: the tail thickens fast) */
+                            static const uint8_t LA[4] = {67, 101, 139, 173};
+                            int32_t z = e->lap[j][(e->law - LA[j]) & (BIO_LAP - 1u)], v = y[j] - (z >> 1);
+                            e->lap[j][e->law] = (int16_t)bio_sat(v);
+                            y[j] = z + (v >> 1);
+                        }
                     }
+                    e->law = (e->law + 1u) & (BIO_LAP - 1u);
                     /* Hadamard: orthogonal, so the loop keeps what the gains say */
                     a = y[0] + y[1]; b = y[0] - y[1]; c = y[2] + y[3]; d = y[2] - y[3];
                     {
@@ -496,7 +520,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         /* RUMBLE: HEART, an eighth of the rate, two lines of 37 and 53 ms feeding each other (orthogonal) through a
            low-pass each, about 2 s long; back up to the full rate smoothly, ducked by PUMP */
         if (e->mix.rumble) {
-            int32_t rl = bio_mul15(bio_fader(e->mix.rumble), 32767 - e->duck) * 2;
+            int32_t rl = bio_mul15(bio_fader(e->mix.rumble), 32767 - bio_mul15(e->duck, 25000)) * 2;   /* (its own: -12 dB) */
             for (k = 0; k < BIO_SB; k++) {
                 e->rum_acc += e->ob[O_HEART][k];
                 if ((k & 7u) == 7u) {

@@ -7,14 +7,17 @@
 #define BIO_UI_H
 #include "bio_art.h"
 
-#define COL_GREEN RGB(140, 255, 42)
-#define COL_GREEN_D RGB(56, 110, 24)
-#define COL_RED RGB(230, 40, 52)
-#define COL_RED_D RGB(110, 22, 30)
-#define COL_BONE RGB(214, 200, 176)
-#define COL_BONE_D RGB(140, 120, 110)
-#define COL_DIM RGB(84, 62, 60)
-#define COL_FLESH RGB(150, 70, 80)
+/* the colours (D26: chrome and graphite; the names are the first look's): sound a pale green, recording a dark blood
+   red, the text steel, the second row's names a warmer grey */
+#define COL_GREEN RGB(176, 214, 150)
+#define COL_GREEN_D RGB(73, 89, 64)
+#define COL_RED RGB(168, 28, 34)
+#define COL_RED_D RGB(86, 16, 20)
+#define COL_BONE RGB(196, 196, 200)
+#define COL_BONE_D RGB(130, 128, 122)
+#define COL_DIM RGB(74, 74, 80)
+#define COL_FLESH RGB(147, 146, 141)
+#define COL_GROOVE RGB(30, 30, 33)               /* a knob's arc unlit, a meter's dark segment */
 
 static int32_t cvx, cvy;                        /* where the canvas sits on the screen */
 

@@ -21,8 +21,8 @@
 #define SEQ_MAXLEN 64u
 #define SEQ_NSCENE 4u
 #define SEQ_BAR (16u * SEQ_TPS)
-#define SEQ_MAGIC 0x36464F42u                   /* "BOF6": the scene's format (2: PUMP; 3: 24 parameters; 4: SPACE; 5: RUMBLE;
-                                                   6: DARK) */
+#define SEQ_MAGIC 0x37464F42u                   /* "BOF7": the scene's format (2: PUMP; 3: 24 parameters; 4: SPACE; 5: RUMBLE;
+                                                   6: DARK; 7: DUCK) */
 #define SEQ_NUNDO 16u
 #define SEQ_NREDO 8u
 

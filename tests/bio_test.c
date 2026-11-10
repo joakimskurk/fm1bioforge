@@ -389,8 +389,8 @@ static void test_perc(void)
         check(slipped >= 2u, "and at LOOP 60 %: some of its steps' noise has slipped");
     }
     {
-        static const uint8_t T[BIO_NP] = NC(50, 10, 50, 40,  10, 90, 50, 0, 0, 0, 0,  0, 0, 0, 0,  24, 100, 50,  0, 60, 0);
-        static const uint8_t S[BIO_NP] = NC(40, 10, 50, 40,  10, 30, 50, 0, 0, 0, 0,  0, 100, 0, 0,  24, 100, 50,  100, 0, 0);
+        static const uint8_t T[BIO_NP] = NC(50, 10, 50, 40,  4, 90, 50, 0, 0, 0, 0,  0, 0, 0, 0,  24, 100, 50,  0, 60, 0);
+        static const uint8_t S[BIO_NP] = NC(40, 10, 50, 40,  4, 30, 50, 0, 0, 0, 0,  0, 100, 0, 0,  24, 100, 50,  100, 0, 0);
         static bio_perc_t v1, v2;
         bio_perc_p_t pp;
         int32_t want = bio_lf_hz(880), d;

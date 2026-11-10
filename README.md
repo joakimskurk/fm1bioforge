@@ -10,7 +10,7 @@ it locks the sound and the rhythm in place, and changes them slowly.
 </p>
 
 <p align="center">
-<img src="docs/screens/seq.png" width="240" alt="SEQ: nine tracks of sixteen membrane cells, HEART BONE TEETH CLAW BASS DRONE SPASM VOICE NOISE, the green lit cells the notes of the awakening, the playhead a green column; below it four eye-shaped knobs: STEP, LENGTH, VELO, CHANCE">
+<img src="docs/screens/seq.png" width="240" alt="SEQ: nine tracks of sixteen steel rivets, HEART BONE TEETH CLAW BASS DRONE SPASM VOICE NOISE, the pale green lit ones the notes of the awakening, the playhead a column; below it four ribbed steel valve knobs: STEP, LENGTH, VELO, CHANCE">
 <img src="docs/screens/syn.png" width="240" alt="SYN on HEART: the organ's own output as a green scope, its three modes at 93, 171 and 286 Hz as lines that ring, the excitation's four parts PRESS FRACT FRIC VENT; the knobs BODY 76, TEXTURE 48, MOTION 18, DECAY 46">
 <img src="docs/screens/mut.png" width="240" alt="MUT: the Turing register as a spine of sixteen vertebrae, their cores lit green for its 1 bits; LOOP 100 % LOCK in large figures; CLOCK 1/8, LENGTH 8, DEPTH 20 %, the CV8 bar; the routes SCRAPE METAL AIR ROT, RATTLE and WAIL off">
 </p>
@@ -128,7 +128,7 @@ the drums, and the live notes keep their timing, because quantise only places th
 D5–G5. The middle key of each zone, which glows, plays the organ as it is set; the others tune its body up or down.
 
 <p align="center">
-<img src="docs/screens/mix.png" width="240" alt="MIX: six channel strips, DRUM BASS DRONE SPASM VOICE NOISE, each a green segment meter, a bone fader track with a red handle and a mute box; the knobs DRUM 80, BASS 70, DRONE 58, SPASM 62">
+<img src="docs/screens/mix.png" width="240" alt="MIX: six channel strips, DRUM BASS DRONE SPASM VOICE NOISE, each a pale green segment meter, a steel fader track with a red handle and a mute box; the knobs DRUM 80, BASS 70, DRONE 58, SPASM 62">
 <img src="docs/screens/fx.png" width="240" alt="FX: BLOOD DELAY 3/16 FDBK 28, BILE REVERB DECAY 2.8 S SIZE 115 %, MARROW CRUSH DRIVE 40 RATE 30 BITS 12, with their mix bars; the knobs DELAY, REVERB, CRUSH, D>REV">
 </p>
 
@@ -169,7 +169,7 @@ make web      # the page: the demos, BIOFORGE for the browser (clang, lld), its 
   rung out. Every hit's noise comes from a seed, so the same start gives the same sound, sample for sample.
 - **The memory** is `bio_seq.h` (scenes, tracks, events, recording, undo) and `bio_turing.h` (the register).
 - **The screens** come from `bio_ui.h` and `firmware/gen/bio_art.h`. The art is drawn by `tools/gen_art.py` from
-  shapes and numbers: tissue, bone frames, eye knobs, membrane cells, vertebrae and a 5 x 7 font.
+  shapes and numbers: a biomechanical relief of hoses, vertebrae and ribs, chrome frames, valve knobs, rivets, a steel spine and a 5 x 7 font (D26).
 - **Its cost on a computer** (`make perf`, built `-Os`) is about 2 400 instructions a frame for the awakening and
   2 900 with every organ sounding and every effect on. Over 75 % of the audio interrupt, the drums out of focus ring
   on two modes instead of four.
