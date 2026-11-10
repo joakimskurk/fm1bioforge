@@ -35,7 +35,7 @@ static void rit_tick(seq_scene_t *sc, uint32_t trk, uint32_t tick, uint32_t len,
 }
 static void rit_dry(seq_scene_t *sc)              /* the effects off but a little room; the master up (sparse, dry) */
 {
-    sc->fx.d_mix = 0; sc->fx.c_mix = 0; sc->fx.r_mix = 12; sc->fx.r_decay = 12; sc->fx.r_size = 40;
+    sc->fx.d_mix = 0; sc->fx.c_mix = 0; sc->fx.r_mix = 6; sc->fx.r_decay = 12; sc->fx.r_size = 40;
     sc->mix.master = 88;
 }
 
@@ -85,7 +85,7 @@ static void rit_static(seq_scene_t *sc)
     sc->mix.lvl[CH_DRUM] = 88; sc->mix.lvl[CH_BASS] = 72; sc->mix.lvl[CH_DRONE] = 0; sc->mix.lvl[CH_VOICE] = 0;
     sc->mix.lvl[CH_NOISE] = 86; sc->mix.lvl[CH_SPASM] = 54;
     sc->mix.sb[CH_DRUM] = 10; sc->mix.sa[CH_DRUM] = 14; sc->mix.sb[CH_NOISE] = 12; sc->mix.sa[CH_SPASM] = 40;
-    sc->fx.d_time = 4; sc->fx.d_fb = 34; sc->fx.d_mix = 34; sc->fx.r_mix = 22; sc->fx.r_decay = 14; sc->fx.c_mix = 0;
+    sc->fx.d_time = 4; sc->fx.d_fb = 34; sc->fx.d_mix = 17; sc->fx.r_mix = 11; sc->fx.r_decay = 14; sc->fx.c_mix = 0;
     sc->tur.rattle = 30; sc->tur.loop = 90; sc->tur.r_rot = 60; sc->tur.depth = 30;
     sc->tr[O_TEETH].qstr = 100;
     sc->mix.pump = 55;
@@ -124,7 +124,7 @@ static void rit_splice(seq_scene_t *sc)
     sc->mix.lvl[CH_DRONE] = 0; sc->mix.lvl[CH_DRUM] = 86; sc->mix.lvl[CH_VOICE] = 60; sc->mix.lvl[CH_NOISE] = 84;
     sc->mix.sc[CH_DRUM] = 30; sc->mix.sc[CH_SPASM] = 50; sc->mix.sa[CH_VOICE] = 40; sc->mix.sa[CH_DRUM] = 20;
     sc->fx.c_mix = 50; sc->fx.c_rate = 50; sc->fx.c_bits = 60; sc->fx.d_time = 2; sc->fx.d_fb = 50; sc->fx.d_ping = 1;
-    sc->fx.d_mix = 40; sc->fx.r_mix = 26; sc->fx.r_decay = 10;
+    sc->fx.d_mix = 20; sc->fx.r_mix = 13; sc->fx.r_decay = 10;
     sc->mix.pump = 30;
 }
 
@@ -161,7 +161,7 @@ static void rit_void(seq_scene_t *sc)
     sc->p[O_VOICE][P_D1] = 30; sc->p[O_VOICE][P_MOTION] = 90;
     sc->mix.lvl[CH_DRONE] = 76; sc->mix.lvl[CH_VOICE] = 64; sc->mix.lvl[CH_NOISE] = 70; sc->mix.lvl[CH_DRUM] = 82;
     sc->mix.sb[CH_DRUM] = 40; sc->mix.sb[CH_VOICE] = 60; sc->mix.sb[CH_SPASM] = 70; sc->mix.sb[CH_NOISE] = 50;
-    sc->fx.r_decay = 70; sc->fx.r_size = 90; sc->fx.r_mix = 56; sc->fx.d_time = 7; sc->fx.d_fb = 46; sc->fx.d_mix = 30;
+    sc->fx.r_decay = 70; sc->fx.r_size = 90; sc->fx.r_mix = 28; sc->fx.d_time = 7; sc->fx.d_fb = 46; sc->fx.d_mix = 15;
     sc->tur.loop = 85; sc->tur.r_rot = 70;
     sc->mix.pump = 70;                          /* (the drone breathes with the heart) */
 }
@@ -249,7 +249,7 @@ static void rit_wall(seq_scene_t *sc)
     rit_steps(sc, O_CLAW, "x.x.x.x.x.x.x.x.", 60, 90, 96);
     sc->mix.lvl[CH_NOISE] = 92; sc->mix.lvl[CH_DRUM] = 80;
     rit_dry(sc);
-    sc->fx.r_mix = 18;
+    sc->fx.r_mix = 9;
     sc->tur.depth = 0;
 }
 
@@ -319,7 +319,7 @@ static void rit_embers(seq_scene_t *sc)
     sc->p[O_DRONE][P_D1] = 30;
     sc->mix.lvl[CH_DRONE] = 42; sc->mix.lvl[CH_NOISE] = 90; sc->mix.lvl[CH_DRUM] = 88;
     sc->mix.lvl[CH_BASS] = sc->mix.lvl[CH_SPASM] = sc->mix.lvl[CH_VOICE] = 0;
-    sc->fx.d_mix = 0; sc->fx.c_mix = 0; sc->fx.r_mix = 24; sc->fx.r_decay = 30; sc->fx.r_size = 50;
+    sc->fx.d_mix = 0; sc->fx.c_mix = 0; sc->fx.r_mix = 12; sc->fx.r_decay = 30; sc->fx.r_size = 50;
     sc->tur.loop = 96; sc->tur.depth = 10;
 }
 
@@ -363,10 +363,12 @@ static void rit_foundry(seq_scene_t *sc)
     rit_steps(sc, O_BONE, "....x.......x...", 60, 100, 48);
     sc->mix.lvl[CH_BASS] = 84; sc->mix.lvl[CH_DRONE] = 52; sc->mix.lvl[CH_VOICE] = 58; sc->mix.lvl[CH_SPASM] = 64;
     sc->mix.lvl[CH_NOISE] = 80; sc->mix.lvl[CH_DRUM] = 88;
-    sc->mix.sb[CH_SPASM] = 50; sc->mix.sb[CH_VOICE] = 40; sc->mix.sb[CH_DRUM] = 24; sc->mix.sb[CH_NOISE] = 20;
-    sc->fx.r_space = 3; sc->fx.r_mix = 30; sc->fx.r_decay = 30; sc->fx.d_mix = 0; sc->fx.c_mix = 0;
+    sc->mix.sb[CH_SPASM] = 85; sc->mix.sb[CH_VOICE] = 40; sc->mix.sb[CH_DRUM] = 24; sc->mix.sb[CH_NOISE] = 20;
+    sc->fx.r_space = 3; sc->fx.r_mix = 15; sc->fx.r_decay = 30; sc->fx.d_mix = 24; sc->fx.c_mix = 0;
     sc->mix.pump = 40;
     sc->tur.loop = 95; sc->tur.depth = 10;
+    sc->mix.sa[CH_SPASM] = 60;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 
 /* RITUAL: ORBIT. Cosmic, 76 BPM: glass beating slowly (DRONE), a choir of throats (VOICE) moving through vowels, bells
@@ -404,10 +406,13 @@ static void rit_orbit(seq_scene_t *sc)
     rit_steps(sc, O_HEART, "x...............", 60, 96, 96);
     sc->mix.lvl[CH_DRONE] = 74; sc->mix.lvl[CH_VOICE] = 66; sc->mix.lvl[CH_SPASM] = 62; sc->mix.lvl[CH_BASS] = 0;
     sc->mix.lvl[CH_NOISE] = 60; sc->mix.lvl[CH_DRUM] = 80;
-    sc->mix.sb[CH_DRONE] = 50; sc->mix.sb[CH_VOICE] = 60; sc->mix.sb[CH_SPASM] = 80; sc->mix.sb[CH_DRUM] = 50; sc->mix.sb[CH_NOISE] = 40;
-    sc->fx.r_space = 4; sc->fx.r_mix = 52; sc->fx.r_decay = 70; sc->fx.r_size = 90; sc->fx.d_time = 7; sc->fx.d_fb = 50;
-    sc->fx.d_mix = 24; sc->fx.c_mix = 0;
+    sc->mix.sb[CH_DRONE] = 80; sc->mix.sb[CH_VOICE] = 60; sc->mix.sb[CH_SPASM] = 90; sc->mix.sb[CH_DRUM] = 50; sc->mix.sb[CH_NOISE] = 40;
+    sc->fx.r_space = 4; sc->fx.r_mix = 26; sc->fx.r_decay = 70; sc->fx.r_size = 90; sc->fx.d_time = 7; sc->fx.d_fb = 50;
+    sc->fx.d_mix = 12; sc->fx.c_mix = 0;
     sc->tur.loop = 90; sc->tur.depth = 20;
+    sc->mix.sa[CH_SPASM] = 70;
+    sc->mix.sa[CH_DRONE] = 50;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 
 /* RITUAL: INNARDS. The body from inside, 92 BPM: blood pulsing with the beat (DRONE), a wet squelching bass (SLIME),
@@ -442,7 +447,7 @@ static void rit_innards(seq_scene_t *sc)
     sc->mix.lvl[CH_DRONE] = 78; sc->mix.lvl[CH_BASS] = 80; sc->mix.lvl[CH_VOICE] = 62; sc->mix.lvl[CH_SPASM] = 0;
     sc->mix.lvl[CH_NOISE] = 56; sc->mix.lvl[CH_DRUM] = 86;
     sc->mix.sb[CH_VOICE] = 40; sc->mix.sb[CH_BASS] = 14; sc->mix.sb[CH_DRUM] = 20;
-    sc->fx.r_space = 2; sc->fx.r_mix = 30; sc->fx.r_decay = 40; sc->fx.d_mix = 0; sc->fx.c_mix = 0;
+    sc->fx.r_space = 2; sc->fx.r_mix = 15; sc->fx.r_decay = 40; sc->fx.d_mix = 0; sc->fx.c_mix = 0;
     sc->mix.pump = 30;
     sc->tur.loop = 94; sc->tur.depth = 15;
 }
@@ -500,9 +505,9 @@ static void rit_abyss(seq_scene_t *sc)
     sc->mix.sa[CH_BASS] = 0; sc->mix.sa[CH_VOICE] = 20;
     sc->mix.pump = 55; sc->mix.rumble = 62; sc->mix.master = 80;
     sc->fx.r_duck = 40;
-    sc->fx.d_time = 4; sc->fx.d_fb = 62; sc->fx.d_tone = 40; sc->fx.d_mix = 52; sc->fx.d_rev = 60; sc->fx.d_ping = 1;   /* (the chords
+    sc->fx.d_time = 4; sc->fx.d_fb = 62; sc->fx.d_tone = 40; sc->fx.d_mix = 26; sc->fx.d_rev = 60; sc->fx.d_ping = 1;   /* (the chords
                                                    echo left, right, left into the reverb: D28) */
-    sc->fx.r_space = 2; sc->fx.r_mix = 40; sc->fx.r_decay = 76; sc->fx.r_size = 88; sc->fx.r_damp = 20; sc->fx.c_mix = 0;
+    sc->fx.r_space = 2; sc->fx.r_mix = 20; sc->fx.r_decay = 76; sc->fx.r_size = 88; sc->fx.r_damp = 20; sc->fx.c_mix = 0;
     sc->tur.loop = 97; sc->tur.depth = 10; sc->tur.rattle = 15;
 }
 
@@ -546,12 +551,14 @@ static void rit_ash(seq_scene_t *sc)
     sc->mix.lvl[CH_DRUM] = 88; sc->mix.lvl[CH_BASS] = 0; sc->mix.lvl[CH_DRONE] = 50; sc->mix.lvl[CH_SPASM] = 72;
     sc->mix.lvl[CH_VOICE] = 46; sc->mix.lvl[CH_NOISE] = 76;
     sc->mix.sa[CH_SPASM] = 80; sc->mix.sb[CH_SPASM] = 50; sc->mix.sb[CH_DRUM] = 26; sc->mix.sa[CH_DRUM] = 0;
-    sc->mix.sb[CH_DRONE] = 50; sc->mix.sb[CH_VOICE] = 80; sc->mix.sb[CH_NOISE] = 40;
+    sc->mix.sb[CH_DRONE] = 80; sc->mix.sb[CH_VOICE] = 80; sc->mix.sb[CH_NOISE] = 40;
     sc->mix.pump = 60; sc->mix.rumble = 80; sc->mix.master = 80;
     sc->fx.r_duck = 40;
-    sc->fx.d_time = 7; sc->fx.d_fb = 62; sc->fx.d_tone = 24; sc->fx.d_mix = 36; sc->fx.d_rev = 30; sc->fx.d_ping = 1;
-    sc->fx.r_space = 4; sc->fx.r_mix = 46; sc->fx.r_decay = 82; sc->fx.r_size = 94; sc->fx.r_damp = 16; sc->fx.c_mix = 0;
+    sc->fx.d_time = 7; sc->fx.d_fb = 62; sc->fx.d_tone = 24; sc->fx.d_mix = 18; sc->fx.d_rev = 30; sc->fx.d_ping = 1;
+    sc->fx.r_space = 4; sc->fx.r_mix = 23; sc->fx.r_decay = 82; sc->fx.r_size = 94; sc->fx.r_damp = 16; sc->fx.c_mix = 0;
     sc->tur.loop = 97; sc->tur.depth = 10;
+    sc->mix.sa[CH_DRONE] = 50;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 
 /* ---- grim dark industrial ambience, with a melody and a pulse (D23: the user's reference, measured) */
@@ -604,13 +611,14 @@ static void rit_rust(seq_scene_t *sc)
     /* the mix */
     sc->mix.lvl[CH_DRONE] = 78; sc->mix.lvl[CH_VOICE] = 58; sc->mix.lvl[CH_NOISE] = 70; sc->mix.lvl[CH_DRUM] = 86;
     sc->mix.lvl[CH_SPASM] = 62; sc->mix.lvl[CH_BASS] = 0;
-    sc->mix.sa[CH_SPASM] = 60; sc->mix.sb[CH_SPASM] = 50; sc->mix.sb[CH_DRUM] = 30; sc->mix.sa[CH_DRUM] = 0;
+    sc->mix.sa[CH_SPASM] = 70; sc->mix.sb[CH_SPASM] = 85; sc->mix.sb[CH_DRUM] = 30; sc->mix.sa[CH_DRUM] = 0;
     sc->mix.sb[CH_DRONE] = 56; sc->mix.sb[CH_VOICE] = 66; sc->mix.sb[CH_NOISE] = 30; sc->mix.sa[CH_VOICE] = 10;
-    sc->mix.sb[CH_SPASM] = 64;
+    sc->mix.sb[CH_SPASM] = 85;
     sc->mix.pump = 20; sc->mix.rumble = 45; sc->mix.dark = 0; sc->mix.master = 96;
     sc->fx.r_duck = 35;                         /* (the kick ducks the reverb's return a little: D25) */
-    sc->fx.d_time = 6; sc->fx.d_fb = 50; sc->fx.d_tone = 25; sc->fx.d_mix = 30; sc->fx.d_rev = 25; sc->fx.d_ping = 1;
-    sc->fx.r_space = 2; sc->fx.r_mix = 54; sc->fx.r_decay = 82; sc->fx.r_size = 92; sc->fx.r_damp = 18; sc->fx.c_mix = 0;
+    sc->fx.d_time = 6; sc->fx.d_fb = 50; sc->fx.d_tone = 25; sc->fx.d_mix = 15; sc->fx.d_rev = 25; sc->fx.d_ping = 1;
+    sc->fx.r_space = 2; sc->fx.r_mix = 27; sc->fx.r_decay = 82; sc->fx.r_size = 92; sc->fx.r_damp = 18; sc->fx.c_mix = 0;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 
 /* the factory list (SHIFT + PRESETS) */
@@ -664,8 +672,8 @@ static void rit_grinder(seq_scene_t *sc)
     sc->mix.sc[CH_DRUM] = 40; sc->mix.sc[CH_BASS] = 50; sc->mix.sc[CH_NOISE] = 60;   /* (the crusher: the hard end) */
     sc->mix.sb[CH_SPASM] = 50; sc->mix.sa[CH_SPASM] = 40; sc->mix.sb[CH_DRUM] = 14; sc->mix.sb[CH_NOISE] = 20;
     sc->fx.c_mix = 36; sc->fx.c_drive = 70; sc->fx.c_rate = 20; sc->fx.c_bits = 30; sc->fx.c_fold = 30;
-    sc->fx.d_time = 3; sc->fx.d_fb = 40; sc->fx.d_mix = 30; sc->fx.d_ping = 1; sc->fx.d_rev = 20;
-    sc->fx.r_space = 3; sc->fx.r_mix = 26; sc->fx.r_decay = 30; sc->fx.r_size = 50;
+    sc->fx.d_time = 3; sc->fx.d_fb = 40; sc->fx.d_mix = 15; sc->fx.d_ping = 1; sc->fx.d_rev = 20;
+    sc->fx.r_space = 3; sc->fx.r_mix = 13; sc->fx.r_decay = 30; sc->fx.r_size = 50;
     sc->mix.pump = 35; sc->mix.rumble = 30; sc->mix.dark = 0; sc->mix.master = 82;
     sc->tur.loop = 90; sc->tur.depth = 25; sc->tur.rattle = 35;
 }
@@ -705,12 +713,13 @@ static void rit_spine(seq_scene_t *sc)
     seq_put(sc, O_SPASM, 0, 16 * 96, 62, 92, 0);
     seq_put(sc, O_SPASM, 16, 16 * 96 - 6, 60, 92, 0);
     sc->mix.lvl[CH_DRUM] = 88; sc->mix.lvl[CH_BASS] = 80; sc->mix.lvl[CH_DRONE] = 46; sc->mix.lvl[CH_SPASM] = 56;
-    sc->mix.sb[CH_SPASM] = 60; sc->mix.sa[CH_SPASM] = 50; sc->mix.sb[CH_DRONE] = 40; sc->mix.sb[CH_DRUM] = 20;
+    sc->mix.sb[CH_SPASM] = 92; sc->mix.sa[CH_SPASM] = 78; sc->mix.sb[CH_DRONE] = 40; sc->mix.sb[CH_DRUM] = 20;
     sc->fx.d_time = 4; sc->fx.d_fb = 50; sc->fx.d_mix = 40; sc->fx.d_ping = 1; sc->fx.d_rev = 50; sc->fx.d_tone = 35;
-    sc->fx.r_space = 2; sc->fx.r_mix = 40; sc->fx.r_decay = 70; sc->fx.r_size = 80; sc->fx.r_damp = 25; sc->fx.c_mix = 0;
+    sc->fx.r_space = 2; sc->fx.r_mix = 36; sc->fx.r_decay = 70; sc->fx.r_size = 80; sc->fx.r_damp = 25; sc->fx.c_mix = 0;
     sc->fx.r_duck = 35;
     sc->mix.pump = 45; sc->mix.rumble = 45; sc->mix.dark = 30; sc->mix.master = 80;
     sc->tur.loop = 94; sc->tur.depth = 12; sc->tur.clock = 1; sc->tur.len_i = 6;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 
 /* RITUAL: OSSUARY (D34). No beat at all, C# LOCRIAN: a mass of octaves on the root, a cluster rising under it in the
@@ -742,12 +751,13 @@ static void rit_ossuary(seq_scene_t *sc)
     rit_steps(sc, O_NOISE, "......?.................?.........x...........?..........?......", 60, 70, 96);
     sc->mix.lvl[CH_DRONE] = 70; sc->mix.lvl[CH_BASS] = 56; sc->mix.lvl[CH_SPASM] = 46; sc->mix.lvl[CH_VOICE] = 58;
     sc->mix.lvl[CH_NOISE] = 50;
-    sc->mix.sb[CH_DRONE] = 50; sc->mix.sb[CH_BASS] = 40; sc->mix.sb[CH_SPASM] = 80; sc->mix.sb[CH_VOICE] = 80;
-    sc->mix.sb[CH_NOISE] = 60; sc->mix.sa[CH_SPASM] = 30;
-    sc->fx.d_time = 7; sc->fx.d_fb = 50; sc->fx.d_mix = 24; sc->fx.d_ping = 1; sc->fx.d_rev = 80; sc->fx.d_tone = 25;
-    sc->fx.r_space = 4; sc->fx.r_mix = 56; sc->fx.r_decay = 92; sc->fx.r_size = 96; sc->fx.r_damp = 22; sc->fx.c_mix = 0;
+    sc->mix.sb[CH_DRONE] = 50; sc->mix.sb[CH_BASS] = 40; sc->mix.sb[CH_SPASM] = 95; sc->mix.sb[CH_VOICE] = 80;
+    sc->mix.sb[CH_NOISE] = 60; sc->mix.sa[CH_SPASM] = 60;
+    sc->fx.d_time = 7; sc->fx.d_fb = 50; sc->fx.d_mix = 30; sc->fx.d_ping = 1; sc->fx.d_rev = 80; sc->fx.d_tone = 25;
+    sc->fx.r_space = 4; sc->fx.r_mix = 40; sc->fx.r_decay = 92; sc->fx.r_size = 96; sc->fx.r_damp = 22; sc->fx.c_mix = 0;
     sc->mix.pump = 0; sc->mix.rumble = 0; sc->mix.dark = 35; sc->mix.master = 84;
     sc->tur.loop = 88; sc->tur.depth = 10; sc->tur.clock = 3; sc->tur.len_i = 5;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 
 /* RITUAL: TENDON (D34). Seven eighths, 126 BPM, A HARM MINOR: the kick in two, two and three, a clap on the three's
@@ -785,11 +795,13 @@ static void rit_tendon(seq_scene_t *sc)
     seq_put(sc, O_DRONE, 28, 28 * 96 - 6, 41, 76, 0);
     sc->mix.lvl[CH_DRUM] = 86; sc->mix.lvl[CH_BASS] = 74; sc->mix.lvl[CH_SPASM] = 58; sc->mix.lvl[CH_DRONE] = 46;
     sc->mix.lvl[CH_NOISE] = 66;
-    sc->mix.sa[CH_SPASM] = 50; sc->mix.sb[CH_SPASM] = 40; sc->mix.sb[CH_DRONE] = 50; sc->mix.sb[CH_DRUM] = 18;
-    sc->fx.d_time = 4; sc->fx.d_fb = 45; sc->fx.d_mix = 36; sc->fx.d_ping = 1; sc->fx.d_rev = 40;
-    sc->fx.r_space = 0; sc->fx.r_mix = 30; sc->fx.r_decay = 45; sc->fx.c_mix = 0;
+    sc->mix.sa[CH_SPASM] = 80; sc->mix.sb[CH_SPASM] = 85; sc->mix.sb[CH_DRONE] = 85; sc->mix.sb[CH_DRUM] = 18;
+    sc->fx.d_time = 4; sc->fx.d_fb = 45; sc->fx.d_mix = 40; sc->fx.d_ping = 1; sc->fx.d_rev = 40;
+    sc->fx.r_space = 0; sc->fx.r_mix = 34; sc->fx.r_decay = 45; sc->fx.c_mix = 0;
     sc->mix.pump = 30; sc->mix.master = 82;
     sc->tur.loop = 96; sc->tur.depth = 15;
+    sc->mix.sa[CH_DRONE] = 50;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 
 /* RITUAL: LAMENT (D34: in INFECTION's place, which was nearly THE AWAKENING). A melody, 92 BPM, C HARMONIC MINOR: a
@@ -828,13 +840,14 @@ static void rit_lament(seq_scene_t *sc)
     rit_perc(sc, O_TEETH, "SIX HAT", 40);
     rit_steps(sc, O_TEETH, "..x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.x.x.", 60, 70, 24);
     sc->mix.lvl[CH_VOICE] = 74; sc->mix.lvl[CH_DRONE] = 52; sc->mix.lvl[CH_BASS] = 70; sc->mix.lvl[CH_DRUM] = 72;
-    sc->mix.sb[CH_VOICE] = 60; sc->mix.sa[CH_VOICE] = 30; sc->mix.sb[CH_DRONE] = 60; sc->mix.sa[CH_DRONE] = 40;
+    sc->mix.sb[CH_VOICE] = 60; sc->mix.sa[CH_VOICE] = 30; sc->mix.sb[CH_DRONE] = 90; sc->mix.sa[CH_DRONE] = 75;
     sc->mix.sb[CH_DRUM] = 30;
-    sc->fx.d_time = 6; sc->fx.d_fb = 45; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 60; sc->fx.d_tone = 35;
-    sc->fx.r_space = 0; sc->fx.r_mix = 44; sc->fx.r_decay = 70; sc->fx.r_size = 80; sc->fx.c_mix = 0;
+    sc->fx.d_time = 6; sc->fx.d_fb = 55; sc->fx.d_mix = 42; sc->fx.d_ping = 1; sc->fx.d_rev = 60; sc->fx.d_tone = 35;
+    sc->fx.r_space = 0; sc->fx.r_mix = 38; sc->fx.r_decay = 70; sc->fx.r_size = 80; sc->fx.c_mix = 0;
     sc->fx.r_duck = 20;
     sc->mix.pump = 20; sc->mix.dark = 20; sc->mix.master = 82;
     sc->tur.loop = 100; sc->tur.depth = 8;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 /* RITUAL: SHRINE (D35). Sweetness, ruptured: 78 BPM, E LYDIAN, no beat but a clock. Glass arped up and down a major
    ninth over three octaves (I, then II: the Lydian lift), a choir held on its sharp fourth, chimes the register picks,
@@ -870,12 +883,13 @@ static void rit_shrine(seq_scene_t *sc)
     rit_steps(sc, O_TEETH, "..x...x...x...x...x...x...x...x.", 60, 60, 24);
     sc->mix.lvl[CH_DRONE] = 62; sc->mix.lvl[CH_VOICE] = 60; sc->mix.lvl[CH_SPASM] = 50; sc->mix.lvl[CH_BASS] = 70;
     sc->mix.lvl[CH_NOISE] = 40; sc->mix.lvl[CH_DRUM] = 60;
-    sc->mix.sb[CH_DRONE] = 60; sc->mix.sa[CH_DRONE] = 40; sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_SPASM] = 80;
-    sc->mix.sa[CH_SPASM] = 50; sc->mix.sb[CH_NOISE] = 50;
-    sc->fx.d_time = 6; sc->fx.d_fb = 50; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 50;
-    sc->fx.r_space = 4; sc->fx.r_mix = 50; sc->fx.r_decay = 80; sc->fx.r_size = 90; sc->fx.r_damp = 30; sc->fx.c_mix = 0;
+    sc->mix.sb[CH_DRONE] = 85; sc->mix.sa[CH_DRONE] = 65; sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_SPASM] = 95;
+    sc->mix.sa[CH_SPASM] = 80; sc->mix.sb[CH_NOISE] = 50;
+    sc->fx.d_time = 6; sc->fx.d_fb = 62; sc->fx.d_mix = 50; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 50;
+    sc->fx.r_space = 4; sc->fx.r_mix = 45; sc->fx.r_decay = 80; sc->fx.r_size = 90; sc->fx.r_damp = 30; sc->fx.c_mix = 0;
     sc->mix.warp = 55; sc->mix.dark = 10; sc->mix.master = 84;
     sc->tur.loop = 100; sc->tur.len_i = 7; sc->tur.clock = 2; sc->tur.depth = 10; sc->tur.rupture = 30;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 
 /* RITUAL: MIRAGE (D35). A loop chopped and screwed by the register: 64 BPM, C# DORIAN. A choir's phrase, a mass under
@@ -910,13 +924,15 @@ static void rit_mirage(seq_scene_t *sc)
     sc->tr[O_NOISE].ev[0].fl = 7u << EV_CH_SH;  /* (now and then: one bar in eight) */
     sc->mix.lvl[CH_VOICE] = 70; sc->mix.lvl[CH_DRONE] = 50; sc->mix.lvl[CH_SPASM] = 44; sc->mix.lvl[CH_DRUM] = 76;
     sc->mix.lvl[CH_NOISE] = 64;
-    sc->mix.sb[CH_VOICE] = 60; sc->mix.sa[CH_VOICE] = 40; sc->mix.sb[CH_SPASM] = 70; sc->mix.sb[CH_DRUM] = 50;
+    sc->mix.sb[CH_VOICE] = 60; sc->mix.sa[CH_VOICE] = 40; sc->mix.sb[CH_SPASM] = 92; sc->mix.sb[CH_DRUM] = 50;
     sc->mix.sc[CH_NOISE] = 80;
     sc->fx.c_mix = 40; sc->fx.c_drive = 80; sc->fx.c_bits = 50; sc->fx.c_rate = 40;
-    sc->fx.d_time = 7; sc->fx.d_fb = 55; sc->fx.d_mix = 40; sc->fx.d_ping = 1; sc->fx.d_rev = 60; sc->fx.d_tone = 35;
-    sc->fx.r_space = 0; sc->fx.r_mix = 46; sc->fx.r_decay = 70; sc->fx.r_size = 80;
+    sc->fx.d_time = 7; sc->fx.d_fb = 55; sc->fx.d_mix = 46; sc->fx.d_ping = 1; sc->fx.d_rev = 60; sc->fx.d_tone = 35;
+    sc->fx.r_space = 0; sc->fx.r_mix = 40; sc->fx.r_decay = 70; sc->fx.r_size = 80;
     sc->mix.warp = 85; sc->mix.dark = 25; sc->mix.master = 84;
     sc->tur.loop = 100; sc->tur.len_i = 6; sc->tur.clock = 2; sc->tur.depth = 10; sc->tur.rupture = 60;
+    sc->mix.sa[CH_SPASM] = 72;
+    /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
 static void rit_empty(seq_scene_t *sc) { seq_scene_blank(sc, 0x7E3u); rit_name(sc, "EMPTY BODY"); }
 /* (the first four are the scenes before anything is saved: the document's start, then rhythm made of noise, D20) */

@@ -317,3 +317,20 @@ put through a tape that wavers, slowed loops, sweet chords set against violence.
   kick; WARP 85, RUPTURE 60, and one bar in eight a burst of crushed noise). Demos on the page.
 - The scene's format is "BOF8" (the mix's WARP, the register's RUPTURE): scenes saved before are not read (as at every
   format before); the factory rituals sound as they did, sample for sample, WARP and RUPTURE off.
+
+**D36 (2026-11-10) The FM dirty; the reverb and the delay heard.** The user: the clean FM sounds must be much more
+dirty (detune, FM), and much more reverb and delay: none could be heard on them. Measured: with SHRINE's settings the
+reverb was 13 .. 16 dB under the dry sound, the delay 24 .. 26 dB (a send and a return both on a fader's square law,
+multiplied, and the reverb's own input at a quarter). So:
+- **The returns +12 dB** (the delay's and the reverb's, in the engine): a return of 50 is now about as loud as what went
+  in. Every ritual's returns were halved with it, so each sounds as it did (the difference 65 .. 75 dB under it).
+- **BELL** dirty: two carriers 13 .. 28 cents apart (one each side, the detune drifting), the modulator fed back on
+  itself (0.6 .. 1.4 rad) and shaken by noise, an index that falls with DECAY to a floor of grit (0.45 .. 1 rad), the
+  flesh curve driving it, its level trimmed back. **GLASS** dirty: its base doubled by a twin a little flat (one each
+  side), the first partial into the second's phase, the second into the fourth's, the base shaken, driven, trimmed.
+  Their spectra: BELL's flatness 0.003 to 0.2, half its energy over 2 kHz; GLASS's 0.0001 to 0.02.
+- **The FM voices much wetter** in the rituals that have them (SHRINE, MIRAGE, LAMENT, TENDON, SPINE, OSSUARY, ORBIT,
+  FOUNDRY, RUST, ASH): their sends to 80 .. 95, the returns up where the scene is theirs; the reverb now 3 .. 4 dB under
+  them, the delay 6 .. 9. RUST and the others with a bell are brighter for it.
+- CPU: a dirty bell or glass about +110 instructions a frame while it sounds (ORBIT 1 964, SHRINE 2 159; the worst case
+  unchanged at 3 322).

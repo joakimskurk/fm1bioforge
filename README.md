@@ -51,7 +51,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
     a drum its own body back.
 - **Landscapes for the synths.** MODEL (SYN, SHIFT, KNOB 1) makes BASS, DRONE, SPASM or VOICE one of twelve other
   voices: **industry** HUM (the mains, with sparks), STEEL (bowed metal), PISTON (a machine stroking on the beat while
-  the key is held); **cosmic** GLASS (inharmonic partials beating), BELL (FM), CHOIR (three throats through vowels);
+  the key is held); **cosmic** GLASS (inharmonic partials beating, rough with phase modulation and a detuned twin), BELL (dirty FM: two
+  carriers apart, the modulator fed back on itself, a floor of grit, driven), CHOIR (three throats through vowels);
   **the body** BLOOD (a pulse with the beat), BUBBLE (rising drops), SLIME (a wet squelch).
 - **Rooms.** The reverb's SPACE (FX, again, again): HALL, ROOM, CAVE, METAL (a ringing tank) or VAST.
 - **A deep kick.** A drum organ's MODEL KICK: a sine swept down to its pitch, held, a long decay, drive, then low-passed

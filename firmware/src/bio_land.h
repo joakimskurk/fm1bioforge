@@ -156,7 +156,8 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         break;
     }
     case L_GLASS: {   /* four inharmonic partials of glass, each beating on its own (MOTION); TEXTURE the upper ones'
-                         level, BODY a sub-octave under them */
+                         level, BODY a sub-octave under them; its base a twin a little flat (one each side), the first
+                         partial into the second's phase, driven (D36: it was clean) */
         uint32_t inc2, inc3, inc4, inc0;
         int32_t l1 = 16000 + tex * 80, l2 = tex * 130, l3 = tex * 80, sub = body * 160;
         if (++v->lu[1] >= 300u) {               /* new aims for the beating, 4 a second */
@@ -169,38 +170,56 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         inc3 = bio_inc(v->lf + 2 * 65536 + BIO_GLASS_LF[2] + bio_mul15(v->lx[2], mot * 8));
         inc4 = bio_inc(v->lf + 2 * 65536 + BIO_GLASS_LF[3] + bio_mul15(v->lx[3], mot * 10));
         inc0 = inc / 4u;
-        for (k = 0; k < n; k++) {
-            v->pa += inc; v->pb += inc2; v->pc += inc3; v->pd += inc4; v->lu[2] += inc0;
-            {
-            int32_t s2 = bio_mul15(bio_sin(v->pb), l1) / 2, s3 = bio_mul15(bio_sin(v->pc), l2) / 2, s4 = bio_mul15(bio_sin(v->pd), l3) / 2;
-            y = (bio_sin(v->pa) >> 1) + s2 + s3 + s4 + bio_mul15(bio_sin(v->lu[2]), sub) / 2;
-            e0 += step;
-            if (side) side[k] += bio_mul15(bio_mul15((s2 - s3 + s4) * 3 / 4, e0), a) * 2;   /* (the partials apart: D32) */
+        {
+            uint32_t incb = bio_inc(v->lf + 2 * 65536 - 1500 - mot * 12 + bio_mul15(life->drift, 600));   /* (its twin a little
+                                                   flat: 16 .. 30 cents, D36) */
+            int32_t pm = 9000 + mot * 250;      /* (the first partial into the second's phase: rough) */
+            for (k = 0; k < n; k++) {
+                int32_t b0, b1, s2, s3, s4;
+                v->pa += inc + (uint32_t)(bio_noise(&v->rnd) * 900); v->pb += inc2; v->pc += inc3; v->pd += inc4;
+                v->lu[2] += inc0; v->lu[3] += incb;   /* (the base shaken a little: grit) */
+                b0 = bio_sin(v->pa); b1 = bio_sin(v->lu[3]);
+                s2 = bio_mul15(bio_sin(v->pb + (uint32_t)((int64_t)b0 * pm * 4)), l1) / 2;
+                s3 = bio_mul15(bio_sin(v->pc), l2) / 2;
+                s4 = bio_mul15(bio_sin(v->pd + (uint32_t)(s2 * 3000)), l3) / 2;
+                y = bio_mul15(bio_flesh(((b0 + b1) >> 2) + s2 + s3 + s4 + bio_mul15(bio_sin(v->lu[2]), sub) / 2, 11000), 22000);
+                e0 += step;
+                if (side) side[k] += bio_mul15(bio_mul15((s2 - s3 + s4) * 3 / 4 + ((b0 - b1) >> 3), e0), a) * 2;   /* (the partials
+                                                   apart, and the twins: D32, D36) */
+                y = bio_mul15(bio_mul15(y, e0), a) * 2;
+                out[k] += y;
+                if (bio_abs(y) > pk) pk = bio_abs(y);
             }
-            y = bio_mul15(bio_mul15(y, e0), a) * 2;
-            out[k] += y;
-            if (bio_abs(y) > pk) pk = bio_abs(y);
         }
         break;
     }
-    case L_BELL: {   /* FM: a carrier and a modulator at a ratio (TEXTURE: 1, 1.41, 2, 2.76, 3.5, 5.4), the index from
-                        BODY falling with DECAY; MOTION a slow vibrato */
-        uint32_t im = bio_inc(v->lf + BIO_BELL_LF[(uint32_t)tex * 6u / 101u]);
-        int32_t idx, sw;
+    case L_BELL: {   /* FM: two carriers a few cents apart (one each side) and a modulator at a ratio (TEXTURE: 1, 1.41,
+                        2, 2.76, 3.5, 5.4), fed back on itself and shaken by noise; the index from BODY falling with
+                        DECAY to a floor of grit; driven; MOTION a slow vibrato and how far apart (D36: it was clean) */
+        uint32_t im = bio_inc(v->lf + BIO_BELL_LF[(uint32_t)tex * 6u / 101u]), inc2;
+        int32_t idx, dt, fb = 9000 + body * 120;   /* (the modulator's feedback: about 0.6 .. 1.4 rad, D36) */
         v->lx[0] = bio_mul30(v->lx[0], v->lx[1]);
-        idx = (int32_t)(((int64_t)v->lx[0] * 104305) >> 15);   /* (5 rad at full: phase units for a Q15 sine's 1) */
+        idx = (int32_t)(((int64_t)(v->lx[0] + 3000 + body * 40) * 104305) >> 15);   /* (5 rad at full; a floor that never
+                                                   falls away: 0.45 .. 1 rad, the grit that stays, D36) */
         v->pc += bio_inc(bio_lf_hz(5)) * n;
-        inc = bio_inc(v->lf + bio_mul15(bio_sin(v->pc), mot * 20));
-        v->pd += bio_inc(bio_lf_hz(1) - 65536) * n;   /* (its place in the field turns at 0.5 Hz) */
-        sw = 9000 + bio_mul15(bio_sin(v->pd), 14000);
+        v->pd += bio_inc(bio_lf_hz(1) - 65536) * n;   /* (a slow drift of the detune) */
+        dt = 1200 + mot * 14 + bio_mul15(bio_sin(v->pd), 500);   /* (the carriers apart: 13 .. 28 cents, drifting) */
+        inc = bio_inc(v->lf + bio_mul15(bio_sin(v->pc), mot * 20) + dt);
+        inc2 = bio_inc(v->lf + bio_mul15(bio_sin(v->pc), mot * 20) - dt);
         for (k = 0; k < n; k++) {
-            int32_t m;
-            v->pa += inc; v->pb += im;
-            m = bio_sin(v->pb);
-            y = bio_sin(v->pa + (uint32_t)((int64_t)m * idx)) >> 1;
+            int32_t m, cl, cr;
+            uint32_t ph;
+            v->pa += inc; v->lu[0] += inc2;
+            v->pb += im + (uint32_t)(bio_noise(&v->rnd) * 1500);   /* (the modulator shaken a little: grit) */
+            m = bio_sin(v->pb + (uint32_t)((int64_t)v->lx[2] * fb * 2));   /* (fed back on itself: its sidebands rough) */
+            v->lx[2] = m;
+            ph = (uint32_t)((int64_t)m * idx);
+            cl = bio_sin(v->pa + ph);
+            cr = bio_sin(v->lu[0] + ph);
+            y = bio_mul15(bio_flesh((cl + cr) >> 2, 9000), 21000);   /* (driven: about +7 dB into the flesh curve; as
+                                                   loud as it was) */
             e0 += step;
-            if (side) side[k] += bio_mul15(bio_mul15(bio_mul15(bio_sin(v->pa + (uint32_t)((int64_t)m * idx) + (1u << 30)) >> 2,
-                                                               sw), e0), a) * 2;   /* (D32) */
+            if (side) side[k] += bio_mul15(bio_mul15((cl - cr) >> 2, e0), a) * 2;   /* (the two carriers apart: wide) */
             y = bio_mul15(bio_mul15(y, e0), a) * 2;
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);

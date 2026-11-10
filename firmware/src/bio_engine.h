@@ -114,7 +114,8 @@ struct bio_s {
 
 static const bio_mix_t BIO_MIX_INIT = {{80, 70, 58, 62, 56, 46}, {0, 0, 0, 0, 0, 0}, {12, 8, 0, 18, 10, 0},
                                        {18, 6, 30, 28, 34, 30}, {0, 0, 0, 0, 0, 0}, 75, 50, 0, 0, 0, 0};   /* (no crush: D22) */
-static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 40, 30,   50, 23, 40, 23, 38,   40, 30, 40, 20, 0,   0, 0};
+static const bio_fxp_t BIO_FX_INIT = {4, 28, 50, 0, 20, 30,   50, 23, 40, 23, 19,   40, 30, 40, 20, 0,   0, 0};   /* (the
+                                                   returns halved with their +12 dB: as they sounded, D36) */
 
 static void bio_fx_coefs(bio_t *e);
 
@@ -430,8 +431,8 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
                     e->dl[e->dw] = (int16_t)bio_sat(sa[k] + bio_mul15(fl, fb));
                     e->dr[e->dw] = (int16_t)bio_sat(sa[k] + bio_mul15(fr2, fb));
                 }
-                dryl[k] += bio_mul15(yl, ret);
-                dryr[k] += bio_mul15(yr, ret);
+                dryl[k] += bio_mul15(yl, ret) * 4;   /* (+12 dB: a return of 50 the delay as loud as what went in, D36) */
+                dryr[k] += bio_mul15(yr, ret) * 4;
                 sb[k] += bio_mul15((yl + yr) >> 1, torev);
             }
         }
@@ -517,8 +518,8 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
                     int32_t r = k & 1u ? e->rout_r : (e->rprev_r + e->rout_r) >> 1;
                     l = bio_op_hp(&e->rhp_l, bio_op_lp(&e->rol, l));
                     r = bio_op_hp(&e->rhp_r, bio_op_lp(&e->ror, r));
-                    dryl[k] += bio_mul15(l, ret);
-                    dryr[k] += bio_mul15(r, ret);
+                    dryl[k] += bio_mul15(l, ret) * 4;   /* (+12 dB: D36) */
+                    dryr[k] += bio_mul15(r, ret) * 4;
                 }
             }
         }
