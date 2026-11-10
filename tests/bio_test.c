@@ -677,6 +677,57 @@ static void test_key(void)
     check(k && !eng.tone[3].gate, "a key held in F, let go in B: its note ends (it took the shift it began with)");
 }
 
+/* the ARP (D33): the held note's chord in the scale, up, down, up and down, the KEY on it; a held key arps with the
+   transport stopped and ends when let go; off, nothing changes (the rituals' renders are the same: tests/run_bio.sh) */
+static uint32_t arp_notes(uint32_t org, uint32_t blocks, uint8_t *out, uint32_t max)   /* the notes it plays, in order */
+{
+    uint32_t b, n = 0, last = 0, k;
+    for (b = 0; b < blocks; b++) {
+        for (k = 0; k < 8u; k++) {               /* (32 frames at a time: each step seen) */
+            static int32_t buf[64];
+            memset(buf, 0, sizeof buf);
+            bio_render(&eng, buf, 32);
+            if (eng.tone[org - 4u].gate && eng.tone[org - 4u].note != last && n < max) out[n++] = (uint8_t)(last = eng.tone[org - 4u].note);
+            if (!eng.tone[org - 4u].gate) last = 0;
+        }
+    }
+    return n;
+}
+static void test_arp(void)
+{
+    static const uint8_t UP[6] = {50, 53, 57, 62, 65, 69}, DN[6] = {69, 65, 62, 57, 53, 50}, UD[8] = {50, 53, 57, 62, 65, 69, 65, 62};
+    uint8_t got[32];
+    uint32_t n, ok, i;
+    for (i = 0; i < 3u; i++) {
+        setup(&eng, &sq, scn, und, red);
+        seq_scene_blank(&scn[0], 0xA2Bu);
+        seq_put(&scn[0], O_SPASM, 0, 16 * 96 - 6, 50, 100, 0);   /* D3 held a bar */
+        scn[0].p[O_SPASM][P_A] = 0;
+        scn[0].tr[O_SPASM].arp = (uint8_t)(i == 0u ? ARP_UP : i == 1u ? ARP_DOWN : ARP_UPDN);
+        seq_play(&sq);
+        n = arp_notes(O_SPASM, 300, got, 32);
+        ok = n >= 8u && !memcmp(got, i == 0u ? UP : i == 1u ? DN : UD, i == 2u ? 8u : 6u);
+        if (!ok) { uint32_t j; printf("     ARP %u:", (unsigned)i); for (j = 0; j < n && j < 12u; j++) printf(" %u", got[j]); printf("\n"); }
+        check(ok, i == 0u ? "ARP UP: D3 held, its triad in D Phrygian up two octaves, 16ths (D F A D F A)" :
+                  i == 1u ? "ARP DOWN: the same, down" : "ARP UP-DN: up and back, the ends not twice");
+        seq_stop(&sq);
+    }
+    scn[0].tr[O_SPASM].arp = ARP_UP;
+    scn[0].tur.key = 2u | 3u << 4;              /* E HARM MINOR: E G B E G B (the triad on its root) */
+    seq_play(&sq);
+    n = arp_notes(O_SPASM, 300, got, 32);
+    check(n >= 6u && got[0] == 52u && got[1] == 55u && got[2] == 59u && got[3] == 64u, "ARP in E HARM MINOR: E G B E");
+    seq_stop(&sq);
+    scn[0].tur.key = 0;
+    run(&eng, 40, 0);
+    seq_live(&sq, O_SPASM, 50, 100, 1);          /* stopped: a held key arps on its own clock */
+    n = arp_notes(O_SPASM, 200, got, 32);
+    ok = n >= 4u && got[0] == 50u && got[1] == 53u;
+    seq_live(&sq, O_SPASM, 50, 0, 0);
+    run(&eng, 40, 0);
+    check(ok && !eng.tone[2].gate && !sq.arp_on[O_SPASM], "ARP stopped: a held key arps, and ends when let go");
+}
+
 int main(void)
 {
     test_turing();
@@ -685,6 +736,7 @@ int main(void)
     test_perc();
     test_scar();
     test_key();
+    test_arp();
     printf("%d of %d checks passed\n", checks - fails, checks);
     return fails ? 1 : 0;
 }

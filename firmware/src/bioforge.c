@@ -87,7 +87,7 @@ static void touched(void) { ui.dirty[sq.cur] = 1; ui.dirty_draw |= D_STATUS; ui.
 enum { KT_NONE, KT_P, KT_LVL, KT_SA, KT_SB, KT_SC, KT_MASTER, KT_RIB, KT_TDEPTH, KT_TLEN, KT_TCLK, KT_TRATTLE,
        KT_TROUTE, KT_TWAIL, KT_TSCALE, KT_FX, KT_BPM, KT_SWING, KT_QUANT, KT_QSTR, KT_RECMODE, KT_STEPLEN, KT_KEYLED,
        KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE, KT_PUMP, KT_KIT,
-       KT_RUMBLE, KT_DARK, KT_KEY, KT_SCALEM };
+       KT_RUMBLE, KT_DARK, KT_KEY, KT_SCALEM, KT_ARP, KT_ARATE, KT_ARANGE, KT_ACHORD, KT_AGATE };
 typedef struct { uint8_t type, idx; const char *name; } knob_t;
 
 static const char *const DRUM_DEEP[8] = {"PRESS", "FRACT", "FRIC", "VENT", "RESO", "MATTER", "DRIVE", "MODEL"};
@@ -199,11 +199,15 @@ static knob_t knob_for(uint32_t k)
     default: {                                  /* GLO; again: the notes (D31) */
         static const char *const A[4] = {"BPM", "SWING", "QUANT", "Q-STR"}, *const B[4] = {"REC", "STEPLEN", "KEYS", "MIDI CH"};
         static const uint8_t TA[4] = {KT_BPM, KT_SWING, KT_QUANT, KT_QSTR}, TB[4] = {KT_RECMODE, KT_STEPLEN, KT_KEYLED, KT_MIDICH};
-        if (ui.sub == 1u) {
-            static const char *const N[4] = {"KEY", "SCALE", "", ""};
-            static const uint8_t TN[4] = {KT_KEY, KT_SCALEM, KT_NONE, KT_NONE};
-            n.type = sh ? KT_NONE : TN[k];
-            n.name = sh ? "" : N[k];
+        if (ui.sub == 1u) {                     /* KEY SCALE, the focus's ARP (D33); SHIFT: its RANGE CHORD GATE */
+            static const char *const N[4] = {"KEY", "SCALE", "ARP", "RATE"}, *const NS[4] = {"RANGE", "CHORD", "GATE", ""};
+            static const uint8_t TN[4] = {KT_KEY, KT_SCALEM, KT_ARP, KT_ARATE}, TS[4] = {KT_ARANGE, KT_ACHORD, KT_AGATE, KT_NONE};
+            n.type = sh ? TS[k] : TN[k];
+            n.name = sh ? NS[k] : N[k];
+            if ((n.type == KT_ARP || n.type == KT_ARATE || n.type == KT_ARANGE || n.type == KT_ACHORD || n.type == KT_AGATE) && o < 4u) {
+                n.type = KT_NONE;                   /* (the drums have no ARP) */
+                n.name = "";
+            }
             break;
         }
         n.type = sh ? TB[k] : TA[k];
@@ -254,6 +258,11 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
         return fx[n.idx];
     case KT_BPM: *lo = 400; *hi = 2400; return sc->bpm10;
     case KT_KEY: *hi = 11; return (int32_t)bio_key_root(&sc->tur);
+    case KT_ARP: *hi = SEQ_NARP - 1; return t->arp < SEQ_NARP ? t->arp : 0;
+    case KT_ARATE: *hi = 5; return (int32_t)seq_arp_rate(t);
+    case KT_ARANGE: *lo = 1; *hi = 3; return (int32_t)seq_arp_range(t);
+    case KT_ACHORD: *hi = (int32_t)SEQ_NCHORD - 1; return (int32_t)seq_arp_chord(t);
+    case KT_AGATE: *lo = 1; *hi = 10; return (int32_t)seq_arp_gate(t) / 10;
     case KT_SCALEM: *hi = (int32_t)BIO_NSCALE - 1; return (int32_t)bio_key_scale(&sc->tur);
     case KT_SWING: return sc->swing;
     case KT_QUANT: *hi = 4; return t->quant;
@@ -339,6 +348,11 @@ static void knob_turn(knob_t n, int32_t d)
     case KT_FX: fx[n.idx] = (uint8_t)nv; break;
     case KT_BPM: sc->bpm10 = (uint16_t)nv; break;
     case KT_KEY: sc->tur.key = (uint8_t)((sc->tur.key & 0x70u) | (uint32_t)nv); break;
+    case KT_ARP: t->arp = (uint8_t)nv; break;
+    case KT_ARATE: t->arp_rr = (uint8_t)((t->arp_rr & 0xF0u) | ((uint32_t)nv + 4u) % 6u); break;
+    case KT_ARANGE: t->arp_rr = (uint8_t)((t->arp_rr & 0x0Fu) | (((uint32_t)nv + 1u) % 3u) << 4); break;
+    case KT_ACHORD: t->arp_cg = (uint8_t)((t->arp_cg & 0xF0u) | (uint32_t)nv); break;
+    case KT_AGATE: t->arp_cg = (uint8_t)((t->arp_cg & 0x0Fu) | (((uint32_t)nv + 4u) % 10u) << 4); break;
     case KT_SCALEM: sc->tur.key = (uint8_t)((sc->tur.key & 0x0Fu) | (uint32_t)nv << 4); break;
     case KT_SWING: SEQ_LOCK(); sc->swing = (uint8_t)nv; { uint32_t k; for (k = 0; k < BIO_NORG; k++) sq.ver[k]++; } SEQ_UNLOCK(); break;
     case KT_QUANT: SEQ_LOCK(); t->quant = (uint8_t)nv; sq.ver[o]++; SEQ_UNLOCK(); break;
@@ -427,6 +441,11 @@ static void knob_text(knob_t n, char *s)
         break;
     case KT_BPM: p = u2s(p, (uint32_t)v / 10u); *p++ = '.'; u2s(p, (uint32_t)v % 10u); return;
     case KT_KEY: str_cat(s, NOTE_NAME[(2u + (uint32_t)v) % 12u]); return;
+    case KT_ARP: str_cat(s, SEQ_ARP_NAME[(uint32_t)v < SEQ_NARP ? (uint32_t)v : 0u]); return;
+    case KT_ARATE: str_cat(s, SEQ_ARP_RATE_NAME[(uint32_t)v % 6u]); return;
+    case KT_ARANGE: p = u2s(s, (uint32_t)v); str_cat(p, " OCT"); return;
+    case KT_ACHORD: str_cat(s, SEQ_CHORD_NAME[(uint32_t)v % SEQ_NCHORD]); return;
+    case KT_AGATE: p = u2s(s, (uint32_t)v * 10u); str_cat(p, "%"); return;
     case KT_SCALEM: str_cat(s, BIO_SCALE_NAME[(uint32_t)v & 7u]); return;
     case KT_QUANT: str_cat(s, SEQ_QNAME[v < 5 ? v : 0]); return;
     case KT_RECMODE: str_cat(s, v ? "REPLACE" : "OVERDUB"); return;
@@ -1087,6 +1106,21 @@ static void draw_glo(void)
         cv_t5(14, 88, "THE DRUMS AS THEY ARE", COL_DIM, 1);
         p = str_cat(s, "WAIL: "); str_cat(p, W[sc->tur.wail & 3u]);
         cv_t5(14, 102, s, sc->tur.wail ? COL_BONE : COL_DIM, 1);
+        {                                       /* the focus's ARP (D33) */
+            uint32_t o = cur_org();
+            if (o >= 4u) {
+                p = str_cat(s, "ARP "); p = str_cat(p, ORG_NAME[o]); p = str_cat(p, ": ");
+                p = str_cat(p, SEQ_ARP_NAME[t->arp < SEQ_NARP ? t->arp : 0u]);
+                if (t->arp) {
+                    p = str_cat(p, " "); p = str_cat(p, SEQ_ARP_RATE_NAME[seq_arp_rate(t)]);
+                    p = str_cat(p, " "); p = u2s(p, seq_arp_range(t)); p = str_cat(p, " OCT ");
+                    p = str_cat(p, SEQ_CHORD_NAME[seq_arp_chord(t)]);
+                }
+            } else {
+                str_cat(s, "ARP: THE SYNTHS AND NOISE");
+            }
+            cv_t5(14, 60, s, o >= 4u && t->arp ? COL_GREEN : COL_DIM, 1);
+        }
         p = str_cat(s, "RITUAL 0"); p = u2s(p, sq.cur); p = str_cat(p, " "); str_cat(p, sc->name);
         cv_t5(14, 116, s, COL_FLESH, 1);
         cv_out();

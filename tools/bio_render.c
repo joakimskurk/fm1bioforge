@@ -5,7 +5,10 @@
  *   build/bio_render organ N OUT.wav [NOTE] [LEN_MS] one hit (or note) of organ N (0 HEART .. 8 NOISE), dry, 2 s
  *   build/bio_render dry OUT.wav [BARS]             the awakening with no effects and no Turing (DRY START)
  *   build/bio_render ritual N OUT.wav [BARS] [SOLO] a factory ritual (bio_rituals.h, BIO_RITUAL_NAME); SOLO: one organ;
- *                         [k=R] [s=M]             or its KEY (R semitones over D) and SCALE (bio_turing.h's M) instead
+ *                         [k=R] [s=M]             or its KEY (R semitones over D) and SCALE (bio_turing.h's M) instead;
+ *                         [arp=T:M:R:G:C:Q]       an ARP on track T (mode, rate, range, chord, gate as the knobs show)
+ *                         [m=T:L] [a=T:V] [nowail] track T's MODEL a landscape L, its ATTACK V; WAIL off
+ *                         [lvl=C:V]               channel C's level
  *   build/bio_render scar N OUT.wav BARS M@B+L ...  ritual N with SCAR bursts (bio_scar.h): mode M (1 REPEAT 1/16,
  *                                                   2 REPEAT 1/8, 3 REVERSE, 4 SMEAR) held from beat B for L beats
  *   build/bio_render palette OUT.wav                the noise kit (bio_kits.h), each sound three times
@@ -88,6 +91,28 @@ int main(int argc, char **argv)
         for (k = 5; k < (uint32_t)argc; k++) {
             if (!strncmp(argv[k], "k=", 2)) scenes[0].tur.key = (uint8_t)((scenes[0].tur.key & 0x70u) | ((uint32_t)atoi(argv[k] + 2) % 12u));
             else if (!strncmp(argv[k], "s=", 2)) scenes[0].tur.key = (uint8_t)((scenes[0].tur.key & 0x0Fu) | ((uint32_t)atoi(argv[k] + 2) & 7u) << 4);
+            else if (!strncmp(argv[k], "arp=", 4)) {   /* arp=TRK:MODE:RATE:RANGE:CHORD:GATE (as the knobs show them) */
+                unsigned t, m, r, g, c, q;
+                if (sscanf(argv[k] + 4, "%u:%u:%u:%u:%u:%u", &t, &m, &r, &g, &c, &q) == 6 && t >= 4u && t < BIO_NORG) {
+                    seq_track_t *tr = &scenes[0].tr[t];
+                    tr->arp = (uint8_t)m;
+                    tr->arp_rr = (uint8_t)((r + 4u) % 6u | ((g + 1u) % 3u) << 4);
+                    tr->arp_cg = (uint8_t)(c % SEQ_NCHORD | ((q + 4u) % 10u) << 4);
+                }
+            }
+            else if (!strncmp(argv[k], "m=", 2)) {   /* m=TRK:MODEL (a landscape, bio_land.h) */
+                unsigned t, m;
+                if (sscanf(argv[k] + 2, "%u:%u", &t, &m) == 2 && t >= 4u && t < O_NOISE && m < BIO_NLAND) scenes[0].p[t][P_E1] = BIO_LAND(m);
+            }
+            else if (!strncmp(argv[k], "a=", 2)) {   /* a=TRK:ATTACK */
+                unsigned t, v;
+                if (sscanf(argv[k] + 2, "%u:%u", &t, &v) == 2 && t < BIO_NORG) scenes[0].p[t][P_A] = (uint8_t)v;
+            }
+            else if (!strcmp(argv[k], "nowail")) scenes[0].tur.wail = 0;
+            else if (!strncmp(argv[k], "lvl=", 4)) {   /* lvl=CH:LEVEL (a channel's) */
+                unsigned c, v;
+                if (sscanf(argv[k] + 4, "%u:%u", &c, &v) == 2 && c < BIO_NCH) scenes[0].mix.lvl[c] = (uint8_t)v;
+            }
             else {                              /* one organ alone (its stem, through the effects) */
                 uint32_t solo = (uint32_t)atoi(argv[k]), j;
                 for (j = 0; j < BIO_NORG; j++) scenes[0].tr[j].mute = j != solo;

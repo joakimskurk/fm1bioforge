@@ -278,3 +278,12 @@ the thump in the middle; GLASS's partials apart, its base and sub in the middle;
 the side, turned at 0.5 Hz; BLOOD's rush its own each side, the pulse in the middle; each BUBBLE born somewhere; SLIME's
 squelch wanders with its gurgle, the body in the middle. Their sides now 3 .. 18 dB under their middles (the low ones
 the narrowest). A test holds every model wide. CPU: FOUNDRY +82 instructions a frame, the others a few.
+
+**D33 (2026-11-10) The ARP.** Each synth's track and NOISE's has an ARP (GLO's notes page, for the focus): a note on
+it, sequenced or held on a key, plays its chord in the SCALE (TRIAD, 7TH, 9TH, SUS4 or FIFTHS, stacked in the scale's
+own notes on the note's degree; CHROMATIC: minor shapes) over 1 .. 3 octaves for as long as it lasts, UP, DOWN, UP-DN
+(the ends not twice) or NERVE (the register's CV8 picks the note each step: locked, a hook that repeats; LOOP down, it
+slips), at 1/32 .. 1/4 (triplets too), each note GATE long, on its rate's grid. On a clock of its own while the
+transport stands, so a held key arps stopped. The KEY moves what it plays; what is recorded is the note held. Kept in
+the track's three spare bytes (each 0 its default: a scene from before has none, and every ritual sounds as it did,
+sample for sample). Control-rate only: no CPU to speak of.

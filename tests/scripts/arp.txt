@@ -1,0 +1,17 @@
+# The ARP (D33): RUST (PRESETS once), the focus on SPASM (SELECT), GLO twice: the notes page; ARP turned on (UP), its
+# RATE; SHIFT held: RANGE, CHORD; the screen with it playing
+200 enc 6 1
+300 enc 0 7
+400 btn 12
+1500 btn 7
+1700 btn 7
+2000 enc 4 1
+2400 enc 5 -1
+2800 shot
+3200 btndown 3
+3400 enc 4 1
+3600 enc 5 1
+3900 shot
+4100 btnup 3
+7000 shot
+8000 end
