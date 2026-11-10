@@ -247,14 +247,10 @@ the music going on underneath, in time, for when the key is let go (the tests: i
 - CPU: the recording 11 instructions a frame; held, REVERSE +17, SMEAR +33, REPEAT +57 (the worst case with every
   organ: 3 313, with REPEAT 3 370).
 
-**D30 (2026-11-10) The logo: the word cut into a ribbed plate.** The user sent five more pictures (Scorn's
-biomechanical rooms: carved reliefs, sockets, flesh in the hollows, ribbed tubes) for the last polish of the design:
-the logo must be more biomechanical. D16 holds: their mood, not their layout. Letters built of bone (knuckles, claws, a
-column of vertebrae, a hose through the word) were sketched in chrome and in bone and turned down ("none of them");
-three other directions followed (an emblem beside the word, the word carved into a plate, dark wet letters melting),
-the user had no preference, and the carved one was taken as the one that reads best at its size and is closest to the
-pictures' reliefs. `tools/gen_art.py` draws it: a convex capsule of steel ribbed along its top and its foot, the word
-cut into it (dark flesh in the cuts, darker deep at the top, their upper walls in shadow and their lower ones lit), a
-ribbed socket with an eye of steel at each end, a hose from each into the frame. 103 x 28: it lies over the top panel's
-frame (28 rows instead of the old 22: at 22 its detail was noise). The rest stays chrome and graphite (D26). The page's
-logo is drawn by the same code at six times the size (sharp, not the firmware's pixels blown up).
+**D30 (2026-11-10) The logo stays; its black line softened.** The user sent five more pictures (Scorn's
+biomechanical rooms) for the last polish and asked for a more biomechanical logo. Letters of bone, an emblem, the word
+carved into a ribbed plate and dark melting letters were sketched; the carved plate went into the firmware, and the
+user then chose the old logo (D26) after all. Kept, with one change: its chrome's dark band at the horizon was nearly
+black and read as a black line through the middle of the word; it is now a soft band (0.3 deep in the metal's ramp,
+was 0.7). And it sits midway between the top panel's two lines (a row lower: its letters on rows 6 .. 19, the lines on
+2 and 23), clear of both.

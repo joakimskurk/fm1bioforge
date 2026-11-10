@@ -144,10 +144,19 @@ def encode(wav, m4a):
 
 
 def logo_png(out, scale):
-    """the logo, drawn as the firmware's is (tools/gen_art.py, D30) but at `scale` times its size: sharp, not blown up"""
-    sys.path.insert(0, str(ROOT / "tools"))
-    import gen_art
-    gen_art.logo(scale).save(out)
+    """the logo, as the firmware draws it (bio_art.h's LOGO), scaled up, sharp"""
+    src = (ROOT / "firmware" / "gen" / "bio_art.h").read_text()
+    w = int(re.search(r"#define LOGO_W (\d+)", src).group(1))
+    h = int(re.search(r"#define LOGO_H (\d+)", src).group(1))
+    cols = [int(v) for v in re.search(r"static const uint16_t LOGO\[\d+\] = \{([^}]*)\}", src).group(1).split(",")]
+    alph = [int(v) for v in re.search(r"static const uint8_t LOGO_A\[\d+\] = \{([^}]*)\}", src).group(1).split(",")]
+    im = Image.new("RGBA", (w, h))
+    px = im.load()
+    for i, c in enumerate(cols):
+        a = (alph[i >> 1] >> 4) if not i & 1 else alph[i >> 1] & 15
+        r, g, b = (c >> 11) << 3, ((c >> 5) & 63) << 2, (c & 31) << 3
+        px[i % w, i // w] = (r | r >> 5, g | g >> 6, b | b >> 5, a * 17)
+    im.resize((w * scale, h * scale), Image.NEAREST).save(out)
 
 
 def og_image(out):
