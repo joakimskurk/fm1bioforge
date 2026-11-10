@@ -241,7 +241,7 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
         if (n.idx == 0u) *hi = 9;
         if (n.idx == 3u) *hi = 1;
         if (n.idx == 1u) *hi = 85;
-        if (n.idx == 5u) *hi = 35;
+        if (n.idx == 5u) *hi = 100;
         if (n.idx == 16u) *hi = (int32_t)BIO_NSPACE - 1;
         return fx[n.idx];
     case KT_BPM: *lo = 400; *hi = 2400; return sc->bpm10;

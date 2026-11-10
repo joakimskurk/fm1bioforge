@@ -215,3 +215,13 @@ gone, its drone a MASS (wide) instead of the drone's own voice (mono, still). DU
 tune and still; now two saws a note, one each side, a few cents apart and drifting (a 0.7 Hz chorus, the nerve's
 drift), a little driven, each side through its own resonant low-pass that the breath and the register move as well
 as the note. About +70 instructions a sample while it sounds.
+
+**D28 (2026-11-10) The synth in a ping-pong delay, the delay on into the reverb; memory for an effects buffer.** The
+user, on ABYSS: the synth must have a ping-pong delay and more send to the reverb, the delay's return into the reverb
+too; and is there memory for an audio buffer for effects? ABYSS's delay is now ping-pong (the send in on the left, each
+repeat crossing sides) at 3/16 (0.41 s at 110 BPM), feedback 62, a little brighter (TONE 40) and louder (52) than
+before; its SPASM sends 76 to it and 64 to the reverb. D>REV (FX, the delay's return into the reverb) now goes to 100
+(was 35): ABYSS uses 60. No new code in the render, no CPU. Memory (the build's own count): the pool has ~36 KB free,
+RAM ~78 KB of which ~60 KB can be spent with the stack kept safe: ~90 KB, ~1 s mono at 44.1 kHz in 16 bits, ~2 s at
+22 kHz, ~4 s in 8 bits; the delay's 128 KB could also be shared with a new effect. Not built until the user says what
+it is for.

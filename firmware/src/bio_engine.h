@@ -407,7 +407,7 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
         /* BLOOD DELAY: stereo, darker each time round, ping-pong, a send on into the reverb */
         {
             int32_t fb = (int32_t)(e->fx.d_fb > 85u ? 85u : e->fx.d_fb) * 327, ret = bio_mul15(bio_fader(e->fx.d_mix), rduck);
-            int32_t torev = (int32_t)(e->fx.d_rev > 35u ? 35u : e->fx.d_rev) * 327;
+            int32_t torev = (int32_t)(e->fx.d_rev > 100u ? 100u : e->fx.d_rev) * 327;   /* (all of it, if asked: D28) */
             e->dtime_to = bio_dly_time(e);
             if (!e->dtime) e->dtime = e->dtime_to;
             for (k = 0; k < BIO_SB; k++) {

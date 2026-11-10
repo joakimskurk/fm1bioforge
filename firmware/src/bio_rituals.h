@@ -494,12 +494,13 @@ static void rit_abyss(seq_scene_t *sc)
     /* the mix: the kick and its rumble, everything else breathing with it */
     sc->mix.lvl[CH_DRUM] = 92; sc->mix.lvl[CH_BASS] = 66; sc->mix.lvl[CH_DRONE] = 56; sc->mix.lvl[CH_SPASM] = 74;
     sc->mix.lvl[CH_VOICE] = 44; sc->mix.lvl[CH_NOISE] = 70;
-    sc->mix.sa[CH_SPASM] = 70; sc->mix.sb[CH_SPASM] = 40; sc->mix.sb[CH_DRUM] = 22; sc->mix.sa[CH_DRUM] = 0;
+    sc->mix.sa[CH_SPASM] = 76; sc->mix.sb[CH_SPASM] = 64; sc->mix.sb[CH_DRUM] = 22; sc->mix.sa[CH_DRUM] = 0;
     sc->mix.sb[CH_DRONE] = 40; sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_NOISE] = 34; sc->mix.sb[CH_BASS] = 0;
     sc->mix.sa[CH_BASS] = 0; sc->mix.sa[CH_VOICE] = 20;
     sc->mix.pump = 55; sc->mix.rumble = 62; sc->mix.master = 80;
     sc->fx.r_duck = 40;
-    sc->fx.d_time = 4; sc->fx.d_fb = 56; sc->fx.d_tone = 28; sc->fx.d_mix = 34; sc->fx.d_rev = 20; sc->fx.d_ping = 1;
+    sc->fx.d_time = 4; sc->fx.d_fb = 62; sc->fx.d_tone = 40; sc->fx.d_mix = 52; sc->fx.d_rev = 60; sc->fx.d_ping = 1;   /* (the chords
+                                                   echo left, right, left into the reverb: D28) */
     sc->fx.r_space = 2; sc->fx.r_mix = 40; sc->fx.r_decay = 76; sc->fx.r_size = 88; sc->fx.r_damp = 20; sc->fx.c_mix = 0;
     sc->tur.loop = 97; sc->tur.depth = 10; sc->tur.rattle = 15;
 }
