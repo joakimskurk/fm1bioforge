@@ -491,6 +491,31 @@ static void test_perc(void)
         check(ok_h, "the landscapes: each of nine models heard on each of the four synths (over -30 dBFS)");
         check(ok_c && ok_s, "and none clips, and each is asleep 12 s after its release (no CPU)");
     }
+    /* D32: every landscape is wide (its side at least 20 dB under its middle, never as loud), on the DRONE, dry */
+    {
+        uint32_t m, ok = 1;
+        static int16_t keep[2u * 256u * 140u];
+        for (m = 1; m < BIO_NLAND; m++) {
+            double mm = 0, ss = 0;
+            uint32_t i;
+            setup(&eng, &sq, scn, und, red);
+            seq_sound(&sq);
+            eng.tick = 0;
+            eng.fx.d_mix = eng.fx.r_mix = eng.fx.c_mix = 0;
+            eng.mix.sa[CH_DRONE] = eng.mix.sb[CH_DRONE] = eng.mix.sc[CH_DRONE] = 0;
+            eng.mix.lvl[CH_DRONE] = 100;
+            eng.p[O_DRONE][P_E1] = BIO_LAND(m);
+            eng.p[O_DRONE][P_TEXTURE] = 60;
+            bio_trigger(&eng, O_DRONE, 45, 110, BIO_MS(800), 0, 0x99u + m);
+            run(&eng, 140, keep);
+            for (i = 0; i < 256u * 140u; i++) {
+                double l = keep[2u * i], r = keep[2u * i + 1u];
+                mm += (l + r) * (l + r); ss += (l - r) * (l - r);
+            }
+            if (!(ss * 100.0 > mm && ss < mm)) { ok = 0; printf("     %s: side/mid %.4f\n", BIO_LAND_NAME[m], ss / (mm + 1)); }
+        }
+        check(ok, "the landscapes: each wide (its side within 20 dB of its middle, under it)");
+    }
     /* DARK: the master's low-pass takes the top off (a tone of 6 kHz down by 20 dB at 100), and nothing at 0 */
     {
         int32_t pk0 = 0, pk1 = 0;

@@ -3,8 +3,9 @@
  * its MODEL (E1). The user chose three worlds: INDUSTRY (HUM, an electric hum with sparks; STEEL, bowed metal; PISTON,
  * a machine that runs while the key is held), COSMIC (GLASS, inharmonic partials beating; BELL, FM; CHOIR, three
  * throats through formants) and BODY (BLOOD, a pulse with the beat; BUBBLE, rising drops; SLIME, a wet squelch). The
- * organ keeps its own envelope, note and role; the four macros mean what each model says below. Integers only, mono,
- * the same seed the same sound. And DUB (D22): a dark chord through a closing low-pass, for the delay to carry. MASS
+ * organ keeps its own envelope, note and role; the four macros mean what each model says below. Integers only, the same
+ * seed the same sound; each wide in its own way (D32: the plate's modes apart, sparks and drops anywhere, the low end in
+ * the middle). And DUB (D22): a dark chord through a closing low-pass, for the delay to carry. MASS
  * and CLUSTER (D23): the grim drone's body, a stack of octaves and a fifth, or a cluster of semitones, thick under a
  * breathing low-pass, with grit. */
 #ifndef BIO_LAND_H
@@ -69,19 +70,27 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
                        (MOTION); now and then a spark (TEXTURE) */
         uint32_t w = 2147483648u - (uint32_t)tex * 17179869u;   /* 0.5 .. 0.1 */
         int32_t spk = tex * tex * 970;           /* (sparks: 9 a second at 30, 100 at 100) */
-        if (++v->lu[1] >= 40u) { v->lu[1] = 0; v->lx[1] = bio_noise(&v->rnd); }   /* the flutter's aim, 34 a second */
+        if (++v->lu[1] >= 40u) { v->lu[1] = 0; v->lx[1] = bio_noise(&v->rnd); v->lx[2] = bio_noise(&v->rnd); }   /* the
+                                                   flutter's aim, 34 a second; the band's place in the field (D32) */
         v->lx[0] += (v->lx[1] - v->lx[0]) >> 2;
+        v->lx[3] += (v->lx[2] - v->lx[3]) >> 4;
         bio_svf_set(&v->f1, bio_map_lf((uint32_t)body, 150, 900, 5000) + bio_mul15(v->lx[0], mot * 600), bio_q_k(25));
         for (k = 0; k < n; k++) {
-            int32_t x, bp;
+            int32_t x, bp, sd;
             v->pa += inc;
             x = (bio_pulse(v->pa, inc, w) >> 1) + bio_mul15(bio_sin(v->pa * 2u), 6000);
             x = bio_op_lp(&v->o1, x);
             (void)bio_svf(&v->f1, x, &bp);
             y = (x >> 1) + bp;
-            if ((bio_rnd(&v->rnd) >> 8) < (uint32_t)spk >> 8) y += (v->rnd & 1u) ? 14000 : -14000;
+            sd = bio_mul15(bp, v->lx[3]) / 2;
+            if ((bio_rnd(&v->rnd) >> 8) < (uint32_t)spk >> 8) {
+                int32_t sp = (v->rnd & 1u) ? 14000 : -14000;
+                y += sp;
+                sd += bio_mul15(sp, (int32_t)(v->rnd >> 16) - 32768);   /* (a spark: anywhere from left to right) */
+            }
             y = bio_mul15(y, 32767 - bio_abs(bio_mul15(v->lx[0], mot * 200)));
             e0 += step;
+            if (side) side[k] += bio_mul15(bio_mul15(sd, e0), a) * 2;
             y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);
@@ -102,6 +111,10 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
             y = (int32_t)(((int64_t)(b1 + ((b2 * 23) >> 5) + (b3 >> 1) + ((b4 * 11) >> 5)) * g) >> 12);
             y = bio_clamp(y, -60000, 60000);
             e0 += step;
+            if (side) {                         /* (the plate's modes apart: 1 and 3 one side, 2 and 4 the other, D32) */
+                int32_t sd = (int32_t)(((int64_t)((b1 >> 1) - ((b2 * 23) >> 5) + (b3 >> 1) - ((b4 * 11) >> 5)) * g) >> 13);
+                side[k] += bio_mul15(bio_mul15(bio_clamp(sd, -40000, 40000), e0), a) * 2;
+            }
             y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);
@@ -126,6 +139,11 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
             (void)bio_svf(&v->f1, cl, &b1); (void)bio_svf(&v->f2, cl, &b2);
             hp = w - bio_op_lp(&v->o1, w);
             st = bio_mul15(hp, v->lx[2]) >> 2;
+            if (side) {                         /* (the clank's partials apart, the steam on both sides its own: D32) */
+                int32_t w2 = bio_noise(&v->rnd);
+                v->lx[3] += (w2 - v->lx[3]) >> 2;
+                side[k] += bio_mul15(bio_mul15(((b1 - b2) >> 1) + (bio_mul15(w2 - v->lx[3], v->lx[2]) >> 2), e0 + step), a) * 2;
+            }
             v->lx[0] = bio_mul15(v->lx[0], 32440);   /* (the clank's noise: 3 ms) */
             v->lx[1] = bio_mul15(v->lx[1], 32742);   /* (the thump: 30 ms) */
             v->lx[2] = bio_mul15(v->lx[2], 32750);   /* (the steam: 45 ms) */
@@ -153,9 +171,12 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         inc0 = inc / 4u;
         for (k = 0; k < n; k++) {
             v->pa += inc; v->pb += inc2; v->pc += inc3; v->pd += inc4; v->lu[2] += inc0;
-            y = (bio_sin(v->pa) >> 1) + bio_mul15(bio_sin(v->pb), l1) / 2 + bio_mul15(bio_sin(v->pc), l2) / 2 +
-                bio_mul15(bio_sin(v->pd), l3) / 2 + bio_mul15(bio_sin(v->lu[2]), sub) / 2;
+            {
+            int32_t s2 = bio_mul15(bio_sin(v->pb), l1) / 2, s3 = bio_mul15(bio_sin(v->pc), l2) / 2, s4 = bio_mul15(bio_sin(v->pd), l3) / 2;
+            y = (bio_sin(v->pa) >> 1) + s2 + s3 + s4 + bio_mul15(bio_sin(v->lu[2]), sub) / 2;
             e0 += step;
+            if (side) side[k] += bio_mul15(bio_mul15((s2 - s3 + s4) * 3 / 4, e0), a) * 2;   /* (the partials apart: D32) */
+            }
             y = bio_mul15(bio_mul15(y, e0), a) * 2;
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);
@@ -165,17 +186,21 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
     case L_BELL: {   /* FM: a carrier and a modulator at a ratio (TEXTURE: 1, 1.41, 2, 2.76, 3.5, 5.4), the index from
                         BODY falling with DECAY; MOTION a slow vibrato */
         uint32_t im = bio_inc(v->lf + BIO_BELL_LF[(uint32_t)tex * 6u / 101u]);
-        int32_t idx;
+        int32_t idx, sw;
         v->lx[0] = bio_mul30(v->lx[0], v->lx[1]);
         idx = (int32_t)(((int64_t)v->lx[0] * 104305) >> 15);   /* (5 rad at full: phase units for a Q15 sine's 1) */
         v->pc += bio_inc(bio_lf_hz(5)) * n;
         inc = bio_inc(v->lf + bio_mul15(bio_sin(v->pc), mot * 20));
+        v->pd += bio_inc(bio_lf_hz(1) - 65536) * n;   /* (its place in the field turns at 0.5 Hz) */
+        sw = 9000 + bio_mul15(bio_sin(v->pd), 14000);
         for (k = 0; k < n; k++) {
             int32_t m;
             v->pa += inc; v->pb += im;
             m = bio_sin(v->pb);
             y = bio_sin(v->pa + (uint32_t)((int64_t)m * idx)) >> 1;
             e0 += step;
+            if (side) side[k] += bio_mul15(bio_mul15(bio_mul15(bio_sin(v->pa + (uint32_t)((int64_t)m * idx) + (1u << 30)) >> 2,
+                                                               sw), e0), a) * 2;   /* (D32) */
             y = bio_mul15(bio_mul15(y, e0), a) * 2;
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);
@@ -222,6 +247,10 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
             y = (bio_sin(v->pa) >> 1) + (bio_sin(v->pb) >> 3) + bio_mul15(r, tex * 600) / 8;
             y = bio_mul15(y, am);
             e0 += step;
+            if (side) {                         /* (the rush its own each side; the pulse in the middle: D32) */
+                v->lx[3] += (bio_noise(&v->rnd) - v->lx[3]) >> 5;
+                side[k] += bio_mul15(bio_mul15(bio_mul15(bio_mul15(v->lx[3] * 4, tex * 600) / 8, am), e0), a) * 2;
+            }
             y = bio_mul15(bio_mul15(y, e0), a) * 2;
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);
@@ -239,13 +268,18 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
                 v->lu[s] = bio_inc(lf);
                 v->lx[s] = 22000 + (int32_t)(r >> 21);
                 v->lx[2 + s] = bio_decay(1, BIO_MS(6u + sz * sz / 200u));   /* (6 .. 56 ms) */
+                v->lx[4 + s] = (int32_t)(bio_rnd(&v->rnd) >> 17) - 16384;   /* (its place: D32) */
                 if (s) v->pb = 0; else v->pa = 0;
             }
             v->pa += v->lu[0]; v->pb += v->lu[1];
             v->lu[0] += v->lu[0] >> 12; v->lu[1] += v->lu[1] >> 12;   /* rising: an octave in 64 ms */
             if (v->lu[0] > (1u << 29)) v->lx[0] = 0;
             if (v->lu[1] > (1u << 29)) v->lx[1] = 0;
-            y = bio_mul15(bio_sin(v->pa), v->lx[0]) + bio_mul15(bio_sin(v->pb), v->lx[1]);
+            {
+                int32_t d0 = bio_mul15(bio_sin(v->pa), v->lx[0]), d1 = bio_mul15(bio_sin(v->pb), v->lx[1]);
+                y = d0 + d1;
+                if (side) side[k] += bio_mul15(bio_mul15((bio_mul15(d0, v->lx[4]) + bio_mul15(d1, v->lx[5])) * 2, e0 + step), a) * 2;
+            }
             v->lx[0] = bio_mul30(v->lx[0], v->lx[2]); v->lx[1] = bio_mul30(v->lx[1], v->lx[3]);
             e0 += step;
             y = bio_mul15(bio_mul15(y, e0), a) * 2;
@@ -271,6 +305,8 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
             {
                 int32_t bp;
                 y = bio_svf(&v->f1, o, &bp);
+                if (side) side[k] += bio_mul15(bio_mul15(bio_clamp(bio_mul15(bp, v->lx[0]), -30000, 30000), e0 + step), a);   /* (the
+                                                   squelch wanders with its gurgle; the body in the middle: D32) */
             }
             y = bio_clamp(y, -50000, 50000);
             e0 += step;

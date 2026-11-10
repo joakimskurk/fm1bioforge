@@ -268,3 +268,13 @@ SCALE, stereo synths, an ARP, new themes). First the KEY and SCALE of a scene, o
   into a major 7th); they move with the KEY.
 - Kept in the register settings' spare byte: a scene saved before reads D PHRYGIAN, as it sounded; every ritual sounds
   as it did, sample for sample (ABYSS and ASH are marked D AEOLIAN, which only WAIL and the ARP would hear). No CPU.
+
+**D32 (2026-11-10) The synths wide, each in its own way.** HUM, STEEL, PISTON, GLASS, BLOOD, BUBBLE and SLIME were
+mono (their side 44 .. 54 dB under their middle), BELL nearly; as DUB was before D27, they sounded flat. Each now has a
+side of its own nature, added left and taken right, so the mono sum is what it was: HUM's band wanders in the field on
+a slow flutter of its own and each spark lands anywhere; STEEL's plate has its first and third modes to one side, the
+second and fourth to the other; PISTON's clank has its two partials apart and its steam a noise of its own each side,
+the thump in the middle; GLASS's partials apart, its base and sub in the middle; BELL a quarter turn of its carrier on
+the side, turned at 0.5 Hz; BLOOD's rush its own each side, the pulse in the middle; each BUBBLE born somewhere; SLIME's
+squelch wanders with its gurgle, the body in the middle. Their sides now 3 .. 18 dB under their middles (the low ones
+the narrowest). A test holds every model wide. CPU: FOUNDRY +82 instructions a frame, the others a few.
