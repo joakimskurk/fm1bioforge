@@ -503,7 +503,7 @@ typedef struct {
     int32_t mouth, vel, fade, grain, gt;
     int32_t peak, last;
     int32_t lx[8];                              /* a landscape's state (bio_land.h) */
-    uint32_t lu[4];
+    uint32_t lu[4], lph;                        /* (lph: DUB's chorus, a phase) */
 } bio_tone_t;
 static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_t seed);
 static inline uint32_t bio_land_of(uint32_t v);

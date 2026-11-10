@@ -280,21 +280,37 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         }
         break;
     }
-    case L_DUB: {   /* four saws a chord (TEXTURE: minor, minor 7th, minor 9th, fifths), a little apart, through a
-                       resonant low-pass: BODY its cutoff, MOTION how far the note opens it */
+    case L_DUB: {   /* a chord (TEXTURE: minor, minor 7th, minor 9th, fifths) of two saws a note, one each side, a few
+                       cents apart and drifting (a slow chorus), driven a little, each side through its own resonant
+                       low-pass: BODY its cutoff, MOTION how far the note opens it; the breath and the nerve move it too
+                       (D27: it was four saws in the middle, still, flat) */
         static const int8_t CH[4][4] = {{0, 3, 7, 12}, {0, 3, 7, 10}, {0, 3, 10, 14}, {0, 7, 12, 19}};
-        uint32_t c = (uint32_t)tex * 4u / 101u, i1 = bio_inc(v->lf + CH[c][1] * BIO_SEMI + 90);
-        uint32_t i2 = bio_inc(v->lf + CH[c][2] * BIO_SEMI - 70), i3 = bio_inc(v->lf + CH[c][3] * BIO_SEMI + 40);
-        int32_t lfc = bio_map_lf((uint32_t)body, 200, 900, 4000) + bio_mul15(v->lx[0], mot * 1966);   /* (to 3 octaves) */
+        uint32_t c = (uint32_t)tex * 4u / 101u, j, il[4], ir[4];
+        int32_t ch, d, lfc;
+        v->lph += bio_inc(bio_lf_hz(1) - 32768) * n;   /* (the chorus: 0.7 Hz) */
+        ch = bio_sin(v->lph);
+        d = 382 + bio_mul15(ch, 218);           /* 7 cents, +-4 */
+        for (j = 0; j < 4u; j++) {
+            int32_t dj = d + d * (int32_t)j * 5 / 32 + bio_mul15(life->drift, 300);
+            il[j] = bio_inc(v->lf + CH[c][j] * BIO_SEMI + dj);
+            ir[j] = bio_inc(v->lf + CH[c][j] * BIO_SEMI - dj);
+        }
+        lfc = bio_map_lf((uint32_t)body, 200, 900, 4000) + bio_mul15(v->lx[0], mot * 1966) +
+              bio_mul15(life->breath, 26214) + bio_mul15(life->cv, 16384);   /* (to 3 octaves; 0.4 and 0.25 more) */
         v->lx[0] = bio_mul30(v->lx[0], v->lx[1]);
-        bio_svf_set(&v->f1, lfc, bio_q_k(25));
+        bio_svf_set(&v->f1, lfc, bio_q_k(32));
+        bio_svf_set(&v->f2, lfc + 600, bio_q_k(32));
         for (k = 0; k < n; k++) {
-            int32_t o, bp;
-            v->pa += inc; v->pb += i1; v->pc += i2; v->pd += i3;
-            o = (bio_saw(v->pa, inc) + bio_saw(v->pb, i1) + bio_saw(v->pc, i2) + bio_saw(v->pd, i3)) / 4;
-            y = bio_svf(&v->f1, o, &bp);
+            int32_t ol, or_, bp, yl, yr;
+            v->pa += il[0]; v->pb += il[1]; v->pc += il[2]; v->pd += il[3];
+            v->lu[0] += ir[0]; v->lu[1] += ir[1]; v->lu[2] += ir[2]; v->lu[3] += ir[3];
+            ol = (bio_saw(v->pa, il[0]) + bio_saw(v->pb, il[1]) + bio_saw(v->pc, il[2]) + bio_saw(v->pd, il[3])) / 4;
+            or_ = (bio_saw(v->lu[0], ir[0]) + bio_saw(v->lu[1], ir[1]) + bio_saw(v->lu[2], ir[2]) + bio_saw(v->lu[3], ir[3])) / 4;
+            yl = bio_svf(&v->f1, bio_flesh(ol, 6000), &bp);
+            yr = bio_svf(&v->f2, bio_flesh(or_, 6000), &bp);
             e0 += step;
-            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, (yl + yr) / 2), e0), a) * 2;
+            if (side) side[k] += bio_mul15(bio_mul15((yl - yr) / 2, e0), a);
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);
         }

@@ -47,9 +47,9 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
      "rumble, a bone breaking far off, dark slices of noise locked in 16ths; a bell the register plays from the scale. "
      "Made against a reference recording: its spectrum, its width, its weight."),
     ("3_abyss", "RITUAL 02 · ABYSS",
-     "Dark ambient meets noise, 122 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
-     "crackling, the reverb and the delay breathing with it; dark ticks off the beat, sparks in time, a far clap; dub "
-     "chords off the beat into a dark delay, a bass on the off-beats, the drone and a choir in a cave."),
+     "Dark ambient meets noise, 110 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
+     "crackling, the reverb and the delay breathing with it; ticks of six squares off the beat, sparks in time; wide, "
+     "drifting dub chords off the beat into a dark delay, a bass on the off-beats, a wide drone and a choir in a cave."),
     ("4_ash", "RITUAL 03 · ASH",
      "The ambient side, 116 BPM: a sub kick with a big rumble, a fire held and wood creaking, sparks in time, glass "
      "beating under a choir, minor-ninth dub chords far apart into the delay; a vast space."),

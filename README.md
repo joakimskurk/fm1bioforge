@@ -84,7 +84,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   - RITUAL 00 THE AWAKENING, the idea document's start scene;
   - 01 RUST, grim dark industrial ambience with a pulse and a melody: a drone for a body, a smouldering rumble, a sub
     kick, dark noise locked in 16ths, a bell the register plays;
-  - 02 ABYSS, dark ambient meets noise: a deep kick and its rumble, crackle and the room breathing with it, dub chords;
+  - 02 ABYSS, dark ambient meets noise, 110 BPM: a deep kick and its rumble, crackle and the room breathing with it,
+    wide dub chords;
   - 03 ASH, its ambient side: a sub kick, a big rumble, fire and creaking wood, glass and a choir in a vast space.
   - PRESETS switches between them on the next bar. **SHIFT + PRESETS loads a factory ritual** into the scene that
     plays: those four, FROZEN (slices of noise locked into a groove), STREAM (one noise, gated), WALL (a riff of pitched noise), DATA (clicks, bursts, digital noise,

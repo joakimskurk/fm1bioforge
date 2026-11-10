@@ -1,8 +1,8 @@
-# Demo: RITUAL 02, ABYSS (PRESETS twice): dark ambient meets noise, 122 BPM, D minor. A deep kick with almost no top on
+# Demo: RITUAL 02, ABYSS (PRESETS twice): dark ambient meets noise, 110 BPM, D minor. A deep kick with almost no top on
 # the four and its RUMBLE under it; a fire crackling, the reverb and the delay breathing with it (PUMP); dark ticks off the
-# beat, ghosts locked between, sparks now and then, a far clap on two and four; dub chords off the beat into a dark
+# beat, ghosts locked between, sparks now and then; wide, drifting dub chords off the beat into a dark
 # delay, a bass on the off-beats, the drone and a choir in a cave
 200 enc 6 2
 400 btn 12
-31875 btn 12
-35875 end
+35309 btn 12
+39309 end

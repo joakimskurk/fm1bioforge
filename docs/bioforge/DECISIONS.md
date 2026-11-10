@@ -208,3 +208,10 @@ and the user chose chrome and graphite. `tools/gen_art.py` now draws a biomechan
 vertebrae, arcs of ribs, smooth capsules, airbrushed light) very dark under recessed panels framed in ribbed chrome
 with rivets; the knobs are ribbed steel valves with a closed eye; the cells rivets that glow; the spine's vertebrae
 steel; the logo chrome. Sound is a pale green (176, 214, 150), recording a dark blood red, the text steel.
+
+**D27 (2026-11-10) ABYSS slower, no clap; the dub synth alive.** The user, on ABYSS with SIX hats and the longer reverb:
+perfect without the clap, slower; and the synth still sounds incredibly flat. ABYSS is now 110 BPM (122), the clap
+gone, its drone a MASS (wide) instead of the drone's own voice (mono, still). DUB was four saws in the middle, nearly in
+tune and still; now two saws a note, one each side, a few cents apart and drifting (a 0.7 Hz chorus, the nerve's
+drift), a little driven, each side through its own resonant low-pass that the breath and the register move as well
+as the note. About +70 instructions a sample while it sounds.

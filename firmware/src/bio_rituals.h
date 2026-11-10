@@ -449,21 +449,18 @@ static void rit_innards(seq_scene_t *sc)
 
 /* ---- dark ambient meets noise, a deep kick (D22) */
 
-/* RITUAL: ABYSS. 122 BPM, D minor. A deep kick with almost no top on the four, its RUMBLE under it; everything else
-   breathes with it (PUMP): a fire crackling held, the reverb and the delay. Noise in time: dark ticks off the beat and
-   ghosts locked between, sparks now and then, a low clap far away on two and four. Dub chords off the beat into a
-   dark delay, a bass on the off-beats, the drone and a choir in a cave */
+/* RITUAL: ABYSS. 110 BPM, D minor. A deep kick with almost no top on the four, its RUMBLE under it; everything else
+   breathes with it: a fire crackling held, the reverb and the delay (DUCK). Noise in time: ticks of six squares off
+   the beat and ghosts locked between, sparks now and then. Dub chords off the beat, wide and drifting, into a dark
+   delay; a bass on the off-beats; a MASS for the drone and a choir, in a cave (D27: slower, no clap) */
 static void rit_abyss(seq_scene_t *sc)
 {
     static const uint8_t TK[BIO_NP] = NC(76, 30, 50, 30,  87, 15, 90, 0, 0, 0, 0,  0, 0, 30, 20,  24, 80, 62,  25, 0, 0);
-    static const uint8_t CL[BIO_NP] = NC(32, 20, 52, 55,  4, 30, 50, 80, 0, 10, 0,  0, 0, 40, 30,  24, 74, 46,  0, 0, 0);
     seq_scene_blank(sc, 0xAB7550u);
     rit_name(sc, "ABYSS");
-    sc->bpm10 = 1220;
+    sc->bpm10 = 1100;                           /* (122 at first: slower, D27) */
     rit_perc(sc, O_HEART, "DEEP KICK", 50);
     rit_steps(sc, O_HEART, "x...x...x...x...", 60, 112, 96);
-    rit_core(sc, O_BONE, CL);
-    rit_steps(sc, O_BONE, "....x.......x...", 60, 84, 48);
     rit_core(sc, O_TEETH, TK);
     rit_steps(sc, O_TEETH, "g.x.g.xgg.x.g.xg", 60, 88, 30);
     rit_perc(sc, O_CLAW, "SPARKS", 30);
@@ -487,7 +484,8 @@ static void rit_abyss(seq_scene_t *sc)
     sc->tr[O_DRONE].len = 64;
     seq_put(sc, O_DRONE, 0, 32 * 96 - 6, 38, 90, 0);
     seq_put(sc, O_DRONE, 32, 32 * 96 - 6, 34, 90, 0);
-    sc->p[O_DRONE][P_D1] = 26; sc->p[O_DRONE][P_MOTION] = 70;
+    rit_model(sc, O_DRONE, L_MASS, 26, 35, 60, 60);   /* (its own voice was mono and still: a MASS, wide, D27) */
+    sc->p[O_DRONE][P_A] = 70; sc->p[O_DRONE][P_R] = 70;
     rit_model(sc, O_VOICE, L_CHOIR, 22, 40, 50, 60);
     sc->p[O_VOICE][P_A] = 80; sc->p[O_VOICE][P_R] = 85;
     sc->tr[O_VOICE].len = 64;
