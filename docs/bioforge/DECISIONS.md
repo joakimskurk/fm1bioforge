@@ -254,3 +254,17 @@ user then chose the old logo (D26) after all. Kept, with one change: its chrome'
 black and read as a black line through the middle of the word; it is now a soft band (0.3 deep in the metal's ramp,
 was 0.7). And it sits midway between the top panel's two lines (a row lower: its letters on rows 6 .. 19, the lines on
 2 and 23), clear of both.
+
+**D31 (2026-11-10) KEY and SCALE.** A medley of the whole (every ritual, the noise kit, the synths' models) showed the
+breadth in sound and the narrowness elsewhere: everything in D, its melodies from D Phrygian only, 4/4 at 70..132 BPM,
+most synth models mono, hardly a melody, INFECTION nearly THE AWAKENING. The user chose to widen all four (KEY and
+SCALE, stereo synths, an ARP, new themes). First the KEY and SCALE of a scene, on GLO's second page (GLO again):
+- **KEY** (D, D#, .. C#): the synths' and NOISE's notes (sequenced, and the keys and MIDI as they sound) move to it,
+  the nearest way (-5 .. +6 semitones); the drums stay as they are. What is recorded is the key's own note, so a part
+  moves with the KEY when it turns later. A held key lets go with the shift it began with.
+- **SCALE**: PHRYGIAN, AEOLIAN, LOCRIAN, HARM MINOR, PHRYG DOM, WHOLE TONE, PENTA MIN, CHROMATIC. WAIL picks from it
+  (its range now an octave and a note to two octaves and a note of the scale's own notes), the ARP will.
+- DUB's chords keep their shapes (moved whole, the dub way; diatonic ones would have changed ABYSS's B flat minor 7th
+  into a major 7th); they move with the KEY.
+- Kept in the register settings' spare byte: a scene saved before reads D PHRYGIAN, as it sounded; every ritual sounds
+  as it did, sample for sample (ABYSS and ASH are marked D AEOLIAN, which only WAIL and the ARP would hear). No CPU.

@@ -458,6 +458,7 @@ static void rit_abyss(seq_scene_t *sc)
     static const uint8_t TK[BIO_NP] = NC(76, 30, 50, 30,  87, 15, 90, 0, 0, 0, 0,  0, 0, 30, 20,  24, 80, 62,  25, 0, 0);
     seq_scene_blank(sc, 0xAB7550u);
     rit_name(sc, "ABYSS");
+    sc->tur.key = 1u << 4;                      /* D AEOLIAN (D31) */
     sc->bpm10 = 1100;                           /* (122 at first: slower, D27) */
     rit_perc(sc, O_HEART, "DEEP KICK", 50);
     rit_steps(sc, O_HEART, "x...x...x...x...", 60, 112, 96);
@@ -512,6 +513,7 @@ static void rit_ash(seq_scene_t *sc)
 {
     seq_scene_blank(sc, 0xA54u);
     rit_name(sc, "ASH");
+    sc->tur.key = 1u << 4;                      /* D AEOLIAN (D31) */
     sc->bpm10 = 1160;
     rit_perc(sc, O_HEART, "SUB KICK", 50);
     rit_steps(sc, O_HEART, "x...x...x...x...", 60, 104, 96);

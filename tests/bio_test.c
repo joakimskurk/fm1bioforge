@@ -610,6 +610,48 @@ static void test_scar(void)
     check(clip2 == 0u && rb > ra / 4.0 && rb < ra * 4.0, "SCAR SMEAR: not clipped, its loudness within 6 dB of the music's");
 }
 
+/* KEY and SCALE (D31): the synths' notes take the KEY's shift (the nearest way), the drums do not; WAIL picks from the
+   SCALE; a held key lets go even when the KEY was turned in between; KEY 0 changes nothing */
+static void test_key(void)
+{
+    uint32_t b, ok_pc = 1, seen = 0, k;
+    setup(&eng, &sq, scn, und, red);
+    seq_scene_blank(&scn[0], 0x4B1u);
+    seq_put(&scn[0], O_BASS, 0, 96, 38, 100, 0);
+    scn[0].tur.key = 2;                         /* E */
+    seq_play(&sq);
+    run(&eng, 2, 0);
+    check(eng.tone[0].note == 40u, "KEY E: the bass's D2 sounds as E2");
+    seq_stop(&sq);
+    scn[0].tur.key = 7;                         /* A: down a fourth, not up a fifth */
+    seq_play(&sq);
+    run(&eng, 2, 0);
+    check(eng.tone[0].note == 33u && bio_key_shift(&scn[0].tur) == -5, "KEY A: the nearest way, -5 (A1)");
+    seq_stop(&sq);
+    /* WAIL from MINOR PENTATONIC: every note SPASM plays is D, F, G, A or C */
+    seq_scene_blank(&scn[0], 0x4B2u);
+    for (k = 0; k < 16u; k++) seq_put(&scn[0], O_SPASM, k, 48, 62, 100, 0);
+    scn[0].tur.wail = 1; scn[0].tur.loop = 50; scn[0].tur.key = 6u << 4; scn[0].tur.scale = 100;
+    seq_play(&sq);
+    for (b = 0; b < 400u; b++) {
+        uint32_t pc;
+        run(&eng, 1, 0);
+        pc = (eng.tone[2].note + 10u) % 12u;   /* (semitones over D) */
+        if (eng.tone[2].note) { seen |= 1u << pc; if (!(BIO_SCALE_MASK[6] >> pc & 1u)) ok_pc = 0; }
+    }
+    check(ok_pc && (seen & ~1u), "WAIL in MINOR PENTATONIC: only its notes, and more than the root");
+    seq_stop(&sq);
+    /* a key held while the KEY turns: it still lets go */
+    scn[0].tur.wail = 0; scn[0].tur.key = 3;
+    seq_live(&sq, O_VOICE, 62, 100, 1);
+    run(&eng, 1, 0);
+    k = eng.tone[3].gate && eng.tone[3].note == 65u;
+    scn[0].tur.key = 9;
+    seq_live(&sq, O_VOICE, 62, 0, 0);
+    run(&eng, 1, 0);
+    check(k && !eng.tone[3].gate, "a key held in F, let go in B: its note ends (it took the shift it began with)");
+}
+
 int main(void)
 {
     test_turing();
@@ -617,6 +659,7 @@ int main(void)
     test_record();
     test_perc();
     test_scar();
+    test_key();
     printf("%d of %d checks passed\n", checks - fails, checks);
     return fails ? 1 : 0;
 }

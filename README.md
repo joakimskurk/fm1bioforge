@@ -113,6 +113,7 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 | **LFO** | MUT: the spine. **Held:** white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK. |
 | **FX** | Delay, reverb, crush; again: their times and colours; again: the reverb's SPACE. |
 | **GLO** | Tempo, swing, quantise and its strength; SHIFT: OVERDUB or REPLACE, the step length, the key LEDs, the MIDI channel. |
+| **GLO** again | The notes: KEY (D .. C#: the synths and NOISE move to it, the drums stay) and SCALE (PHRYGIAN, AEOLIAN, LOCRIAN, HARM MINOR, PHRYG DOM, WHOLE TONE, PENTA MIN, CHROMATIC: WAIL picks from it). |
 | **ARP** | **Held:** BURST on the white keys: STUTTER, INVERT (the register), FREEZE (the reverb), SPASM (a nerve burst); SCAR on keys 5 to 8: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR (the last pressed plays). |
 | **SAVE** | The scene to flash (playing: when it stops). SHIFT: every edited scene. Left alone, stopped and quiet, a scene saves itself. |
 | **PLAY** | Start, stop. SHIFT + PLAY: PANIC (every voice silent, the memory kept). |

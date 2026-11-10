@@ -10,7 +10,7 @@
  *   KNOB 1..4    the page's four (SHIFT, or SEL tapped: the second four)
  *   HOME  MIX (again: the sends); held: white keys 1-6 mute     SEQ  SEQ; held: the white keys are the steps
  *   EDIT  SYN (again: deeper)      ENV   the organ's envelope    LFO  MUT; held: WRITE 0, WRITE 1, RESET, FUSE, LOCK
- *   FX    FX (again: deeper)       GLO   tempo, swing, quantise  ARP  held: BURST (STUTTER, INVERT, FREEZE, SPASM;
+ *   FX    FX (again: deeper)       GLO   tempo, swing, quantise (again: KEY, SCALE)   ARP  held: BURST (STUTTER, INVERT, FREEZE, SPASM;
  *                                                                       SCAR: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR)
  *   SAVE  the scene to flash (SHIFT: every edited scene)
  *   PLAY  start / stop (SHIFT: PANIC)  REC  playing: LIVE REC; stopped: STEP REC (SHIFT: OVERDUB / REPLACE)
@@ -87,7 +87,7 @@ static void touched(void) { ui.dirty[sq.cur] = 1; ui.dirty_draw |= D_STATUS; ui.
 enum { KT_NONE, KT_P, KT_LVL, KT_SA, KT_SB, KT_SC, KT_MASTER, KT_RIB, KT_TDEPTH, KT_TLEN, KT_TCLK, KT_TRATTLE,
        KT_TROUTE, KT_TWAIL, KT_TSCALE, KT_FX, KT_BPM, KT_SWING, KT_QUANT, KT_QSTR, KT_RECMODE, KT_STEPLEN, KT_KEYLED,
        KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE, KT_PUMP, KT_KIT,
-       KT_RUMBLE, KT_DARK };
+       KT_RUMBLE, KT_DARK, KT_KEY, KT_SCALEM };
 typedef struct { uint8_t type, idx; const char *name; } knob_t;
 
 static const char *const DRUM_DEEP[8] = {"PRESS", "FRACT", "FRIC", "VENT", "RESO", "MATTER", "DRIVE", "MODEL"};
@@ -196,9 +196,16 @@ static knob_t knob_for(uint32_t k)
         }
         break;
     }
-    default: {                                  /* GLO */
+    default: {                                  /* GLO; again: the notes (D31) */
         static const char *const A[4] = {"BPM", "SWING", "QUANT", "Q-STR"}, *const B[4] = {"REC", "STEPLEN", "KEYS", "MIDI CH"};
         static const uint8_t TA[4] = {KT_BPM, KT_SWING, KT_QUANT, KT_QSTR}, TB[4] = {KT_RECMODE, KT_STEPLEN, KT_KEYLED, KT_MIDICH};
+        if (ui.sub == 1u) {
+            static const char *const N[4] = {"KEY", "SCALE", "", ""};
+            static const uint8_t TN[4] = {KT_KEY, KT_SCALEM, KT_NONE, KT_NONE};
+            n.type = sh ? KT_NONE : TN[k];
+            n.name = sh ? "" : N[k];
+            break;
+        }
         n.type = sh ? TB[k] : TA[k];
         n.name = sh ? B[k] : A[k];
     }
@@ -246,6 +253,8 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
         if (n.idx == 16u) *hi = (int32_t)BIO_NSPACE - 1;
         return fx[n.idx];
     case KT_BPM: *lo = 400; *hi = 2400; return sc->bpm10;
+    case KT_KEY: *hi = 11; return (int32_t)bio_key_root(&sc->tur);
+    case KT_SCALEM: *hi = (int32_t)BIO_NSCALE - 1; return (int32_t)bio_key_scale(&sc->tur);
     case KT_SWING: return sc->swing;
     case KT_QUANT: *hi = 4; return t->quant;
     case KT_QSTR: return t->qstr;
@@ -329,6 +338,8 @@ static void knob_turn(knob_t n, int32_t d)
     case KT_TSCALE: sc->tur.scale = (uint8_t)nv; break;
     case KT_FX: fx[n.idx] = (uint8_t)nv; break;
     case KT_BPM: sc->bpm10 = (uint16_t)nv; break;
+    case KT_KEY: sc->tur.key = (uint8_t)((sc->tur.key & 0x70u) | (uint32_t)nv); break;
+    case KT_SCALEM: sc->tur.key = (uint8_t)((sc->tur.key & 0x0Fu) | (uint32_t)nv << 4); break;
     case KT_SWING: SEQ_LOCK(); sc->swing = (uint8_t)nv; { uint32_t k; for (k = 0; k < BIO_NORG; k++) sq.ver[k]++; } SEQ_UNLOCK(); break;
     case KT_QUANT: SEQ_LOCK(); t->quant = (uint8_t)nv; sq.ver[o]++; SEQ_UNLOCK(); break;
     case KT_QSTR: SEQ_LOCK(); t->qstr = (uint8_t)nv; sq.ver[o]++; SEQ_UNLOCK(); break;
@@ -415,6 +426,8 @@ static void knob_text(knob_t n, char *s)
         if (n.idx == 16u) { str_cat(s, BIO_SPACE_NAME[v < (int32_t)BIO_NSPACE ? v : 0]); return; }
         break;
     case KT_BPM: p = u2s(p, (uint32_t)v / 10u); *p++ = '.'; u2s(p, (uint32_t)v % 10u); return;
+    case KT_KEY: str_cat(s, NOTE_NAME[(2u + (uint32_t)v) % 12u]); return;
+    case KT_SCALEM: str_cat(s, BIO_SCALE_NAME[(uint32_t)v & 7u]); return;
     case KT_QUANT: str_cat(s, SEQ_QNAME[v < 5 ? v : 0]); return;
     case KT_RECMODE: str_cat(s, v ? "REPLACE" : "OVERDUB"); return;
     case KT_KEYLED: str_cat(s, v ? "OFF" : "ON"); return;
@@ -1048,8 +1061,37 @@ static void draw_glo(void)
 {
     seq_scene_t *sc = SC();
     seq_track_t *t = &sc->tr[cur_org()];
-    char s[32], *p;
+    char s[48], *p;
     cv_at(0, 49, 240, 134);
+    if (ui.sub == 1u) {                         /* the notes (D31): the KEY, its SCALE, the notes of it */
+        uint32_t r = (2u + bio_key_root(&sc->tur)) % 12u, m = bio_key_scale(&sc->tur), c = bio_scale_count(m), j;
+        static const char *const W[4] = {"OFF", "SPASM", "VOICE", "SPASM VOICE"};
+        cv_ts(12, 8, &FONT_L, NOTE_NAME[r], COL_GREEN);
+        cv_t5(14, 44, "KEY", COL_BONE_D, 2);
+        cv_t5(96, 12, BIO_SCALE_NAME[m], COL_BONE, 2);
+        p = str_cat(s, c >= 12u ? "ALL TWELVE" : "");
+        for (j = 0; j < c && c < 12u; j++) {
+            p = str_cat(p, NOTE_NAME[(r + (uint32_t)bio_scale_note(m, j)) % 12u]);
+            if (j + 1u < c) p = str_cat(p, " ");
+        }
+        cv_t5(96, 34, s, COL_FLESH, 1);
+        p = str_cat(s, "THE SYNTHS AND NOISE IN ");
+        p = str_cat(p, NOTE_NAME[r]);
+        p = str_cat(p, bio_key_shift(&sc->tur) ? " (" : "");
+        if (bio_key_shift(&sc->tur)) {
+            p = str_cat(p, bio_key_shift(&sc->tur) > 0 ? "+" : "");
+            p = i2s(p, bio_key_shift(&sc->tur));
+            p = str_cat(p, ")");
+        }
+        cv_t5(14, 74, s, COL_BONE, 1);
+        cv_t5(14, 88, "THE DRUMS AS THEY ARE", COL_DIM, 1);
+        p = str_cat(s, "WAIL: "); str_cat(p, W[sc->tur.wail & 3u]);
+        cv_t5(14, 102, s, sc->tur.wail ? COL_BONE : COL_DIM, 1);
+        p = str_cat(s, "RITUAL 0"); p = u2s(p, sq.cur); p = str_cat(p, " "); str_cat(p, sc->name);
+        cv_t5(14, 116, s, COL_FLESH, 1);
+        cv_out();
+        return;
+    }
     p = u2s(s, sc->bpm10 / 10u);
     p = str_cat(p, ".");
     u2s(p, sc->bpm10 % 10u);
@@ -1123,7 +1165,7 @@ static void leds(void)
 static void page_to(uint32_t pg)
 {
     if (ui.page == pg) {                        /* again: the page under it */
-        uint32_t nsub = pg == PG_GLO || pg == PG_SEQ ? 1u : pg == PG_FX ? 3u : 2u;
+        uint32_t nsub = pg == PG_SEQ ? 1u : pg == PG_FX ? 3u : 2u;   /* (GLO again: the notes, D31) */
         ui.sub = (ui.sub + 1u) % nsub;
     } else {
         ui.page = pg;

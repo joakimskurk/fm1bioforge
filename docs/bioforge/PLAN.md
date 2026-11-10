@@ -45,7 +45,7 @@ screen. One AC791N core, no FPU: integers only; the audio interrupt gets 256 fra
 | **ENV** | the organ's envelope and level page |
 | **LFO** | MUT: the Turing spine. **Held:** the white keys are WRITE 0, WRITE 1, RESET, FUSE |
 | **FX** | FX: delay, reverb, crush (again: their times and colours) |
-| **GLO** | GLOBAL: tempo, swing, quantise, record mode, count-in |
+| **GLO** | GLOBAL: tempo, swing, quantise, record mode, count-in; again: the notes, KEY and SCALE (D31) |
 | **ARP** | **Held:** BURST, the performance mutations on the white keys (STUTTER, INVERT, FREEZE, SPASM; SCAR: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR, D29) |
 | **SAVE** | the scene to flash (playing: when it stops) |
 | **PLAY** | start, stop. SHIFT + PLAY: PANIC (every voice off, the memory kept) |

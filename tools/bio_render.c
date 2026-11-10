@@ -4,8 +4,8 @@
  *   build/bio_render awaken OUT.wav [BARS]          RITUAL 00, THE AWAKENING, from PLAY
  *   build/bio_render organ N OUT.wav [NOTE] [LEN_MS] one hit (or note) of organ N (0 HEART .. 8 NOISE), dry, 2 s
  *   build/bio_render dry OUT.wav [BARS]             the awakening with no effects and no Turing (DRY START)
- *   build/bio_render ritual N OUT.wav [BARS] [SOLO] a factory ritual (bio_rituals.h: 0 AWAKENING, 1 STATIC CULT,
- *                                                   2 SPLICE, 3 VOID, 4 INFECTION, 5 EMPTY BODY); SOLO: one organ
+ *   build/bio_render ritual N OUT.wav [BARS] [SOLO] a factory ritual (bio_rituals.h, BIO_RITUAL_NAME); SOLO: one organ;
+ *                         [k=R] [s=M]             or its KEY (R semitones over D) and SCALE (bio_turing.h's M) instead
  *   build/bio_render scar N OUT.wav BARS M@B+L ...  ritual N with SCAR bursts (bio_scar.h): mode M (1 REPEAT 1/16,
  *                                                   2 REPEAT 1/8, 3 REVERSE, 4 SMEAR) held from beat B for L beats
  *   build/bio_render palette OUT.wav                the noise kit (bio_kits.h), each sound three times
@@ -85,9 +85,13 @@ int main(int argc, char **argv)
         uint32_t r = (uint32_t)atoi(argv[2]), bars = argc > 4 ? (uint32_t)atoi(argv[4]) : 8u;
         if (r >= BIO_NRITUAL) r = 0;
         BIO_RITUAL[r](&scenes[0]);
-        if (argc > 5) {                         /* one organ alone (its stem, through the effects) */
-            uint32_t solo = (uint32_t)atoi(argv[5]);
-            for (k = 0; k < BIO_NORG; k++) scenes[0].tr[k].mute = k != solo;
+        for (k = 5; k < (uint32_t)argc; k++) {
+            if (!strncmp(argv[k], "k=", 2)) scenes[0].tur.key = (uint8_t)((scenes[0].tur.key & 0x70u) | ((uint32_t)atoi(argv[k] + 2) % 12u));
+            else if (!strncmp(argv[k], "s=", 2)) scenes[0].tur.key = (uint8_t)((scenes[0].tur.key & 0x0Fu) | ((uint32_t)atoi(argv[k] + 2) & 7u) << 4);
+            else {                              /* one organ alone (its stem, through the effects) */
+                uint32_t solo = (uint32_t)atoi(argv[k]), j;
+                for (j = 0; j < BIO_NORG; j++) scenes[0].tr[j].mute = j != solo;
+            }
         }
         sq.tur_reset = 1;
         seq_play(&sq);

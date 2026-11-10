@@ -1,0 +1,13 @@
+# KEY and SCALE (D31): RUST playing (PRESETS once); GLO, GLO again: the notes page; KEY turned up 4 (F#), SCALE
+# turned to HARM MINOR; the screen; then KEY back down past D to A (the nearest way: -5)
+200 enc 6 1
+400 btn 12
+2000 btn 7
+2300 btn 7
+2600 shot
+3000 enc 2 4
+3400 enc 3 3
+4500 shot
+6000 enc 2 -9
+7000 shot
+9000 end

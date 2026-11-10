@@ -72,6 +72,7 @@ typedef struct {
     uint32_t rat_t[BIO_NORG], rat_left[BIO_NORG], rat_dt[BIO_NORG];   /* a ratchet's next pulse */
     uint8_t rat_note[BIO_NORG], rat_vel[BIO_NORG];
     uint32_t rat_seed[BIO_NORG];                /* a noise organ's ratchet repeats its hit's noise: a stutter */
+    int8_t live_shift[BIO_NORG];                /* the KEY's shift a held key took (its release takes the same) */
     uint32_t nseed[BIO_NORG][SEQ_MAXLEN];       /* the noise core's locked noise, a seed each step (0: not yet) */
     uint32_t nrng;                              /* (its slips' own draws) */
     uint32_t ghosts_step, ghost_tick[32];
@@ -180,6 +181,7 @@ static void seq_fire(seq_t *s, uint32_t trk, const seq_ev_t *ev, uint32_t step)
     if (ev->fl & EV_ACC) vel = vel + 30u > 127u ? 127u : vel + 30u;
     if ((sc->tur.wail & 1u && trk == O_SPASM) || (sc->tur.wail & 2u && trk == O_VOICE))
         note = bio_tur_wail(&s->tur, &sc->tur, note);
+    if (trk >= 4u) note = bio_clamp(note + bio_key_shift(&sc->tur), 0, 127);   /* the KEY (D31): the synths and NOISE */
     len = (uint32_t)(ev->len ? ev->len : SEQ_TPS) * (s->e->spb_q8 >> 8) / 384u;   /* in samples */
     if (bio_is_perc(trk, sc->p[trk])) seed = seq_noise_seed(s, sc, trk, step);
     s->rat_seed[trk] = seed;
@@ -221,11 +223,14 @@ static void seq_tick(bio_t *e, void *ctx)
             uint32_t len = in.org == O_NOISE || (in.org < 4u && s->e->p[in.org][P_D8] >= 50u) ? 0xFFFFFFFFu   /* (a perc voice:
                                                    held until the key is let go) */
                          : in.org == O_CLAW ? BIO_MS(300) : BIO_MS(125);
-            bio_trigger(s->e, in.org, in.org < 4u ? (int32_t)in.note - 60 : (int32_t)in.note, in.vel, len, 0,
+            int32_t sh = in.org >= 4u ? bio_key_shift(&s->sc[s->cur].tur) : 0;   /* (the KEY: what is recorded is
+                                                   the key's own note, what sounds is in the scene's key, D31) */
+            s->live_shift[in.org] = (int8_t)sh;
+            bio_trigger(s->e, in.org, in.org < 4u ? (int32_t)in.note - 60 : bio_clamp((int32_t)in.note + sh, 0, 127), in.vel, len, 0,
                         bio_hash(s->sc[s->cur].seed, in.note * 131u + in.org + s->e->frames));
             if (in.org >= 4u) s->off_t[in.org] = 0;   /* a held key: no sequenced end cuts it */
         } else {
-            bio_release(s->e, in.org, in.note);
+            bio_release(s->e, in.org, in.org < 4u ? in.note : (uint32_t)bio_clamp((int32_t)in.note + s->live_shift[in.org], 0, 127));
             if (in.org == O_CLAW && s->e->drum[O_CLAW].awake && s->e->drum[O_CLAW].t < s->e->drum[O_CLAW].f_att + s->e->drum[O_CLAW].f_hold) {
                 bio_drum_t *d = &s->e->drum[O_CLAW];   /* the claw lets go: the drag ends (45 ms at least) */
                 uint32_t h = d->t > d->f_att ? d->t - d->f_att : 0;
