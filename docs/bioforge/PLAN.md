@@ -241,7 +241,8 @@ All in `firmware/src/bio_turing.h`.
 240 x 240, drawn on a background made by `tools/gen_art.py` (bone ribs, tubes, membranes; generated, not copied from
 anyone's art), only what changed redrawn.
 
-- **Top (0–27):** BIOFORGE in bone, the page tabs MIX SEQ SYN MUT FX GLO (green the current one). SEQ is the first.
+- **Top (0–27):** the logo (D30: BIOFORGE cut into a ribbed steel plate, over the panel's frame), the page tabs MIX SEQ
+  SYN MUT FX GLO (green the current one). SEQ is the first.
 - **Status (29–46):** the transport (▶ ■ ●), LIVE / STEP / REPL, the focus, the scene, BPM, SAVED or EDIT; for a
   moment LOOP's value and word, or a message (UNDO, P-LOCK, SAVED).
 - **Middle (28–183):** the page.

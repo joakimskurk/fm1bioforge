@@ -691,7 +691,7 @@ static void draw_top(void)
 {
     uint32_t i;
     cv_at(0, 0, 240, 28);
-    SPR(7, 4, LOGO, 16);
+    SPR(4, 0, LOGO, 16);                        /* (over the panel's frame: the plate, D30) */
     for (i = 0; i < PG_N; i++) {
         int32_t x = 108 + (int32_t)i * 21;
         if (i == ui.page) {

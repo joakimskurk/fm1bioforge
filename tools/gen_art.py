@@ -3,7 +3,8 @@
 """BIOFORGE's pictures: firmware/gen/bio_art.h (Pillow). Drawn here, at four times the size and brought down, from
 shapes and numbers only: no image of anyone else's goes in. The look (D26): biomechanical, after the feel of the
 pictures the user gave (chrome and graphite, ribbed hoses, vertebrae, smooth capsules, airbrushed light), in the dark;
-a pale green the only colour for sound, a dark blood red for recording.
+a pale green the only colour for sound, a dark blood red for recording. The logo (D30): the word cut into a ribbed
+plate, dark flesh in the cuts, an eye at each end.
 
   python3 tools/gen_art.py           write firmware/gen/bio_art.h (and build/art/*.png to look at)
   python3 tools/gen_art.py --check   fail if it differs
@@ -16,7 +17,7 @@ import math
 import random
 import sys
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "firmware" / "gen" / "bio_art.h"
@@ -279,27 +280,121 @@ def vertebra(on):
     return im.resize((12, 20), Image.LANCZOS)
 
 
-def logo():
-    text = "BIOFORGE"; W, H = len(text) * 12 + 2, 22
-    im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); px = im.load()
-    mask = [[0] * W for _ in range(H)]
-    for i, ch in enumerate(text):
-        for gy, row in enumerate(F5[ch]):
-            for gx, v in enumerate(row):
-                if v == '#':
-                    for sy in range(2):
-                        for sx in range(2):
-                            mask[1 + gy * 2 + sy][1 + i * 12 + gx * 2 + sx] = 1
-    for y in range(H):
-        for x in range(W):
-            if mask[y][x]:
-                t = (y - 1) / 13                # chrome: bright, a dark band at the horizon, bright again under it
-                v = 0.95 - 0.7 * math.exp(-((t - 0.55) / 0.12) ** 2) - 0.25 * t
-                px[x, y] = shade(v) + (255,)
-            elif any(0 <= y + dy < H and 0 <= x + dx < W and mask[y + dy][x + dx] for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
-                px[x, y] = BLACK + (230,)
-    return im
+# the logo's letters (D30): strokes in a box 10 wide and 16 high
+LOGO_STROKES = {
+    'B': [[(0, 0), (0, 16)], [(0, 0), (5.5, 0), (8.3, 1.6), (8.3, 6.2), (5.5, 8), (0, 8)],
+          [(0, 8), (6.2, 8), (9.3, 9.8), (9.3, 14.2), (6.2, 16), (0, 16)]],
+    'I': [[(4.6, 0), (4.6, 16)]],
+    'O': [[(4.7 + 4.5 * math.cos(a * math.pi / 16), 8 + 8 * math.sin(a * math.pi / 16)) for a in range(33)]],
+    'F': [[(0, 0), (0, 16)], [(0, 0), (9, 0)], [(0, 8), (6.8, 8)]],
+    'R': [[(0, 0), (0, 16)], [(0, 0), (5.5, 0), (8.3, 1.6), (8.3, 6.2), (5.5, 8), (0, 8)], [(4.2, 8), (9.2, 16)]],
+    'G': [[(9.2, 3), (7.4, 0.3), (2.6, 0.3), (0.3, 3.2), (0.3, 12.8), (2.6, 15.7), (7.2, 15.7), (9.2, 13.5), (9.2, 8.8),
+           (5.0, 8.8)]],
+    'E': [[(0, 0), (0, 16)], [(0, 0), (9, 0)], [(0, 8), (7, 8)], [(0, 16), (9, 16)]],
+}
+LOGO_SIZE = (103, 28)
+FLESH = [(14, 5, 5), (44, 14, 14), (82, 28, 26), (128, 52, 44)]
 
+
+def logo(scale=1):
+    """BIOFORGE cut into a ribbed steel plate (D30), after the carved reliefs of the pictures: the cuts dark flesh, lit
+    on their lower walls; the plate convex, ribbed along its top and its foot, a socket with an eye at each end, a hose
+    from each into the frame. 103 x 28 (it overlaps the top panel's frame); `scale` for the page, drawn sharp"""
+    K = scale * (8 if scale < 3 else 4)        # drawn at K times 1x and brought down
+    W, H = LOGO_SIZE[0] * K, LOGO_SIZE[1] * K
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+
+    def P(x, y):
+        return (x * K, y * K)
+
+    def tube(pts, w, lit):
+        for x, y in pts:
+            r = w / 2 + K * 0.5; d.ellipse([x - r, y - r, x + r, y + r], fill=BLACK + (255,))
+        for k, off, t in ((1.0, 0, 0.16), (0.7, 0.1, 0.42), (0.35, 0.2, 0.8)):
+            for x, y in pts:
+                r = w / 2 * k; o = w * off
+                d.ellipse([x - r - o, y - r - o, x + r - o, y + r - o], fill=shade(t * lit) + (255,))
+        for i in range(0, len(pts) - 1, 3):
+            (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+            a = math.atan2(y1 - y0, x1 - x0) + math.pi / 2
+            dx, dy = math.cos(a) * w / 2, math.sin(a) * w / 2
+            d.line([(x0 - dx, y0 - dy), (x0 + dx, y0 + dy)], fill=BLACK + (255,), width=max(1, int(K * 0.45)))
+
+    def line_pts(p0, p1, step):
+        n = max(2, int(math.hypot(p1[0] - p0[0], p1[1] - p0[1]) / step))
+        return [(p0[0] + (p1[0] - p0[0]) * i / n, p0[1] + (p1[1] - p0[1]) * i / n) for i in range(n + 1)]
+
+    # the hoses, from the sockets into the frame
+    tube(line_pts(P(-4, 16.2), P(3, 14.4), K * 0.6), 2.4 * K, 0.6)
+    tube(line_pts(P(100, 14.4), P(107, 16.2), K * 0.6), 2.4 * K, 0.6)
+    # the plate: a capsule, convex, lit from above, a black rim
+    x0, y0, x1, y1 = 1.0 * K, 2.2 * K, 102.0 * K, 25.8 * K
+    d.rounded_rectangle([x0 - K * 0.7, y0 - K * 0.7, x1 + K * 0.7, y1 + K * 0.7], radius=int(12 * K), fill=BLACK + (255,))
+    for k in range(48):
+        t = k / 47
+        ya, yb = y0 + (y1 - y0) * t * 0.5, y1 - (y1 - y0) * t * 0.5
+        if yb - ya < K:                         # (the middle reached)
+            break
+        d.rounded_rectangle([x0 + t * 3 * K, ya, x1 - t * 3 * K, yb], radius=max(1, int((11.8 - t * 9) * K)),
+                            fill=shade(0.2 + 0.52 * math.sin(t * math.pi / 2) ** 2) + (255,))
+    d.arc([x0 + K, y0 + K * 0.6, x0 + 22 * K, y1 - K], 150, 260, fill=shade(0.95) + (255,), width=max(1, int(K * 0.5)))
+    d.line([P(12, 2.9), P(91, 2.9)], fill=shade(0.9) + (255,), width=max(1, int(K * 0.45)))
+    # its ribs, along the top and the foot; a groove each side of the word
+    x = 13.2
+    while x < 90.5:
+        for ya, yb in ((2.8, 6.4), (21.6, 25.2)):
+            d.line([P(x, ya), P(x, yb)], fill=shade(0.06) + (255,), width=max(1, int(K * 0.7)))
+            d.line([P(x + 0.8, ya), P(x + 0.8, yb)], fill=shade(0.78) + (255,), width=max(1, int(K * 0.35)))
+        x += 2.4
+    for yy in (7.0, 21.0):
+        d.line([P(13, yy), P(90.5, yy)], fill=shade(0.05) + (255,), width=max(1, int(K * 0.5)))
+        d.line([P(13, yy + 0.6), P(90.5, yy + 0.6)], fill=shade(0.7) + (255,), width=max(1, int(K * 0.3)))
+    # the word, cut: its mask, flesh in it (darker deep at the top), the upper walls in shadow, the lower ones lit
+    mask = Image.new("L", (W, H), 0); md = ImageDraw.Draw(mask)
+    for i, ch in enumerate("BIOFORGE"):
+        for st in LOGO_STROKES[ch]:
+            pts = [P(14.6 + i * 9.35 + x * 0.74, 8.0 + y * 0.75) for x, y in st]
+            path = catmull([pts[-2]] + pts + [pts[1]], 8) if ch == 'O' else catmull([pts[0]] + pts + [pts[-1]], 12) if len(pts) > 2 else pts
+            dense = []
+            for (xa, ya), (xb, yb) in zip(path, path[1:]):
+                dense += line_pts((xa, ya), (xb, yb), K * 0.25)
+            for xx, yy in dense or path:
+                r = 1.25 * K; md.ellipse([xx - r, yy - r, xx + r, yy + r], fill=255)
+    flesh = Image.new("RGBA", (W, H), (0, 0, 0, 0)); fd = ImageDraw.Draw(flesh)
+    for k in range(40):
+        t = k / 39
+        fd.rectangle([0, int((7.4 + 13.2 * t) * K), W, H], fill=lerp(FLESH[0], FLESH[2], t ** 1.3) + (255,))
+    im.paste(flesh, (0, 0), mask)
+    wall = ImageChops.subtract(mask, ImageChops.offset(mask, int(0.9 * K), int(1.1 * K)))
+    lit = ImageChops.subtract(mask, ImageChops.offset(mask, -int(0.6 * K), -int(0.7 * K)))
+    im.paste(Image.new("RGBA", (W, H), BLACK + (255,)), (0, 0), wall.point(lambda v: int(v * 0.85)))
+    im.paste(Image.new("RGBA", (W, H), shade(0.92) + (255,)), (0, 0), lit.point(lambda v: int(v * 0.8)))
+    d = ImageDraw.Draw(im)
+    # the sockets: a ribbed bezel, flesh, an eye of steel lit from the top left
+    for cx in (7.0, 96.0):
+        c = (cx * K, 14 * K)
+        d.ellipse([c[0] - 4.6 * K, c[1] - 4.6 * K, c[0] + 4.6 * K, c[1] + 4.6 * K], fill=BLACK + (255,))
+        for k in range(int(4.1 * K), int(2.7 * K), -1):
+            t = (k - 2.7 * K) / (1.4 * K)
+            d.ellipse([c[0] - k, c[1] - k, c[0] + k, c[1] + k], fill=shade(0.22 + 0.68 * math.sin(t * math.pi)) + (255,))
+        for j in range(16):
+            a = j * math.pi / 8
+            d.line([(c[0] + math.cos(a) * 2.9 * K, c[1] + math.sin(a) * 2.9 * K), (c[0] + math.cos(a) * 4.0 * K, c[1] + math.sin(a) * 4.0 * K)],
+                   fill=shade(0.1) + (255,), width=max(1, int(K * 0.35)))
+        for k in range(int(2.7 * K), 0, -1):
+            t = k / (2.7 * K)
+            d.ellipse([c[0] - k, c[1] - k, c[0] + k, c[1] + k], fill=lerp(FLESH[0], FLESH[2], (1 - t) * 0.7) + (255,))
+        for k in range(int(1.7 * K), 0, -1):
+            t = k / (1.7 * K)
+            o = (1 - t) * 0.7 * K
+            d.ellipse([c[0] + 0.2 * K - k - o, c[1] + 0.3 * K - k - o, c[0] + 0.2 * K + k - o, c[1] + 0.3 * K + k - o],
+                      fill=shade(0.2 + (1 - t) * 0.8) + (255,))
+    # a soft shadow under it all, down and right
+    a = im.split()[3]
+    sh = Image.new("RGBA", (W, H), BLACK + (0,)); sh.putalpha(a.point(lambda v: int(v * 0.8)))
+    sh = sh.transform((W, H), Image.AFFINE, (1, 0, -0.8 * K, 0, 1, -1.0 * K)).filter(ImageFilter.GaussianBlur(K))
+    out = Image.new("RGBA", (W, H), (0, 0, 0, 0)); out.alpha_composite(sh); out.alpha_composite(im)
+    return out.resize((LOGO_SIZE[0] * scale, LOGO_SIZE[1] * scale), Image.LANCZOS)
 
 
 def rgb565(c):

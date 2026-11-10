@@ -173,7 +173,8 @@ make web      # the page: the demos, BIOFORGE for the browser (clang, lld), its 
   rung out. Every hit's noise comes from a seed, so the same start gives the same sound, sample for sample.
 - **The memory** is `bio_seq.h` (scenes, tracks, events, recording, undo) and `bio_turing.h` (the register).
 - **The screens** come from `bio_ui.h` and `firmware/gen/bio_art.h`. The art is drawn by `tools/gen_art.py` from
-  shapes and numbers: a biomechanical relief of hoses, vertebrae and ribs, chrome frames, valve knobs, rivets, a steel spine and a 5 x 7 font (D26).
+  shapes and numbers: a biomechanical relief of hoses, vertebrae and ribs, chrome frames, valve knobs, rivets, a steel spine and a 5 x 7 font (D26);
+  the logo is the word cut into a ribbed steel plate, dark flesh in the cuts, an eye in a socket at each end (D30).
 - **Its cost on a computer** (`make perf`, built `-Os`) is about 2 400 instructions a frame for the awakening and
   2 900 with every organ sounding and every effect on. Over 75 % of the audio interrupt, the drums out of focus ring
   on two modes instead of four.
