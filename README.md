@@ -16,7 +16,8 @@ it locks the sound and the rhythm in place, and changes them slowly.
 </p>
 
 > [!CAUTION]
-> **Not yet tried on a real FM-1.** Version 0.1, in progress. It is built and tested on every change: the host tests,
+> **Early alpha: not yet tried on a real FM-1.** Its sounds, its controls and the way it keeps its scenes still change
+> (a new version can forget what an older one saved). It is built and tested on every change: the host tests,
 > Dinghy's platform tests, the FM-1 and SMK-37 packages with the chip's own checks, and a run in fm1-emu (the FM-1
 > emulator) in CI. It has not been tried on an actual device yet. Install it at your own risk.
 
@@ -149,7 +150,7 @@ D5–G5. The middle key of each zone, which glows, plays the organ as it is set;
 
 **Try it without an FM-1:** *Play it here* on [the page](https://joakimskurk.github.io/fm1bioforge/#play), in any
 recent browser, phones too: the firmware itself compiled to WebAssembly, its sound, its screen and its keys' lights.
-The page also has fourteen demos, each the firmware played by a script (`tests/scripts/demo_*.txt`).
+The page also has eight demos, each the firmware played by a script (`tests/scripts/demo_*.txt`; there are more).
 
 **Install it from the browser:** [the page's installer](https://joakimskurk.github.io/fm1bioforge/#install), in Chrome
 or Edge on a computer, the FM-1 on USB. It always offers the latest build of `main` that passed its tests.

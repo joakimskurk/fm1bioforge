@@ -176,7 +176,8 @@ def ribs(d, x, y, rx, ry, n):
         d.arc([box[0] + S, box[1] + S, box[2] + S, box[3] + S], 210, 300, fill=shade(0.85), width=S)
 
 
-def background(rnd):
+def background(rnd, panels=True):
+    """the screen's background; panels False: the relief alone, at 4x (the page's ground, web/make_site.py)"""
     W = 240 * S
     im = Image.new("RGB", (W, W), BLACK)
     d = ImageDraw.Draw(im)
@@ -206,6 +207,8 @@ def background(rnd):
             x += math.cos(a) * rnd.uniform(60, 140); y += math.sin(a) * rnd.uniform(60, 140)
         hose(d, pts, rnd.uniform(5, 14) * S / 2, rnd, bright=rnd.uniform(0.7, 1.0))
     im = im.point(lambda v: int(v * 0.72))      # the whole of it in the dark
+    if not panels:
+        return im
     dark = im.point(lambda v: int(v * 0.34))
     for box in (TOP, STATUS, MAIN, KNOBS):   # the panels: recesses, a chrome bevel, rivets
         x0, y0, x1, y1 = [v * S for v in box]

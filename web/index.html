@@ -7,10 +7,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BIOFORGE · a biomechanical rhythm machine for the M-VAVE FM-1</title>
+<title>BIOFORGE · a biomechanical rhythm machine for the M-VAVE FM-1 (early alpha)</title>
 <meta name="description" content="Play BIOFORGE in the browser: the FM-1 firmware itself, compiled to WebAssembly. Drums made of pressure, fracture, friction and vents in resonant bodies, tonal organs, the keys straight into the pattern memory, a Turing register as a nervous system. Hear the demos, install it on your FM-1 from this page.">
 <meta property="og:title" content="BIOFORGE · a biomechanical rhythm machine for the M-VAVE FM-1">
-<meta property="og:description" content="A rhythm machine and synth that sounds like its own disturbing machinery. Play it in the browser, hear the demos, install it on your FM-1.">
+<meta property="og:description" content="An early alpha of a rhythm machine and synth that sounds like its own disturbing machinery. Play it in the browser, hear it, install it on your FM-1.">
 <meta property="og:image" content="screens/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="screens/icon.png">
@@ -18,92 +18,114 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Barlow+Semi+Condensed:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+/* the firmware's own look (D26): graphite and chrome, a pale green the only colour for sound, a dark blood red for
+   recording, the text steel; the ground is its relief (web/make_site.py draws it with tools/gen_art.py) */
 :root {
-  --bg: #0a0607; --panel: #150b0d; --panel2: #211015; --frame: #8c786e; --fdim: #3c2426;
-  --flesh: #962c38; --flesh2: #5a1a24; --bone: #d6c8b0; --green: #8cff2a; --gdim: #386e18; --red: #e62834;
-  --txt: #efe6dc; --grey: #a89890; --dim: #6a5250; --ink: #0a0607;
+  --bg: #070709; --plate: #101013; --plate2: #17171b; --groove: #1e1e22;
+  --chrome-hi: #d8d8de; --chrome: #8a8a92; --chrome-lo: #2c2c32; --rivet: #c4c4cc;
+  --steel: #c4c4c8; --steel-d: #828088; --dim: #55555c; --flesh: #93928d;
+  --green: #b0d696; --gdim: #495940; --red: #a81c22; --red-d: #561014;
+  --txt: #dcdce0; --grey: #9c9ca2; --ink: #070709;
   --px: "Silkscreen", ui-monospace, monospace; --sans: "Barlow Semi Condensed", system-ui, sans-serif;
-  color-scheme: dark;                            /* one look, the tissue: the form controls and the scrollbars follow it */
+  --rivets: radial-gradient(circle at 11px 11px, var(--rivet) 0 1.4px, #18181b 2.4px, transparent 3.2px),
+            radial-gradient(circle at calc(100% - 11px) 11px, var(--rivet) 0 1.4px, #18181b 2.4px, transparent 3.2px),
+            radial-gradient(circle at 11px calc(100% - 11px), var(--rivet) 0 1.4px, #18181b 2.4px, transparent 3.2px),
+            radial-gradient(circle at calc(100% - 11px) calc(100% - 11px), var(--rivet) 0 1.4px, #18181b 2.4px, transparent 3.2px);
+  color-scheme: dark;                            /* one look: the form controls and the scrollbars follow it */
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body {
-  margin: 0; background: var(--bg); color: var(--txt); font: 18px/1.6 var(--sans);
-  background-image:
-    radial-gradient(ellipse 60% 40% at 15% 10%, #2a0e1455, transparent 70%),
-    radial-gradient(ellipse 50% 50% at 85% 35%, #3a121c44, transparent 70%),
-    radial-gradient(ellipse 70% 40% at 40% 90%, #2a0e1455, transparent 70%);
-  background-attachment: fixed;
-}
+body { margin: 0; color: var(--txt); font: 18px/1.6 var(--sans); background: var(--bg) url(screens/tissue.webp) center top / 960px repeat fixed; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;   /* (the relief at the sides, dark
+                                                   under the words) */
+  background: linear-gradient(90deg, #07070970 0, #070709e0 calc(50% - 540px), #070709e0 calc(50% + 540px), #07070970 100%); }
 a { color: var(--green); }
-a:hover { color: var(--bone); }
+a:hover { color: var(--chrome-hi); }
 .wrap { max-width: 1000px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 h1, h2, h3, .px { font-family: var(--px); font-weight: 700; letter-spacing: 0.02em; text-wrap: balance; }
-h2 { font-size: 24px; margin: 60px 0 14px; color: var(--bone); display: flex; align-items: center; gap: 12px; }
-h2::before { content: ""; width: 12px; height: 12px; background: var(--green); box-shadow: 0 0 10px var(--green), 3px 3px 0 var(--flesh); flex: none; }
+h2 { font-size: 24px; margin: 60px 0 14px; color: var(--steel); display: flex; align-items: center; gap: 12px; }
+h2::before { content: ""; width: 13px; height: 13px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 38% 35%, #f0fff0 0 18%, var(--green) 40%, var(--gdim) 100%);
+  box-shadow: 0 0 0 2px #050506, 0 0 0 3px var(--chrome-lo), 0 0 12px #b0d69688; }
 h3 { font-size: 15px; margin: 0 0 6px; color: var(--green); }
 p { margin: 0 0 12px; }
 .small { font-size: 15px; color: var(--grey); }
-kbd { font: 12px var(--px); background: var(--panel2); border: 1px solid var(--fdim); border-radius: 4px; padding: 0 5px; color: var(--txt); }
-code { font-size: 15px; color: var(--bone); }
+kbd { font: 12px var(--px); background: var(--plate2); border: 1px solid var(--chrome-lo); border-radius: 4px; padding: 0 5px; color: var(--txt); }
+code { font-size: 15px; color: var(--steel); }
+/* a plate: recessed graphite in a chrome bevel (the firmware's panels) */
+.plate, .box, .demo, .card, .kmap > div, .note {
+  background: linear-gradient(180deg, var(--plate2), var(--plate)); border: 1px solid #040405; border-radius: 12px;
+  box-shadow: inset 0 0 0 2px var(--chrome-lo), inset 0 2px 0 2px #6a6a7255, 0 10px 26px #000b; }
+.box { background: var(--rivets), linear-gradient(180deg, var(--plate2), var(--plate)); padding: 20px 24px; }
 
 /* ---- the top */
 header.hero { text-align: center; padding: 44px 0 10px; }
-.hero .logo { width: min(588px, 92vw); height: auto; image-rendering: pixelated; filter: drop-shadow(0 0 30px #962c3866); }
-.hero .bar { width: 240px; height: 4px; margin: 16px auto 18px; background: linear-gradient(90deg, var(--flesh2), var(--flesh), var(--bone), var(--green)); }
-.hero .tag { font: 700 18px var(--px); color: var(--txt); margin: 0; }
+.mark { position: relative; display: inline-block; }
+.hero .logo { width: min(588px, 92vw); height: auto; image-rendering: pixelated; filter: drop-shadow(0 6px 14px #000) drop-shadow(0 0 26px #b0d69622); }
+.stamp { position: absolute; right: -8px; bottom: -14px; transform: rotate(-6deg); font: 700 15px var(--px); letter-spacing: 0.08em;
+  color: var(--red); border: 2px solid var(--red); border-radius: 4px; padding: 3px 9px; background: #0a0405cc; box-shadow: 0 0 14px #a81c2244; }
+.hero .bar { width: 240px; height: 3px; margin: 26px auto 18px; background: linear-gradient(90deg, transparent, var(--chrome), var(--chrome-hi), var(--chrome), transparent); }
+.hero .tag { font: 700 18px var(--px); color: var(--steel); margin: 0; }
 .hero .sub { color: var(--grey); margin: 6px 0 22px; font-size: 19px; }
 .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.btn { font: 700 14px var(--px); text-decoration: none; padding: 11px 18px; border-radius: 6px; border: 2px solid var(--frame); color: var(--txt); background: var(--panel); cursor: pointer; }
-.btn.go { background: var(--green); color: var(--ink); border-color: var(--green); }
-.btn:hover { border-color: var(--green); color: var(--green); }
+.btn { font: 700 14px var(--px); text-decoration: none; padding: 11px 18px; border-radius: 6px; color: var(--steel); cursor: pointer;
+  background: linear-gradient(180deg, #222226, #131316); border: 1px solid #050506; box-shadow: inset 0 0 0 1px #5a5a62, inset 0 2px 0 #ffffff1a; }
+.btn.go { background: linear-gradient(180deg, #c4e6ac, var(--green)); color: var(--ink); box-shadow: inset 0 0 0 1px #d8f0c8, 0 0 18px #b0d69644; }
+.btn:hover { color: var(--green); box-shadow: inset 0 0 0 1px var(--green); }
+.btn.go:hover { color: var(--ink); filter: brightness(1.06); }
 .btn:focus-visible, .b:focus-visible, .pp:focus-visible, #go:focus-visible, .fm1-foot button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
-.btn.go:hover { color: var(--ink); filter: brightness(1.08); }
-.note { margin: 22px auto 0; max-width: 680px; font-size: 15px; color: var(--grey); border: 1px dashed var(--flesh); border-radius: 8px; padding: 8px 14px; }
-.box { background: var(--panel); border: 2px solid var(--fdim); border-radius: 10px; padding: 18px 20px; }
+.note { margin: 26px auto 0; max-width: 700px; font-size: 15px; color: var(--grey); padding: 12px 18px; text-align: left;
+  box-shadow: inset 0 0 0 2px var(--red-d), 0 10px 26px #000b; }
+.note b.alpha { font: 700 13px var(--px); color: var(--red); letter-spacing: 0.06em; display: block; margin-bottom: 2px; }
 
 /* ---- the FM-1 */
-.fm1 { background: linear-gradient(180deg, #241216, #140a0c); border: 2px solid var(--frame); border-radius: 18px; padding: 18px; box-shadow: 0 0 0 4px var(--bg), 0 0 40px #962c3833; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
-.fm1.active { border-color: var(--green); }
+.fm1 { background: var(--rivets), linear-gradient(180deg, #1a1a1e, #0c0c0f); border: 1px solid #040405; border-radius: 18px; padding: 22px;
+  box-shadow: inset 0 0 0 2px #3a3a40, inset 0 3px 0 2px #8a8a9255, 0 0 0 4px #000, 0 18px 50px #000d; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.fm1.active { box-shadow: inset 0 0 0 2px var(--gdim), inset 0 3px 0 2px #8a8a9255, 0 0 0 4px #000, 0 0 30px #b0d69633; }
 .fm1-top { display: grid; grid-template-columns: 1fr auto 1.25fr; gap: 18px; align-items: center; }
 .side { display: flex; flex-direction: column; gap: 14px; align-items: center; }
 .knobs { display: grid; grid-template-columns: repeat(2, auto); gap: 10px 14px; justify-items: center; }
 .fm1-right .knobs { grid-template-columns: repeat(4, auto); }
-.knob { display: flex; flex-direction: column; align-items: center; gap: 3px; font: 700 10px var(--px); color: var(--grey); letter-spacing: 0.04em; }
+.knob { display: flex; flex-direction: column; align-items: center; gap: 3px; font: 700 10px var(--px); color: var(--steel-d); letter-spacing: 0.04em; }
+/* a valve: a ribbed chrome ring, a dark socket, a steel eye (the firmware's knob) */
 .dial { --a: 0deg; width: 46px; height: 46px; border-radius: 50%; cursor: ns-resize; position: relative; outline: none; touch-action: none;
-  background: radial-gradient(ellipse 12% 38% at 50% 50%, #050202 90%, transparent 100%), radial-gradient(circle at 50% 50%, #c42c3a 0, #8a1420 45%, #3a080c 62%, #8c786e 66%, #5a4a44 78%, #2a1c1a 100%);
-  border: 2px solid var(--fdim); box-shadow: inset 0 -3px 6px #0008; }
+  background: radial-gradient(circle at 44% 40%, #e8e8ee 0 6%, #8a8a92 18%, #2a2a30 30%, transparent 31%),
+              radial-gradient(circle, #050506 0 50%, transparent 51%),
+              repeating-conic-gradient(#b4b4bc 0 6deg, #44444a 6deg 12deg);
+  border: 2px solid #050506; box-shadow: 0 0 0 1px #3a3a40, inset 0 -3px 6px #0009; }
 .dial::after { content: ""; position: absolute; left: 50%; top: 2px; width: 3px; height: 9px; margin-left: -1.5px; border-radius: 2px; background: var(--green); box-shadow: 0 0 5px var(--green); transform-origin: 50% 21px; transform: rotate(var(--a)); }
-.dial:focus-visible { border-color: var(--green); }
-.dial.vol::after { background: var(--bone); box-shadow: none; }
+.dial:focus-visible { box-shadow: 0 0 0 2px var(--green); }
+.dial.vol::after { background: var(--chrome-hi); box-shadow: none; }
 .oct { display: flex; gap: 8px; }
-.screen { position: relative; width: min(480px, 100%); aspect-ratio: 1; border-radius: 6px; padding: 8px; background: #050203; border: 2px solid var(--fdim); }
+.screen { position: relative; width: min(480px, 100%); aspect-ratio: 1; border-radius: 8px; padding: 8px; background: #030304;
+  box-shadow: inset 0 0 0 2px #3a3a40, inset 0 2px 0 2px #8a8a9266, 0 0 0 2px #000; }
 #lcd { width: 100%; height: 100%; display: block; image-rendering: pixelated; border-radius: 2px; background: var(--bg); }
 #start { position: absolute; inset: 0; margin: auto; width: 180px; height: 58px; font: 700 18px var(--px); border-radius: 8px; cursor: pointer;
-  background: var(--green); color: var(--ink); border: 0; box-shadow: 0 0 0 4px var(--bg), 0 0 30px #8cff2a88; }
+  background: linear-gradient(180deg, #c4e6ac, var(--green)); color: var(--ink); border: 0; box-shadow: 0 0 0 4px var(--bg), 0 0 30px #b0d69666; }
 .btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; width: 100%; }
-.b { font: 700 11px var(--px); color: var(--txt); background: #2a161a; border: 2px solid var(--fdim); border-radius: 6px; padding: 9px 4px; cursor: pointer; position: relative; touch-action: none; }
-.b::before { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: #3a2224; }
+.b { font: 700 11px var(--px); color: var(--steel); background: linear-gradient(180deg, #222226, #141417); border: 1px solid #050506; border-radius: 6px;
+  padding: 9px 4px; cursor: pointer; position: relative; touch-action: none; box-shadow: inset 0 0 0 1px #3e3e44, inset 0 2px 0 #ffffff14; }
+.b::before { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: #2a2a30; }
 .b.lit::before { background: var(--green); box-shadow: 0 0 6px var(--green); }
-.b.down { background: #4a1a22; border-color: var(--flesh); }
-.b.latched { background: var(--flesh); color: var(--txt); border-color: var(--bone); }
-.b-play { border-color: var(--gdim); }
-.b-rec { border-color: #7a1820; }
+.b.down { background: #2c2c32; }
+.b.latched { background: var(--gdim); color: var(--txt); box-shadow: inset 0 0 0 1px var(--green); }
+.b-play { box-shadow: inset 0 0 0 1px var(--gdim), inset 0 2px 0 #ffffff14; }
+.b-rec { box-shadow: inset 0 0 0 1px var(--red-d), inset 0 2px 0 #ffffff14; }
 .fm1-keys { position: relative; height: 128px; margin-top: 18px; touch-action: none; }
 .kw, .kb { position: absolute; top: 0; border: 0; padding: 0; cursor: pointer; }
-.kw { height: 100%; background: linear-gradient(#efe4d0, #c8b8a0); border: 1px solid #3a2224; border-radius: 0 0 6px 6px; }
-.kb { height: 60%; z-index: 1; background: linear-gradient(#3a1a1e, #160a0c); border-radius: 0 0 5px 5px; border: 1px solid #000; }
-.kw.glow { background: linear-gradient(#e8f4c8, #b8d48a); }
-.kb.glow { background: linear-gradient(#3a5a18, #1a2a0a); }
-.kw.lit, .kb.lit { background: linear-gradient(var(--green), #5aa818); }
-.kw.down, .kb.down { filter: brightness(0.8); }
-.fm1-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; font: 11px var(--px); color: var(--dim); }
-.fm1-foot button { font: 700 11px var(--px); background: none; color: var(--grey); border: 1px solid var(--fdim); border-radius: 5px; padding: 5px 10px; cursor: pointer; }
+.kw { height: 100%; background: linear-gradient(#e6e6ea, #a6a6ae); border: 1px solid #1c1c20; border-radius: 0 0 6px 6px; }
+.kb { height: 60%; z-index: 1; background: linear-gradient(#2e2e34, #0c0c0e); border-radius: 0 0 5px 5px; border: 1px solid #000; }
+.kw.glow { background: linear-gradient(#e8f2de, #b4c8a4); }
+.kb.glow { background: linear-gradient(#3a4a30, #141a10); }
+.kw.lit, .kb.lit { background: linear-gradient(#d4eec2, var(--green)); }
+.kw.down, .kb.down { filter: brightness(0.82); }
+.fm1-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; font: 11px var(--px); color: var(--dim); }
+.fm1-foot button { font: 700 11px var(--px); background: none; color: var(--grey); border: 1px solid var(--chrome-lo); border-radius: 5px; padding: 5px 10px; cursor: pointer; }
 .fm1-foot button[aria-pressed="true"] { color: var(--green); border-color: var(--green); }
 #appstatus { margin: 12px 2px 0; font: 700 13px var(--px); color: var(--green); min-height: 22px; }
 .kmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; font-size: 15px; color: var(--grey); }
-.kmap > div { background: var(--panel); border: 1px solid var(--fdim); border-radius: 8px; padding: 10px 12px; }
+.kmap > div { padding: 12px 14px; }
 .kmap b { color: var(--txt); }
 @media (max-width: 860px) {
   .fm1-top { grid-template-columns: 1fr; }
@@ -112,23 +134,29 @@ header.hero { text-align: center; padding: 44px 0 10px; }
   .kmap { grid-template-columns: 1fr; }
 }
 table.controls { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 10px; }
-table.controls td { border-top: 1px solid var(--fdim); padding: 6px 8px; vertical-align: top; color: var(--grey); }
-table.controls td:first-child { font: 700 12px var(--px); color: var(--bone); white-space: nowrap; }
-details.all summary { cursor: pointer; font: 700 13px var(--px); color: var(--bone); margin-top: 16px; }
+table.controls td { border-top: 1px solid var(--chrome-lo); padding: 6px 8px; vertical-align: top; color: var(--grey); }
+table.controls td:first-child { font: 700 12px var(--px); color: var(--steel); white-space: nowrap; }
+details.all summary { cursor: pointer; font: 700 13px var(--px); color: var(--steel); margin-top: 16px; }
 
-/* ---- the demos, the body */
+/* ---- a look, the demos */
+.look { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 760px) { .look { grid-template-columns: 1fr; } }
+.card { padding: 12px; }
+.card img { width: 100%; height: auto; display: block; image-rendering: pixelated; border-radius: 6px; box-shadow: 0 0 0 2px #000, 0 0 0 3px var(--chrome-lo); margin-bottom: 10px; }
+.card p { font-size: 15px; color: var(--grey); margin: 0; }
 #demos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 @media (max-width: 760px) { #demos { grid-template-columns: 1fr; } }
-.demo { background: var(--panel); border: 1px solid var(--fdim); border-radius: 10px; padding: 12px; }
+.demo { padding: 14px; }
 .demo-top { display: flex; gap: 12px; align-items: flex-start; }
-.demo-top b { font: 700 13px var(--px); color: var(--bone); }
+.demo-top b { font: 700 13px var(--px); color: var(--steel); }
 .demo-top .len { font: 12px var(--px); color: var(--dim); margin-left: 8px; }
 .demo-top p { font-size: 15px; color: var(--grey); margin: 2px 0 8px; }
-.pp { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--green); background: var(--ink); cursor: pointer; display: grid; place-items: center; }
-.pp svg { width: 16px; height: 16px; fill: var(--green); }
-.pp.on { background: var(--green); }
+.pp { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+  background: radial-gradient(circle, #0a0a0c 0 58%, transparent 59%), repeating-conic-gradient(#a4a4ac 0 8deg, #44444a 8deg 16deg); box-shadow: 0 0 0 1px #000; }
+.pp svg { width: 15px; height: 15px; fill: var(--green); }
+.pp.on { background: radial-gradient(circle, var(--green) 0 58%, transparent 59%), repeating-conic-gradient(#a4a4ac 0 8deg, #44444a 8deg 16deg); }
 .pp.on svg { fill: var(--ink); }
-.spec { position: relative; height: 64px; border-radius: 6px; overflow: hidden; background: #050203; }
+.spec { position: relative; height: 64px; border-radius: 6px; overflow: hidden; background: #050506; box-shadow: inset 0 0 0 1px var(--chrome-lo); }
 .spec img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 .spec input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; margin: 0; }
 .spec .head { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--green); left: 0; box-shadow: 0 0 6px var(--green); }
@@ -137,50 +165,48 @@ details.all summary { cursor: pointer; font: 700 13px var(--px); color: var(--bo
 .spec .hz span { position: absolute; left: 4px; top: -1px; font: 9px var(--px); color: #ffffff55; }
 .clock { display: flex; justify-content: space-between; font: 10px var(--px); color: var(--dim); margin-top: 4px; }
 .clock .now { color: var(--green); }
-.how { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-@media (max-width: 760px) { .how { grid-template-columns: 1fr; } }
-.card { display: grid; grid-template-columns: 132px 1fr; gap: 14px; background: var(--panel); border: 1px solid var(--fdim); border-radius: 10px; padding: 12px; }
-.card img { width: 132px; height: 132px; image-rendering: pixelated; border-radius: 4px; border: 1px solid var(--fdim); }
-.card p { font-size: 15px; color: var(--grey); margin: 0; }
 
 /* ---- the installer */
 .install ol { margin: 0 0 12px; padding-left: 22px; }
 .ack { display: flex; gap: 10px; align-items: flex-start; font-size: 16px; margin: 8px 0 12px; cursor: pointer; }
 .ack input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--green); }
-#go { font: 700 15px var(--px); background: var(--green); color: var(--ink); border: 0; border-radius: 6px; padding: 11px 26px; cursor: pointer; }
-#go:disabled { background: var(--fdim); color: var(--grey); cursor: not-allowed; }
+#go { font: 700 15px var(--px); background: linear-gradient(180deg, #c4e6ac, var(--green)); color: var(--ink); border: 0; border-radius: 6px; padding: 11px 26px; cursor: pointer; }
+#go:disabled { background: var(--groove); color: var(--dim); cursor: not-allowed; }
 progress { display: block; width: 100%; height: 12px; margin: 14px 0 6px; accent-color: var(--green); }
 #status { font: 700 13px var(--px); color: var(--grey); }
 #status.good { color: var(--green); } #status.bad { color: var(--red); }
 .pkg { font-size: 12px; color: var(--dim); word-break: break-all; }
 details summary { cursor: pointer; color: var(--grey); font-size: 15px; }
-pre#log { max-height: 220px; overflow: auto; font-size: 12px; background: #050203; padding: 8px; border-radius: 6px; }
-footer { margin: 60px 0 40px; padding-top: 18px; border-top: 1px solid var(--fdim); font-size: 14px; color: var(--grey); }
+pre#log { max-height: 220px; overflow: auto; font-size: 12px; background: #050506; padding: 8px; border-radius: 6px; }
+footer { margin: 60px 0 40px; padding-top: 18px; border-top: 1px solid var(--chrome-lo); font-size: 14px; color: var(--grey); }
 </style>
 </head>
 <body>
 <div class="wrap">
 
 <header class="hero">
-  <img class="logo" src="screens/logo.png" width="588" height="132" alt="BIOFORGE, in bone-coloured pixel letters that drip red">
+  <div class="mark"><img class="logo" src="screens/logo.png" width="588" height="132" alt="BIOFORGE, in chrome pixel letters">
+    <span class="stamp">EARLY ALPHA</span></div>
   <div class="bar"></div>
   <p class="tag">A biomechanical rhythm machine and synth for the M-VAVE FM-1</p>
   <p class="sub">It should sound like its own disturbing machinery.</p>
   <div class="cta">
     <a class="btn go" href="#play">▶ Play it here</a>
-    <a class="btn" href="#hear">Hear the demos</a>
+    <a class="btn" href="#hear">Hear it</a>
     <a class="btn" href="#install">Install on your FM-1</a>
     <a class="btn" href="https://github.com/joakimskurk/fm1bioforge">Source</a>
   </div>
-  <p class="note">In development. It runs here exactly as on the FM-1 (the same code, compiled to WebAssembly), and it
-    builds for the FM-1, passes its tests and runs in the FM-1 emulator, but it has <b>not yet been tried on a real
-    FM-1</b>.</p>
+  <p class="note"><b class="alpha">EARLY ALPHA</b>It runs here exactly as on the FM-1 (the same code, compiled to
+    WebAssembly), it builds for the FM-1 and passes its tests, but it has <b>not yet been tried on a real FM-1</b>. Its
+    sounds, its controls and the way it keeps its scenes will still change: a new version can forget what an older one
+    saved.</p>
 </header>
 
 <h2 id="play">Play it here</h2>
-<p>This is the firmware itself, the same C as on the FM-1, running on a web FM-1. Press Start, then <b>PLAY</b>: RITUAL
-  00, THE AWAKENING. Turn <b>SELECT</b> for the focus (the kit, or one organ), <b>PRESETS</b> for the scene, and
-  <b>ALGO</b> (ALGORITHM) for the nervous system's LOOP. <b>REC</b> while it plays records the keys.</p>
+<p>The firmware itself, the same C as on the FM-1, on a web FM-1. Press Start, then <b>PLAY</b>. <b>PRESETS</b> turns
+  between its four scenes; <b>SEL</b> held and PRESETS turned loads any of twenty-two factory rituals. <b>SELECT</b>
+  picks the focus (the kit, or one organ), <b>ALGO</b> the nervous system's LOOP; <b>REC</b> while it plays records the
+  keys.</p>
 <div class="fm1" id="fm1">
   <div class="fm1-top">
     <div class="side fm1-left">
@@ -236,51 +262,40 @@ footer { margin: 60px 0 40px; padding-top: 18px; border-top: 1px solid var(--fdi
   <tr><td>SELECT</td><td>The focus: DRUM (the kit, four zones of keys), or one organ, HEART … NOISE. The keys play it; REC writes to it.</td></tr>
   <tr><td>SEL</td><td>SHIFT while held (a tap keeps the knobs' second row).</td></tr>
   <tr><td>ALGORITHM</td><td>The Turing register's LOOP, on every page: 100 % locked, 0 % double-locked (the pattern, then its inverse), between: it slips.</td></tr>
-  <tr><td>PRESETS</td><td>The scene: RITUAL 00 THE AWAKENING, 01 RUST, 02 ABYSS, 03 ASH (playing: on the next bar). SHIFT: a factory ritual into this scene (FROZEN, STREAM, WALL, DATA, EMBERS, FOUNDRY, ORBIT, INNARDS, STATIC CULT, …).</td></tr>
+  <tr><td>PRESETS</td><td>The scene: RITUAL 00 THE AWAKENING, 01 RUST, 02 ABYSS, 03 ASH (playing: on the next bar). SHIFT: one of twenty-two factory rituals into this scene (FROZEN, GRINDER, SPINE, TENDON, LAMENT, OSSUARY, SHRINE, MIRAGE, …).</td></tr>
   <tr><td>K1–K4</td><td>The page's four (SHIFT: the second four).</td></tr>
   <tr><td>HOME</td><td>MIX: the six channels; again: the focused channel's sends. Held: white keys 1–6 mute the channels.</td></tr>
   <tr><td>SEQ</td><td>The grid. Held: the white keys are the focused track's 16 steps; tap to set or clear, hold one and turn a knob for a p-lock.</td></tr>
-  <tr><td>EDIT / ENV</td><td>SYN: BODY, TEXTURE, MOTION, DECAY (SHIFT: a noise organ's SCATTER, TONE, DRIFT; a synth's MODEL: HUM, STEEL, PISTON, GLASS, BELL, CHOIR, BLOOD, BUBBLE, SLIME, DUB, MASS, CLUSTER); again: the organ's own depth. ENV: its envelope; on a drum, SHIFT: its SOUND (one of sixteen noise sounds, or TISSUE).</td></tr>
-  <tr><td>LFO</td><td>MUT: the spine. Held: white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK.</td></tr>
-  <tr><td>FX / GLO</td><td>Delay, reverb, crush (again: deeper; again: the reverb's SPACE, HALL ROOM CAVE METAL VAST). GLO: tempo, swing, quantise; SHIFT: OVERDUB or REPLACE, the step length.</td></tr>
-  <tr><td>ARP</td><td>Held: BURST on the white keys: STUTTER, INVERT, FREEZE, SPASM; keys 5 to 8 SCAR: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR.</td></tr>
+  <tr><td>EDIT / ENV</td><td>SYN: BODY, TEXTURE, MOTION, DECAY (SHIFT: a noise organ's SCATTER, TONE, DRIFT; a synth's MODEL: HUM, STEEL, PISTON, GLASS, BELL, CHOIR, BLOOD, BUBBLE, SLIME, DUB, MASS, CLUSTER); again: the organ's own depth. ENV: its envelope; on a drum, SHIFT: its SOUND (a noise sound, a kick, or TISSUE).</td></tr>
+  <tr><td>LFO</td><td>MUT: the spine; again: WAIL, its range, RUPTURE (the register cutting into the music). Held: white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK.</td></tr>
+  <tr><td>FX / GLO</td><td>Delay, reverb, crush (again: deeper; again: the reverb's SPACE, DUCK, WARP: a wavering tape). GLO: tempo, swing, quantise; SHIFT: OVERDUB or REPLACE, the step length. GLO again: KEY, SCALE (twelve), the focused synth's ARP.</td></tr>
+  <tr><td>ARP</td><td>Held: BURST on the white keys: STUTTER, INVERT, FREEZE, SPASM; keys 5 to 10 SCAR, the last 0.37 s played back: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR, SCREW, DROP.</td></tr>
   <tr><td>PLAY / REC</td><td>Start, stop (SHIFT: PANIC). REC: playing, LIVE REC; stopped, STEP REC (KNOB 1 the cursor); SHIFT + REC: OVERDUB / REPLACE.</td></tr>
   <tr><td>OCT− / OCT+</td><td>The keys' octave. SHIFT: UNDO, REDO.</td></tr>
   <tr><td>SAVE</td><td>The scene (here: into this browser; on the FM-1: into flash, two slots, when it is quiet).</td></tr>
 </table>
 </details>
 
-<h2 id="hear">Hear the demos</h2>
+<h2 id="look">A look</h2>
+<div class="look">
+  <div class="card"><img src="screens/seq.png" width="480" height="480" alt="SEQ: nine tracks of steel rivets, HEART to NOISE, the lit ones pale green, the playhead a column">
+    <h3>The keys into the memory</h3>
+    <p>Nine tracks: four drums of pressure, fracture, friction and vents, four synths, a noise. LIVE REC while it plays,
+      STEP REC while it stands, p-locks, overdub, replace, undo.</p></div>
+  <div class="card"><img src="screens/land.png" width="480" height="480" alt="SYN on DRONE as GLASS: its scope, its envelope and note, the knob MODEL">
+    <h3>Organs and landscapes</h3>
+    <p>Each synth its own voice or a landscape: HUM, STEEL, PISTON, GLASS, BELL, CHOIR, BLOOD, BUBBLE, SLIME, DUB, MASS,
+      CLUSTER. Noise as percussion, a deep kick, a delay, a reverb of five rooms.</p></div>
+  <div class="card"><img src="screens/mut.png" width="480" height="480" alt="MUT: the Turing register as a spine of sixteen vertebrae, LOOP 100 % LOCK">
+    <h3>The nervous system</h3>
+    <p>A shift register after the Turing Machine, clocked by the transport: it locks and slips the noise, picks notes,
+      arps, and cuts into the music (RUPTURE), the same cuts each time round while it is locked.</p></div>
+</div>
+
+<h2 id="hear">Hear it</h2>
 <p>Each one is the firmware itself on a computer, its keys and knobs played by a script, its sound as it goes out
   over USB: nothing added, nothing sampled. The picture is the spectrum, low at the bottom: click it to jump.</p>
 <div id="demos"></div>
-
-<h2 id="how">How it works</h2>
-<div class="how">
-  <div class="card"><img src="screens/syn.png" alt="SYN on HEART: its scope, its three modes, its four excitations"><div><h3>TISSUE: the drums</h3>
-    <p>No kick, snare or hat. Each hit is an excitation (a PRESSURE impulse, seeded FRACTURE clicks, coloured FRICTION,
-      a VENT of air) through damped modal resonators, then an asymmetric flesh curve. HEART is a hydraulic piston,
-      BONE a fracture whose resonance bends, TEETH a ratchet, CLAW a gesture through ribs.</p></div></div>
-  <div class="card"><img src="screens/mut.png" alt="MUT: the Turing register as a spine of sixteen vertebrae"><div><h3>The nervous system</h3>
-    <p>A 16-bit shift register clocked by the transport, after the Turing Machine (Music Thing Modular). On the big
-      knob: LOCK, slip, random, double lock. It moves the texture and the scrape, adds ghost hits (RATTLE), picks
-      notes (WAIL), and never moves what you played; FUSE writes its ghosts in.</p></div></div>
-  <div class="card"><img src="screens/seq.png" alt="SEQ: nine tracks of membrane cells"><div><h3>The keys into the memory</h3>
-    <p>LIVE REC while it plays, STEP REC while it stands, p-locks from the knobs, overdub, replace, erase, sixteen
-      undos. A live note keeps the moment you played it; the track's quantise places it when it plays.</p></div></div>
-  <div class="card"><img src="screens/mix.png" alt="MIX: six channel strips with meters and faders"><div><h3>Nine organs, six channels</h3>
-    <p>DRUM (with a shared rib resonator), BASS, DRONE, SPASM, VOICE (three formants moving U O A E I), NOISE. BLOOD
-      DELAY, BILE REVERB, MARROW CRUSH as sends; PUMP ducks it all under the kick. Four scenes; integers only, on one
-      core without an FPU.</p></div></div>
-  <div class="card"><img src="screens/perc.png" alt="SYN on BONE as a FLAM SNR of noise: its source, mode, cutoff and decay, the filter's shape"><div><h3>Rhythm made of noise</h3>
-    <p>NOISE, and any drum turned to it. The sequencer locks each step's noise, so the same noise comes back and is
-      the groove; LOOP lets it slip. SCATTER gives each step its own slice, TONE puts the band on the note, a ratchet
-      stutters the same noise. Under it: five sources, a filter that morphs and pings, a sweep, bursts, drive, a
-      crusher, width; crackle of fire, of frying, of creaking wood; twenty-two sounds to start from.</p></div></div>
-  <div class="card"><img src="screens/land.png" alt="SYN on DRONE as GLASS: its scope, its envelope and note, the knob MODEL GLASS"><div><h3>Landscapes</h3>
-    <p>Each synth can be one of nine other voices: industry (HUM, STEEL, PISTON), the cosmic (GLASS, BELL, CHOIR),
-      the body (BLOOD, BUBBLE, SLIME). The reverb has five rooms, from a ROOM to a ringing METAL tank and the VAST.</p></div></div>
-</div>
 
 <h2 id="install">Install</h2>
 <div class="box install">
@@ -289,8 +304,8 @@ footer { margin: 60px 0 40px; padding-top: 18px; border-top: 1px solid var(--fdi
     <li>Connect the FM-1 <b>directly</b> to the computer with a USB data cable, and switch it on.</li>
     <li>Close other apps that use MIDI, tick the box, press <b>Install</b> and allow MIDI when the browser asks.</li>
   </ol>
-  <label class="ack"><input type="checkbox" id="ack"><span>I understand that BIOFORGE has not been tried on a real
-    FM-1 yet, and that I install it at my own risk.</span></label>
+  <label class="ack"><input type="checkbox" id="ack"><span>I understand that BIOFORGE is an early alpha, that it has
+    not been tried on a real FM-1 yet, and that I install it at my own risk.</span></label>
   <button id="go" disabled>Install</button>
   <progress id="bar" max="100" value="0"></progress>
   <p id="status">Loading the firmware…</p>

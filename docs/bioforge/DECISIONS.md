@@ -334,3 +334,13 @@ multiplied, and the reverb's own input at a quarter). So:
   them, the delay 6 .. 9. RUST and the others with a bell are brighter for it.
 - CPU: a dirty bell or glass about +110 instructions a frame while it sounds (ORBIT 1 964, SHRINE 2 159; the worst case
   unchanged at 3 322).
+
+**D37 (2026-11-12) The page in the firmware's look, an early alpha.** The user: a page for it, not many screens but a
+few, the emulator running, in the firmware's style as the others are; mark it alpha, early alpha. The page keeps the
+Dinghy pages' order (the top, play it, a look, hear it, install) and takes the firmware's look (D26): graphite plates in
+chrome bevels with rivets, a pale green the only colour for sound, blood red for the alpha's stamp and for recording,
+the text steel, the valves of its knobs; its ground is the firmware's own relief (tools/gen_art.py, without the
+screen's panels), dark under the words. An EARLY ALPHA stamp on the logo and a note under it (not tried on a real FM-1;
+its sounds, controls and the way it keeps scenes still change), and in the installer's box. Three screens (SEQ, a
+landscape, MUT), eight demos (RUST, ABYSS, FROZEN, GRINDER, LAMENT, SHRINE, MIRAGE, SCAR; the scripts render them all),
+the spectra and the link preview in graphite and green. 7.7 MB in all (was 16.8).

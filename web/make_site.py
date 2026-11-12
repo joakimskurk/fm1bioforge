@@ -12,7 +12,7 @@ browser, the demos to hear, the installer.
                               offered)
   audio/                      the demos (tools/make_demos.sh: the firmware on the host, played by scripts), AAC, and
                               each one's spectrum as a picture (WebP), low to high
-  screens/                    the logo, the icon, the link preview, the pages' screens
+  screens/                    the logo, the icon, the link preview, three screens, the ground (the firmware's relief)
   .nojekyll                   (served as it is)
 
   sh tools/make_demos.sh       (first: the demos)
@@ -39,8 +39,9 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 BLOCKS, BLK, KEEP = 20, 0x30, 0x2F
 APP = {"build/web/bioforge.wasm": "bioforge.wasm", "web/app/worklet.js": "worklet.js", "web/app/play.js": "play.js"}
-SCREENS = ("seq", "syn", "mut", "mix", "fx", "voice", "perc", "land")
-DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each)
+SCREENS = ("seq", "land", "mut")            # (a few: the page is the FM-1 itself)
+DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each; tools/make_demos.sh
+            # renders every script, the page carries these eight)
     ("2_rust", "RITUAL 01 · RUST",
      "Grim dark industrial ambience with a pulse and a melody, 108 BPM. A drone for a body (a MASS of octaves and a "
      "fifth on D1, a CLUSTER of semitones over it), a smouldering rumble and a wash of noise; a deep sub kick and its "
@@ -50,6 +51,16 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
      "Dark ambient meets noise, 110 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
      "crackling, the reverb and the delay breathing with it; ticks of six squares off the beat, sparks in time; wide, "
      "drifting dub chords off the beat into a dark delay, a bass on the off-beats, a wide drone and a choir in a cave."),
+    ("5_frozen", "FROZEN",
+     "Rhythm made of noise. Each 16th a slice of noise with its own band, length, shape and place; the register locks "
+     "them, so the same noise comes back every bar and is the groove. LOOP down: slice after slice slips to new noise; "
+     "back to LOCK: what it has become stays."),
+    ("16_grinder", "GRINDER",
+     "Industrial techno, 140 BPM, E Phrygian dominant: a hard driven kick, a crushed snare, metal hats, a rolling bass "
+     "between the kicks, an iron stab, slices of metal noise locked; the crusher on. The hard, bright end."),
+    ("20_lament", "LAMENT",
+     "A melody, 92 BPM, C harmonic minor: a choir sings four bars (i, iv, V with its raised seventh, i), glass arped up "
+     "and down through each chord, the bass on the roots, a soft kick and a clap far off, a hall."),
     ("21_shrine", "SHRINE",
      "Sweetness, ruptured: E Lydian, no beat but a clock. Glass arped up and down a major ninth, a choir on the sharp "
      "fourth, chimes; all of it through a wavering tape (WARP), and the nervous system cutting into it (RUPTURE): a "
@@ -57,67 +68,15 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
     ("22_mirage", "MIRAGE",
      "A loop chopped and screwed by the nervous system: 64 BPM, C# Dorian. A choir's phrase, a mass, a bell sparkling "
      "from the chord; the tape wavering hard, cut up most of the time, and now and then crushed noise breaking in."),
-    ("20_lament", "LAMENT",
-     "A melody, 92 BPM, C harmonic minor: a choir sings four bars (i, iv, V with its raised seventh, i), glass arped up "
-     "and down through each chord, the bass on the roots, a soft kick and a clap far off, a hall."),
-    ("16_grinder", "GRINDER",
-     "Industrial techno, 140 BPM, E Phrygian dominant: a hard driven kick, a crushed snare, metal hats, a rolling bass "
-     "between the kicks, an iron stab, slices of metal noise locked; the crusher on. The hard, bright end."),
-    ("17_spine", "SPINE",
-     "A broken beat in half time, 170 BPM, G Aeolian: a sub kick, the snare on three, ghosts and breaks; a wet sub bass "
-     "gliding, a dark cluster, a bell the nervous system picks from the chord in triplets (the ARP)."),
-    ("19_tendon", "TENDON",
-     "Seven eighths, 126 BPM, A harmonic minor: the kick in two, two and three, a bell arped up its triad in 16ths (three "
-     "against seven), slices of noise in seven 16ths against the fourteen."),
-    ("18_ossuary", "OSSUARY",
-     "No beat at all, C# Locrian: a mass of octaves on the root, a cluster rising under it, glass high and slow, a choir "
-     "the nervous system leads through the chord a quarter at a time, bones creaking; a vast room."),
     ("15_scar", "SCAR · ABYSS PLAYED",
      "ABYSS with SCAR, the output's last 0.37 s kept: ARP held, four white keys play it back while held. A roll of 16ths "
      "into the bar, darker each time round; the 8th just played, backwards; a repeat of 8ths; a bar smeared into "
      "crossing grains; let go, the music is where it would have been."),
-    ("4_ash", "RITUAL 03 · ASH",
-     "The ambient side, 116 BPM: a sub kick with a big rumble, a fire held and wood creaking, sparks in time, glass "
-     "beating under a choir, minor-ninth dub chords far apart into the delay; a vast space."),
-    ("5_frozen", "FROZEN",
-     "Rhythm made of noise. Each 16th a slice of noise with its own band, length, shape and place; the register locks "
-     "them, so the same noise comes back every bar and is the groove. LOOP down: slice after slice slips to new noise; "
-     "back to LOCK: what it has become stays."),
-    ("1_awakening", "RITUAL 00 · THE AWAKENING",
-     "The idea document's start scene, sixteen bars: HEART on the four, BONE on two and four, TEETH and CLAW between, "
-     "the BASS sparingly in D Phrygian, the DRONE breathing under it all, SPASM's two nerve impulses."),
-    ("9_embers", "EMBERS",
-     "Organic crackle: a fire held under it all, sparks locked into a groove (each its own), grease on two and four, a "
-     "creak of wood that comes and goes, a low HEART, the drone in the dark."),
-    ("11_orbit", "ORBIT",
-     "Cosmic: glass beating slowly (DRONE as GLASS), a choir moving through vowels (VOICE as CHOIR), bells far apart, ice "
-     "crackling and creaking, a wind drifting; the reverb VAST."),
-    ("10_foundry", "FOUNDRY",
-     "Industry: a piston running (BASS as PISTON), the hum of the mains with its sparks (DRONE as HUM), bowed steel "
-     "(VOICE as STEEL), an anvil off the beat, steam and metal slices locked into a groove; the reverb a room of METAL."),
-    ("12_innards", "INNARDS",
-     "The body from inside: blood pulsing with the beat (DRONE as BLOOD), a wet squelching bass (BASS as SLIME), "
-     "bubbles rising (VOICE as BUBBLE), a heartbeat, grease and sizzling flesh, a breath gated in and out; in a CAVE."),
-    ("6_stream", "STREAM",
-     "One noise that never stops, cut by a gate: the rhythm is where it is open. Accents open its band, every other bar "
-     "ends in a stutter of the same noise, its band drifts; a low noise breathes under it with a beat you do not hear."),
-    ("7_wall", "WALL",
-     "A wall of noise through a band that sits on the note: a riff of hiss in D Phrygian, struck each step, in 16ths, "
-     "then triplets, then 32nds; a wind of noise over it."),
-    ("8_data", "DATA",
-     "Clinical and digital: clicks with a high ping, white bursts of a few milliseconds scattered left and right, "
-     "shift-register noise at four clocks, stutters, and silence."),
-    ("13_kit", "THE NOISE KIT, SOUND BY SOUND",
-     "STATIC CULT plays while TEETH's SOUND is turned one step a bar through the noise sounds, from TICK to LASER; then "
-     "its own body (TISSUE) again."),
-    ("14_build", "FROM NOTHING TO A LOOP",
-     "An empty body. PLAY, REC: HEART and BONE played in, TEETH on the off-beats; then BONE becomes a CLAP and TEETH a "
-     "TICK, the same notes in noise; a bass line in one bar; then the nerve moves the texture, and is locked again."),
 ]
 SPEC_W, SPEC_H, SPEC_N = 1200, 160, 8192
 SPEC_LO, SPEC_HI, SPEC_DB = 40.0, 16000.0, 75.0
-FLESH = [(0.00, (10, 6, 7)), (0.30, (58, 14, 22)), (0.55, (150, 40, 52)), (0.75, (214, 200, 176)),
-         (0.90, (140, 255, 42)), (1.00, (255, 255, 255))]
+FLESH = [(0.00, (7, 7, 9)), (0.30, (30, 30, 34)), (0.55, (74, 74, 80)), (0.75, (150, 150, 156)),
+         (0.90, (176, 214, 150)), (1.00, (240, 248, 236))]   # graphite, steel, the firmware's pale green (D26)
 
 
 def product_of(raw):
@@ -138,7 +97,7 @@ def read_wav(path):
 
 
 def spectrum(x, fs, pic):
-    """the piece's spectrum, left to right: a column a slice, the louder the brighter (black, flesh, bone, green)"""
+    """the piece's spectrum, left to right: a column a slice, the louder the brighter (graphite, steel, green)"""
     win = np.hanning(SPEC_N).astype(np.float32)
     x = np.concatenate([x, np.zeros(SPEC_N, np.float32)])
     hop = (len(x) - 2 * SPEC_N) / (SPEC_W - 1)
@@ -181,25 +140,41 @@ def logo_png(out, scale):
     im.resize((w * scale, h * scale), Image.NEAREST).save(out)
 
 
-def og_image(out):
-    """the link preview, 1200 x 630: three screens on the tissue, the logo over them"""
-    im = Image.new("RGB", (1200, 630), (10, 6, 7))
-    d = ImageDraw.Draw(im)
-    rng = np.random.default_rng(9)
-    for _ in range(90):                         # veins
-        x, y = rng.integers(0, 1200), rng.integers(0, 630)
-        pts = [(x, y)]
-        a = rng.uniform(0, 6.3)
-        for _ in range(6):
-            a += rng.uniform(-0.8, 0.8)
-            x, y = x + np.cos(a) * 26, y + np.sin(a) * 26
-            pts.append((x, y))
-        d.line(pts, fill=(46, 14, 20), width=2)
-    for i, n in enumerate(("seq", "syn", "mut")):
-        s = Image.open(ROOT / "docs" / "screens" / f"{n}.png").convert("RGB").resize((340, 340), Image.NEAREST)
-        im.paste(s, (45 + i * 380, 230))
+def tissue(out):
+    """the page's ground: the firmware's own relief (tools/gen_art.py, without its panels), darker, to tile"""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import gen_art
+    import random
+    im = gen_art.background(random.Random(0x61E7), panels=False).point(lambda v: int(v * 0.55))
+    im.save(out, quality=78, method=6)
+    return im
+
+
+def og_image(out, ground):
+    """the link preview, 1200 x 630: three screens on the relief, the logo over them, EARLY ALPHA"""
+    im = Image.new("RGB", (1200, 630), (7, 7, 9))
+    g = ground.resize((960, 960))
+    for x in (0, 960):
+        im.paste(g, (x, -165))
+    im = Image.blend(im, Image.new("RGB", im.size, (7, 7, 9)), 0.35)
+    for i, n in enumerate(SCREENS):
+        sc = Image.open(ROOT / "docs" / "screens" / f"{n}.png").convert("RGB").resize((340, 340), Image.NEAREST)
+        im.paste(sc, (45 + i * 380, 240))
     logo = Image.open(out.parent / "logo.png").convert("RGBA")
     im.paste(logo, ((1200 - logo.width) // 2, 40), logo)
+    d = ImageDraw.Draw(im)                      # EARLY ALPHA, in the firmware's 5 x 7 font, blood red, a frame round it
+    sys.path.insert(0, str(ROOT / "tools"))
+    import gen_art
+    text, k, x0, y0 = "EARLY ALPHA", 4, 0, 0
+    w = len(text) * 6 * k - k
+    x0, y0 = 1200 - 60 - w, 176
+    d.rectangle([x0 - 12, y0 - 10, x0 + w + 12, y0 + 7 * k + 10], fill=(10, 4, 5), outline=(168, 28, 34), width=3)
+    for i, ch in enumerate(text):
+        for gy, row in enumerate(gen_art.F5[ch]):
+            for gx, v in enumerate(row):
+                if v == "#":
+                    x, y = x0 + (i * 6 + gx) * k, y0 + gy * k
+                    d.rectangle([x, y, x + k - 1, y + k - 1], fill=(168, 28, 34))
     im.save(out)
 
 
@@ -230,7 +205,8 @@ def main(pkg, version, out):
         shutil.copy(ROOT / "docs" / "screens" / f"{n}.png", out / "screens" / f"{n}.png")
     logo_png(out / "screens" / "logo.png", 6)
     logo_png(out / "screens" / "icon.png", 2)
-    og_image(out / "screens" / "og.png")
+    ground = tissue(out / "screens" / "tissue.webp")
+    og_image(out / "screens" / "og.png", ground)
     demos = []
     for stem, title, about in DEMOS:
         x, fs = read_wav(wavs[stem])
