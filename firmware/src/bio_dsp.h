@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's arithmetic: integers only (the chip has no FPU, no 64-bit division; docs/RULES.md). Frequencies are
  * lf = log2(Hz) in Q16; levels Q15; coefficients Q30. The building blocks: the magic-circle resonator, the TPT
  * state-variable filter, one-poles, decays, noise, sine, the flesh curve. Shared by the firmware and the host tools. */

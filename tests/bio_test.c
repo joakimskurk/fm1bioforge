@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's engine and memory, tested on a computer (tests/run_bio.sh builds it twice: plain and under ASan/UBSan).
  * The idea document's testable demands (5.10, 10) where a computer can check them: the Turing's periods, WRITE and
  * RESET; the same start giving the same sound; a dry start that does not clip or drift; recording live and by step,

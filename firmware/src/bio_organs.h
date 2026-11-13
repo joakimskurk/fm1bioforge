@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's nine organs. The drums (HEART, BONE, TEETH, CLAW) are TISSUE: an excitation (PRESSURE, FRACTURE,
  * FRICTION, VENT) through damped modes, the flesh curve, a DC block. Each drum organ is one body that keeps ringing:
  * a hit excites it again, nothing is stolen (DECISIONS.md D2); MODEL NOISE (D8) makes one a perc voice (bio_perc.h)

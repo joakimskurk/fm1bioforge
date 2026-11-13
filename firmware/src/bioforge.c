@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE: a biomechanical rhythm machine and synth for the M-VAVE FM-1. Rhythm out of pressure, fracture, friction
  * and vents in resonant bodies; tonal organs for mass, breath, nerve discharges and an artificial throat; the keys
  * straight into the pattern memory; a Turing register as a nervous system that locks and slowly changes it all.

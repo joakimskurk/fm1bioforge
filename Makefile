@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Joakim (joakimskurk)
 # BIOFORGE: the everyday commands. The firmware itself is built by ./build.sh (docs/DINGHY_README.md: the toolchain).
 #   make test       the engine's and the memory's host tests (plain and ASan/UBSan), the renders: build/audio/
 #   make host       the app on the host, the tour of its pages: build/host/bioforge.wav and its screens

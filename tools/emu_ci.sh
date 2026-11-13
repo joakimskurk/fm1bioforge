@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Joakim (joakimskurk)
 # CI: fm1-emu (joakimeriksson/fm1-emu, pinned) built from source, then BIOFORGE's package run in it
 # (tools/emu_check.sh): how much of the chip it takes, its sound after PLAY, its screens.
 set -e

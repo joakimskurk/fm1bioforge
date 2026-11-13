@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Joakim (joakimskurk)
 # The feel of a recording, measured (D23): spectrum in third octaves, band energies, loudness, width, flatness, crest,
 # a pulse's clarity and tempo, persistent pitches; and a spectrogram of the whole. To compare a render with a reference.
 #   python3 -I tools/bio_feel.py IN.wav OUT_PREFIX      (16-bit stereo WAV; an MP3 first: ffmpeg -i in.mp3 -ac 2 in.wav)

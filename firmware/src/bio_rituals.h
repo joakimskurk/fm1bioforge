@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's factory rituals: whole scenes (patterns, sounds, the nerve, the mix, the effects), each its own world.
  * THE AWAKENING is the idea document's start scene (bio_seq.h); the others are BIOFORGE's own. SHIFT + PRESETS loads
  * one into the scene that plays (the scene in flash stays the one before until SAVE). */

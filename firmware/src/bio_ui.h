@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's drawing: the background (tools/gen_art.py) under everything, sprites with their alpha, the 5 x 7 font,
  * FONT_S blended over the picture, the eye knobs' green arcs. Everything is drawn into the canvas and blitted; the
  * canvas knows where on the screen it sits (cvx, cvy) so that it can start from the background there. Included by

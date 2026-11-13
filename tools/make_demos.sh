@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Joakim (joakimskurk)
 # BIOFORGE's demos for the page: the firmware itself on the host (tests/host.c), played by the scripts
 # tests/scripts/demo_N_name.txt, its sound as it goes out over USB: build/audio/demos/N_name.wav (web/make_site.py
 # encodes them and draws their spectra). Also used to listen: every one is the real app, its keys and knobs turned.

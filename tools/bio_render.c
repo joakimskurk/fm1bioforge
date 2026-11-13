@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE on a computer: the engine and the sequencer as the firmware has them, rendered to WAV (no platform).
  *   cc -O2 -Ifirmware/src -Ifirmware/gen -o build/bio_render tools/bio_render.c
  *   build/bio_render awaken OUT.wav [BARS]          RITUAL 00, THE AWAKENING, from PLAY

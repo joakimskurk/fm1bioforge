@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's noise core: one voice, struck and choked, that the NOISE organ always is and any drum organ can become
  * (its MODEL). Rhythm made of noise (D20): the sequencer locks each step's noise (its seed) and the Turing's LOOP lets
  * it slip; SCATTER gives every step its own slice of it (band, length, shape, level, place); TONE puts the band on the

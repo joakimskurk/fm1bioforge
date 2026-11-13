@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Joakim (joakimskurk)
 // BIOFORGE for the browser (web/app/: the firmware compiled to WebAssembly, web/app/build.sh) in Node, as the page's
 // worklet runs it: no imports; faster than real time; the grid on the screen at power-on; PLAY: the awakening sounds,
 // the playhead moves and PLAY's light is lit; a key plays the kit; HOME: MIX; STOP: the sound dies away; an edit and

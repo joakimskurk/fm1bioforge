@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Joakim (joakimskurk)
 # BIOFORGE's package in fm1-emu (tools/emu_ci.sh builds it): 6 s of the real firmware on the emulated chip. PLAY at
 # 0.5 s (the awakening), the screen at 2.5 and 4.5 s. From its report, its sound and its screens
 # (build/emu/): how much of the chip the interrupts take (the engine and the platform), the engine's own measure of

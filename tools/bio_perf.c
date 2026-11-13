@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* The engine's cost on a computer (tests/run_bio.sh runs it under callgrind, built -Os as the chip's build is):
  * BLOCKS blocks of the awakening, or of everything at once (every organ sounding, every effect on: the worst case),
  * or the worst with the four drums as noise (MODEL NOISE, every 16th, driven and crushed), or a factory ritual.

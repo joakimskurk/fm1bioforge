@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Joakim (joakimskurk)
 # BIOFORGE's own host tests (no FM-1, no JieLi toolchain; Python with numpy and Pillow): the tables are what their tool
 # makes, the engine and the memory pass tests/bio_test.c (plain, and again under ASan/UBSan), the app compiles without a
 # warning (gcc and clang), the renders and their spectrograms land in build/audio/. Dinghy's own tests:

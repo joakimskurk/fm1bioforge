@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's deep kick (D22): a drum organ's MODEL KICK. A sine falling from a sweep to its pitch, held, then a long
  * decay; drive for weight, then two low-pass poles so it keeps almost no top; a knock (some noise, low) if asked. Its
  * phase runs on through a new hit (no click), its attack is a ramp of 1 ms or more.

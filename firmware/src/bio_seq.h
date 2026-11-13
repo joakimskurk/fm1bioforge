@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's memory: the RITUAL GRID (scenes, tracks, note events, p-locks), the transport, recording (LIVE, STEP,
  * PARAM; OVERDUB, REPLACE, ERASE), undo, and the NERVOUS TAPE's clock. The transport runs in the audio interrupt, as
  * the engine's tick, once a sub-block; the main loop records and edits, inside SEQ_LOCK() (the app: interrupts off for

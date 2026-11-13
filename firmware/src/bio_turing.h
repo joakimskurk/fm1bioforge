@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's nervous system: a 16-bit shift register clocked from the transport, after the documented behaviour of the
  * Music Thing Modular Turing Machine (Tom Whitwell; no code of it is used). On each clock: the bit at LENGTH comes
  * round, flipped with the chance 1 - LOOP, and goes in at the bottom. LOOP 100 % (and 97..100): locked, a period of

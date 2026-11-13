@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's SCAR (D29): the master's last 0.37 s, kept, and played back while a BURST key is held (ARP held, the
  * white keys 5 .. 8). It records what the engine sends out (after the limiter: it never clips), always; a burst takes
  * the output's place (a crossfade in and out) while the music goes on underneath, in time for when the key is let go.

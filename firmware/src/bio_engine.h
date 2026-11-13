@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's engine: the nine organs, the shared rib, the six channels, the life signals, BLOOD DELAY, BILE REVERB,
  * MARROW CRUSH and the master. It renders in sub-blocks of 32 frames; before each one it asks its tick (the
  * sequencer) for that sub-block's events. No platform in here: the firmware, the host tools and the tests share it.

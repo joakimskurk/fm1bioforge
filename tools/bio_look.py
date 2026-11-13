@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Joakim (joakimskurk)
 """A look at a render (numpy, Pillow): a spectrogram on a log-frequency axis (30 Hz..20 kHz) over a waveform's envelope,
 as a PNG, and the numbers: peak, RMS, DC, the spectral centroid, the energy above 16 kHz, the largest jump between
 frames (a click).

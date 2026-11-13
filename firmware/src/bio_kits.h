@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's noise-percussion sounds: settings for the perc voice (bio_perc.h), for the NOISE organ or for a drum
  * organ switched to MODEL NOISE. The order of p is an organ's parameters (bio_organs.h):
  *   BODY TEXTURE MOTION DECAY | SOURCE RESO MODE BURSTS CLICK DRIVE CRUSH MODEL | ATTACK GATE WIDTH RELEASE | TUNE LEVEL PAN -

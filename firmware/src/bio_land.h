@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Joakim (joakimskurk) */
 /* BIOFORGE's landscapes (D21): models any tonal organ (BASS, DRONE, SPASM, VOICE) can be instead of its own voice,
  * its MODEL (E1). The user chose three worlds: INDUSTRY (HUM, an electric hum with sparks; STEEL, bowed metal; PISTON,
  * a machine that runs while the key is held), COSMIC (GLASS, inharmonic partials beating; BELL, FM; CHOIR, three

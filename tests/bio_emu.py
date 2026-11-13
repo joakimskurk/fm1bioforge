@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Joakim (joakimskurk)
 """tools/emu_check.sh's checks of an fm1-emu run (numpy, Pillow).
   isr REPORT MAX         the interrupts' share of the chip, under MAX %
   load REPORT            the engine's own isr_load (from the dump), printed
