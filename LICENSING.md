@@ -17,6 +17,7 @@ complete source under the same licence too.
 | The browser installer's protocol: `web/fm1pkg.js`, `web/fm1ota.js` (unchanged, from [SLOOP](https://github.com/isod89/sloop-fm1) `bac9c05`); the install flow of `web/index.html` and the shape of `web/make_site.py`, after SLOOP's `web/index_pkg.html` and `web/make_site.py` | Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments (Felucca), with the changes of SLOOP (isod89) |
 | The import of Dinghy 0.5 as it is carried here (`tools/build.py`'s and the test runners' names, `tools/emu_ci.sh`, the CI workflow's shape) | Copyright (C) 2026 Joakim (joakimskurk), from FM-1 Clock and ORBITRIX |
 | BIOFORGE: `firmware/src/bioforge.c` (in the place of Dinghy's `dinghy.c`), `bio_dsp.h`, `bio_organs.h`, `bio_engine.h`, `bio_turing.h`, `bio_seq.h`, `bio_ui.h`, `firmware/gen/bio_*.h`, `tools/gen_tables.py`, `gen_art.py`, `bio_render.c`, `bio_perf.c`, `bio_look.py`, `emu_check.sh`, `tests/bio_test.c`, `bio_emu.py`, `run_bio.sh`, `tests/web/app_test.mjs`, `tests/scripts/` (BIOFORGE's), `tools/make_demos.sh`, the page `web/index.html` and `web/make_site.py` (but for what is SLOOP's in them, above), BIOFORGE in the browser `web/app/` (after ORBITRIX's and FM-1 Clock's, its `web_host.c` after Dinghy's `tests/host.c`), `docs/bioforge/`, `docs/screens/`, `README.md`, `PLATFORM.md`, `CLAUDE.md` | Copyright (C) 2026 Joakim (joakimskurk) |
+| The changes to Dinghy's own files, listed in PLATFORM.md: each of those files says so at its top ("Changed for BIOFORGE") | Copyright (C) 2026 Joakim (joakimskurk) |
 
 ## Third-party material
 
@@ -37,6 +38,15 @@ The nervous system (`firmware/src/bio_turing.h`) follows the documented behaviou
 Machine by Tom Whitwell (https://www.musicthing.co.uk/Turing-Machine/): a shift register whose bit comes round,
 flipped by chance or not, its LOOP, LENGTH and WRITE. It is an implementation of that idea of its own; no code or
 hardware file of it is copied (the hardware is CC BY-SA, the Workshop Computer program GPL-3.0).
+
+## The name
+
+"BIOFORGE" is the name of this firmware, and it is its author's (Joakim, joakimskurk). The GPL covers the code, not
+the name: under section 7(e) of the GPL, this licence gives no right to use "BIOFORGE", or a name that can be taken
+for it, as the name of another work. A changed version, a fork that is passed on, or a firmware built on this one
+takes a name of its own, and does not call itself BIOFORGE on its screens, in its package or on its page. Saying where
+it comes from ("based on BIOFORGE by joakimskurk") is welcome, and is what the notices above ask for anyway. A copy
+passed on unchanged keeps the name.
 
 ## Trademarks
 
