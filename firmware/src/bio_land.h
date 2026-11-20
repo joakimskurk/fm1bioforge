@@ -42,7 +42,7 @@ static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_
         v->lx[1] = bio_decay(BIO_SB, bio_tau(bio_map_ms(p[P_DECAY], 40, 400, 4000) / 2u + 1u));
         break;
     }
-    case L_CHOIR: bio_op_set(&v->o1, bio_lf_hz(5000)); break;
+    case L_CHOIR: bio_op_set(&v->o1, bio_lf_hz(5000)); bio_op_set(&v->o2, bio_lf_hz(6500)); break;   /* (o2: the air, D41) */
     case L_BLOOD: bio_op_set(&v->o1, bio_map_lf(p[P_BODY], 80, 300, 1500)); break;
     case L_SLIME: v->lx[1] = 32767; break;      /* a squelch at the start */
     case L_MASS: case L_CLUSTER: bio_op_set(&v->o1, bio_lf_hz(90 * 32)); break;   /* (the grit: a slow noise, at the
@@ -261,6 +261,8 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
             o = (bio_saw(v->pa, inc) + sb + sc2) / 4;
             o = bio_op_lp(&v->o1, o) + bio_mul15(bio_noise(&v->rnd), tex * 90);
             y = bio_svf_bp(&v->f1, o) + (bio_svf_bp(&v->f2, o) >> 1) + (bio_svf_bp(&v->f3, o) >> 2);
+            y += bio_mul15(bio_op_hp(&v->o2, bio_noise(&v->rnd)), tex * 22);   /* (D41) the air: breath over 6.5 kHz,
+                                                   past the throats (a choir is not only its formants) */
             e0 += step;
             if (side) side[k] += bio_mul15(bio_mul15((sb - sc2) / 8, e0), a);   /* (the throats apart: wide) */
             y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
@@ -426,7 +428,9 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
                          2 2/3' and 16' to the other */
         int32_t t = tex * 328, g4 = 9830 + bio_mul15(t, 16384), g3 = bio_clamp((t - 9830) * 7 / 10, 0, 32767);
         int32_t g2 = bio_clamp((t - 16384) * 8 / 10, 0, 32767), g16 = bio_clamp((t - 22937) * 3 / 2, 0, 32767);
-        int32_t gm = bio_clamp((t - 27852) * 2, 0, 32767), drv = 4096 + body * 160, trem, ch0 = v->lx[0], chs;
+        int32_t gm = bio_clamp((t - 27852) * 2, 0, 32767), drv = 4096 + body * 60, trem, ch0 = v->lx[0], chs;
+        int32_t bw = body * 260;                /* (D41) the pipes' voice: a sine (flute) blended into a saw (principal,
+                                                   reed) by BODY; a sine's ranks had no top: a toy organ */
         uint32_t i4, i3, i16, ci[6], j, cn = v->ch_n;
         int32_t cg = BIO_CHORD_G[cn];
         v->lph += bio_inc(bio_lf_hz(5) + 9000) * n;   /* the tremulant: 5.6 Hz */
@@ -445,8 +449,10 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
         for (k = 0; k < n; k++) {
             int32_t r8, r4, r3, r2, r16, mx, c, bp;
             v->pa += inc; v->pb += i4; v->pc += i3; v->pd += i16;
-            r8 = bio_flesh(bio_sin(v->pa), drv);
-            r4 = bio_mul15(bio_flesh(bio_sin(v->pb), drv), g4);
+            r8 = bio_sin(v->pa);
+            r8 = bio_flesh(r8 + bio_mul15(bio_saw(v->pa, inc) - r8, bw), drv);
+            r4 = bio_sin(v->pb);
+            r4 = bio_mul15(bio_flesh(r4 + bio_mul15(bio_saw(v->pb, i4) - r4, bw), drv), g4);
             r3 = bio_mul15(bio_sin(v->pc), g3);
             r2 = bio_mul15(bio_sin(v->pb * 2u), g2);
             r16 = bio_mul15(bio_sin(v->pd), g16);
@@ -460,7 +466,10 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
                 for (j = 0; j < cn; j++) {
                     v->cph[2u * j] += ci[2u * j];
                     v->cph[2u * j + 1u] += ci[2u * j + 1u];
-                    cx = (bio_flesh(bio_sin(v->cph[2u * j]), drv) + bio_mul15(bio_flesh(bio_sin(v->cph[2u * j + 1u]), drv), g4)) / 2;
+                    int32_t c8 = bio_sin(v->cph[2u * j]), c4 = bio_sin(v->cph[2u * j + 1u]);
+                    c8 += bio_mul15(bio_saw(v->cph[2u * j], ci[2u * j]) - c8, bw);
+                    c4 += bio_mul15(bio_saw(v->cph[2u * j + 1u], ci[2u * j + 1u]) - c4, bw);
+                    cx = (bio_flesh(c8, drv) + bio_mul15(bio_flesh(c4, drv), g4)) / 2;
                     y += cx;
                     cs += j & 1u ? -cx : cx;
                 }

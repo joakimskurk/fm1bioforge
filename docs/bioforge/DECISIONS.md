@@ -426,3 +426,29 @@ improvement that can be made now; a sci-fi dungeon synth / groovebox. With both 
   FROZEN and LAMENT left out of the page, their scripts kept).
 - CPU on a computer: CATACOMB 2 382 instructions a frame, ORACLE 2 182, CRYPT 2 807, STARGATE 2 573; the worst case
   3 438.
+
+**D41 (2026-11-20) The mix: no clipping inside, the top back, the melody on top, louder.** The user: it sounds lo-fi and
+badly mixed; the first may come from the second. Measured (`tools/bio_mixcheck.c`, the host only: where the engine runs
+out of room, how hard the limiter works, how wet, each channel alone against the whole; and the octave bands against a
+rough curve of finished mixes):
+- **The organs clipped.** An organ's output may reach twice full scale (its level x 2), and the mix cut each at full
+  scale: 21 of 22 rituals did, up to +6.4 dBFS and 0.6 % of all samples (ORACLE's choir 2.7 %, with CHORD). Hard
+  clipping is what lo-fi sounds like. Now each organ goes into the mix at half (6 dB of room), over -2.5 dBFS of that
+  through a knee that bends towards full scale instead of cutting, and the master doubles it back: the balance is as it
+  was, the clipping gone. The crush's drive and the rumble kept as they were. `bio_mixcheck check` (tests/run_bio.sh):
+  no organ past the room in any ritual, the limiter under 1 dB on average.
+- **The top was missing.** Against 1 kHz, CRYPT was -19 dB at 4 kHz, -32 at 8, -54 at 16 (a finished mix about -7, -12,
+  -21): the master's DARK on, the tape's WARP, the voices' filters low, and an organ of sines (a toy organ: nothing over
+  2 kHz). ORGAN's BODY now blends each pipe from a sine (flute) into a band-limited saw (principal, reed): its own
+  spectrum -12 dB at 8 kHz (was -39). CHOIR has air: its breath over 6.5 kHz, past the throats (TEXTURE). The dungeon
+  rituals' DARK off, WARP down, their voices brighter, the reverb's damping higher. CRYPT now -8, -17, -29; STARGATE
+  -11, -13, -18; ORACLE -10, -11, -23; CATACOMB (a choir in a cathedral) -12, -22, -27.
+- **The balance.** Each channel alone against the whole: CRYPT's organ was 8 dB over the melody and the harpsichord 15
+  under; CATACOMB's harpsichord 20 under the choir; ORACLE's choir pad over its melody. Now the melody leads (CRYPT's
+  strings -3, the organ -8, the bass -7, the harpsichord -10, the drums -11), the pads under it. ORACLE's glass melody
+  an octave lower and less modulated (its dirt, D36, stays in the model: as a lead it was a hash to 16 kHz).
+- **Louder.** The rituals came out at -18 .. -21 dBFS RMS with the limiter idle: small next to anything else. The master
+  4 dB up (the limiter taking the peaks): now -11 .. -18, the limiter on average under 0.3 dB (STREAM's master down, it
+  was at 1 dB; SPLICE's strikes 2 dB softer, they still reached the knee).
+- Unchanged: the CPU (the knee is a compare a sample, rarely more), the dry renders' shape, RUST's balance (made against
+  a reference, D20; it only stops clipping and is louder).

@@ -8,6 +8,27 @@
 #include "bio_organs.h"
 #include "bio_scar.h"
 
+/* (the host's mix check, tools/bio_mixcheck.c: where the engine runs out of room. Off in the firmware) */
+#ifdef BIO_STATS
+enum { BS_ORG, BS_SIDE, BS_DLY, BS_PRE, BS_AP, BS_LAP, BS_FDN, BS_RUM, BS_N };   /* (then each organ's: BS_N + o) */
+static uint32_t bio_st_n[BS_N + 9], bio_st_over[BS_N + 9];
+static int32_t bio_st_pk[BS_N + 9];
+static inline int32_t bio_sat_st(uint32_t i, int32_t x)
+{
+    int32_t a = bio_abs(x);
+    bio_st_n[i]++;
+    if (a > bio_st_pk[i]) bio_st_pk[i] = a;
+    if (a > 32767) bio_st_over[i]++;
+    return bio_sat(x);
+}
+static inline int32_t bio_seen_st(uint32_t i, int32_t x) { (void)bio_sat_st(i, x); return x; }
+#define BIO_SAT(i, x) bio_sat_st(i, x)
+#define BIO_SEEN(i, x) bio_seen_st(i, x)
+#else
+#define BIO_SAT(i, x) bio_sat(x)
+#define BIO_SEEN(i, x) (x)
+#endif
+
 #define BIO_DLY_N 32768u                        /* the delay: 0.74 s a side */
 #define BIO_REV_L 3400u                         /* the reverb's four lines (at 22.05 kHz) */
 #define BIO_PRE_N 2700u                         /* its pre-delay: 120 ms */
@@ -312,6 +333,17 @@ static inline int32_t bio_rd(const int16_t *b, uint32_t mask, uint32_t w, int32_
 }
 
 /* a mix level 0..100 to Q15 (a fader's law: the square) */
+/* (D41) an organ into the mix: at half (6 dB of room: an organ may reach twice full scale, a chord of three more), and
+   over -2.5 dBFS of that a knee that bends it towards full scale instead of cutting it off. The master doubles it back */
+static inline int32_t bio_mixknee(int32_t x)
+{
+    int32_t a = bio_abs(x), d;
+    if (a <= 24576) return x;
+    d = a - 24576;
+    if (d > (1 << 19)) d = 1 << 19;
+    a = 24576 + (int32_t)((uint32_t)d * 8191u / (uint32_t)(d + 8191));
+    return x < 0 ? -a : a;
+}
 static inline int32_t bio_fader(uint32_t v) { if (v > 100u) v = 100u; return (int32_t)(v * v * 32767u / 10000u); }
 
 /* the FX unit (D38): BLOOD DELAY and BILE REVERB on the sends the mix made two sub-blocks ago (fx_sa, fx_sb of this
@@ -338,11 +370,11 @@ static void bio_fx_unit(bio_t *e)
             fr2 = bio_op_lp(&e->dtr, yr);
             e->dw = (e->dw + 1u) & (BIO_DLY_N - 1u);
             if (e->fx.d_ping) {
-                e->dl[e->dw] = (int16_t)bio_sat(fx_sa[k] + bio_mul15(fr2, fb));
-                e->dr[e->dw] = (int16_t)bio_sat(bio_mul15(fl, fb));
+                e->dl[e->dw] = (int16_t)BIO_SAT(BS_DLY, fx_sa[k] + bio_mul15(fr2, fb));
+                e->dr[e->dw] = (int16_t)BIO_SAT(BS_DLY, bio_mul15(fl, fb));
             } else {
-                e->dl[e->dw] = (int16_t)bio_sat(fx_sa[k] + bio_mul15(fl, fb));
-                e->dr[e->dw] = (int16_t)bio_sat(fx_sa[k] + bio_mul15(fr2, fb));
+                e->dl[e->dw] = (int16_t)BIO_SAT(BS_DLY, fx_sa[k] + bio_mul15(fl, fb));
+                e->dr[e->dw] = (int16_t)BIO_SAT(BS_DLY, fx_sa[k] + bio_mul15(fr2, fb));
             }
             fx_l[k] += bio_mul15(yl, ret) * 4;   /* (+12 dB: a return of 50 the delay as loud as what went in, D36) */
             fx_r[k] += bio_mul15(yr, ret) * 4;
@@ -362,7 +394,7 @@ static void bio_fx_unit(bio_t *e)
             } else {
                 int32_t x = fz ? 0 : (e->rhalf + in) >> 2, y[4], a, b, c, d;
                 uint32_t j;
-                e->pre[e->pw] = (int16_t)bio_sat(x);
+                e->pre[e->pw] = (int16_t)BIO_SAT(BS_PRE, x);
                 {
                     int32_t i = (int32_t)e->pw - (int32_t)e->rpre;
                     x = e->pre[i < 0 ? i + (int32_t)BIO_PRE_N : i];
@@ -371,22 +403,22 @@ static void bio_fx_unit(bio_t *e)
                 /* two allpasses: the diffusion */
                 {
                     int32_t z = e->ap1[e->a1w], v = x - (z >> 1);
-                    e->ap1[e->a1w] = (int16_t)bio_sat(v);
+                    e->ap1[e->a1w] = (int16_t)BIO_SAT(BS_AP, v);
                     x = z + (v >> 1);
                     if (++e->a1w >= BIO_AP1) e->a1w = 0;
                     z = e->ap2[e->a2w];
                     v = x - (z >> 1);
-                    e->ap2[e->a2w] = (int16_t)bio_sat(v);
+                    e->ap2[e->a2w] = (int16_t)BIO_SAT(BS_AP, v);
                     x = z + (v >> 1);
                     if (++e->a2w >= BIO_AP2) e->a2w = 0;
                     z = e->ap3[e->a3w];
                     v = x - (z >> 1);
-                    e->ap3[e->a3w] = (int16_t)bio_sat(v);
+                    e->ap3[e->a3w] = (int16_t)BIO_SAT(BS_AP, v);
                     x = z + (v >> 1);
                     if (++e->a3w >= BIO_AP3) e->a3w = 0;
                     z = e->ap4[e->a4w];
                     v = x - (z >> 1);
-                    e->ap4[e->a4w] = (int16_t)bio_sat(v);
+                    e->ap4[e->a4w] = (int16_t)BIO_SAT(BS_AP, v);
                     x = z + (v >> 1);
                     if (++e->a4w >= BIO_AP4) e->a4w = 0;
                 }
@@ -404,7 +436,7 @@ static void bio_fx_unit(bio_t *e)
                     {                       /* an allpass in each line (67, 101, 139, 173: the tail thickens fast) */
                         static const uint8_t LA[4] = {67, 101, 139, 173};
                         int32_t z = e->lap[j][(e->law - LA[j]) & (BIO_LAP - 1u)], v = y[j] - (z >> 1);
-                        e->lap[j][e->law] = (int16_t)bio_sat(v);
+                        e->lap[j][e->law] = (int16_t)BIO_SAT(BS_LAP, v);
                         y[j] = z + (v >> 1);
                     }
                 }
@@ -415,10 +447,10 @@ static void bio_fx_unit(bio_t *e)
                     int32_t h0 = (a + c) >> 1, h1 = (b + d) >> 1, h2 = (a - c) >> 1, h3 = (b - d) >> 1;
                     int32_t g0 = fz ? 32702 : e->rg[0], g1 = fz ? 32702 : e->rg[1];
                     int32_t g2 = fz ? 32702 : e->rg[2], g3 = fz ? 32702 : e->rg[3];
-                    e->rv[0][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h0 * g0, 15) + x);
-                    e->rv[1][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h1 * g1, 15) + x);
-                    e->rv[2][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h2 * g2, 15) - x);
-                    e->rv[3][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h3 * g3, 15) - x);
+                    e->rv[0][e->rw] = (int16_t)BIO_SAT(BS_FDN, (int32_t)bio_rz64((int64_t)h0 * g0, 15) + x);
+                    e->rv[1][e->rw] = (int16_t)BIO_SAT(BS_FDN, (int32_t)bio_rz64((int64_t)h1 * g1, 15) + x);
+                    e->rv[2][e->rw] = (int16_t)BIO_SAT(BS_FDN, (int32_t)bio_rz64((int64_t)h2 * g2, 15) - x);
+                    e->rv[3][e->rw] = (int16_t)BIO_SAT(BS_FDN, (int32_t)bio_rz64((int64_t)h3 * g3, 15) - x);
                 }
                 if (++e->rw >= BIO_REV_L) e->rw = 0;
                 e->rprev_l = e->rout_l;
@@ -585,13 +617,14 @@ static void bio_post(bio_t *e, uint32_t b, int32_t *out, int32_t *meter)
                 pl = bio_m15(BIO_SIN[256u + pan * 256u / 100u], chg[ch]);   /* cos */
                 pr = bio_m15(BIO_SIN[pan * 256u / 100u], chg[ch]);          /* sin */
                 for (k = 0; k < BIO_SB; k++) {
-                    int32_t x = bio_sat(e->ob[b][o][k]), sd = bio_m15(bio_sat(e->os[b][o][k]), chg[ch]);
+                    int32_t x = bio_mixknee(BIO_SEEN(BS_ORG, BIO_SEEN(BS_N + o, e->ob[b][o][k] / 2)));   /* (D41: at half) */
+                    int32_t sd = bio_m15(BIO_SAT(BS_SIDE, e->os[b][o][k] / 2), chg[ch]);
                     dryl[k] += bio_m15(x, pl) + sd;   /* (the side: + left, - right) */
                     dryr[k] += bio_m15(x, pr) - sd;
                     chm[k] += x;
                     if (bio_abs(x) > pk) pk = bio_abs(x);
                 }
-                pk = bio_m15(pk, chg[ch]);
+                pk = bio_m15(pk, chg[ch]) * 2;  /* (the meters as before: full scale an organ's) */
                 if (pk > meter[ch]) meter[ch] = pk;
             }
             if (!any || !chg[ch]) continue;
@@ -614,7 +647,8 @@ static void bio_post(bio_t *e, uint32_t b, int32_t *out, int32_t *meter)
     /* RUMBLE: HEART, an eighth of the rate, two lines of 37 and 53 ms feeding each other (orthogonal) through a
        low-pass each, about 2 s long; back up to the full rate smoothly, ducked by PUMP */
     if (e->mix.rumble) {
-        int32_t rl = bio_mul15(bio_fader(e->mix.rumble), 32767 - bio_mul15(pp->duck, 25000)) * 2;   /* (its own: -12 dB) */
+        int32_t rl = bio_mul15(bio_fader(e->mix.rumble), 32767 - bio_mul15(pp->duck, 25000));   /* (its own: -12 dB; at half
+                                                   into the mix, D41) */
         for (k = 0; k < BIO_SB; k++) {
             e->rum_acc += e->ob[b][O_HEART][k];
             if ((k & 7u) == 7u) {
@@ -623,8 +657,8 @@ static void bio_post(bio_t *e, uint32_t b, int32_t *out, int32_t *meter)
                 e->rum_acc = 0;
                 a = bio_op_lp(&e->rum_d0, e->rum[0][(w - 207u) & (BIO_RUM_N - 1u)]);
                 b = bio_op_lp(&e->rum_d1, e->rum[1][(w - 293u) & (BIO_RUM_N - 1u)]);
-                e->rum[0][w] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)(a + b) * 19820, 15) + x);   /* (0.857 x 0.707) */
-                e->rum[1][w] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)(a - b) * 19820, 15) + x);
+                e->rum[0][w] = (int16_t)BIO_SAT(BS_RUM, (int32_t)bio_rz64((int64_t)(a + b) * 19820, 15) + x);   /* (0.857 x 0.707) */
+                e->rum[1][w] = (int16_t)BIO_SAT(BS_RUM, (int32_t)bio_rz64((int64_t)(a - b) * 19820, 15) + x);
                 e->rum_w = (w + 1u) & (BIO_RUM_N - 1u);
                 e->rum_pl = e->rum_l; e->rum_pr = e->rum_r;
                 e->rum_l = a; e->rum_r = b;
@@ -647,20 +681,21 @@ static void bio_post(bio_t *e, uint32_t b, int32_t *out, int32_t *meter)
             int32_t x;
             if (++e->c_cnt >= (int32_t)hold) {
                 e->c_cnt = 0;
-                x = bio_flesh(sc[k], drv);
+                x = bio_flesh(sc[k] * 2, drv);  /* (D41: its sends came at half; its drive as it was) */
                 if (x > fold) x = 2 * fold - x;
                 if (x < -fold) x = -2 * fold - x;
                 e->c_hold = x & mask;
             }
             x = bio_dc(&e->cdc, e->c_hold);
-            dryl[k] += bio_mul15(x, ret);
-            dryr[k] += bio_mul15(x, ret);
+            dryl[k] += bio_mul15(x, ret) / 2;
+            dryr[k] += bio_mul15(x, ret) / 2;
         }
     }
     /* the master: its level (-6 dB at INIT), DC, a peak limiter near -1 dBFS (the sub-block's peak first), a soft
        clip after it */
     {
-        int32_t mg = bio_fader(e->mix.master);   /* 75 -> 0.56: -5 dB at INIT */
+        int32_t mg = bio_mul15(bio_fader(e->mix.master), 25965);   /* 75 -> 0.56: -5 dB at INIT; then (D41) x 4 x 0.79:
+                                                   the organs' half back, and 4 dB louder, the limiter taking the peaks */
         uint32_t dk = e->mix.dark > 100u ? 100u : e->mix.dark;
         if (dk != e->dark_seen) {           /* DARK: 18 kHz at 1, 1.2 kHz at 100 */
             uint32_t j;
@@ -669,8 +704,8 @@ static void bio_post(bio_t *e, uint32_t b, int32_t *out, int32_t *meter)
             for (j = 1; j < 4u; j++) e->dk[j].g = e->dk[0].g;
         }
         for (k = 0; k < BIO_SB; k++) {
-            dryl[k] = bio_dc(&e->mdc_l, (int32_t)(((int64_t)dryl[k] * mg) >> 15));
-            dryr[k] = bio_dc(&e->mdc_r, (int32_t)(((int64_t)dryr[k] * mg) >> 15));
+            dryl[k] = bio_dc(&e->mdc_l, (int32_t)(((int64_t)dryl[k] * mg) >> 13));
+            dryr[k] = bio_dc(&e->mdc_r, (int32_t)(((int64_t)dryr[k] * mg) >> 13));
             if (dk) {
                 dryl[k] = bio_op_lp(&e->dk[1], bio_op_lp(&e->dk[0], dryl[k]));
                 dryr[k] = bio_op_lp(&e->dk[3], bio_op_lp(&e->dk[2], dryr[k]));

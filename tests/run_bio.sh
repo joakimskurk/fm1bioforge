@@ -26,6 +26,8 @@ run "the render on two cores: the same output in every split (D38)" sh -c \
 run "again under ThreadSanitizer (gcc's: a race is a bug on the FM-1 too)" sh -c \
     "gcc -O1 -g -fsanitize=thread -Wall -Wno-unused-function $I -pthread -o build/bio_par_tsan tests/bio_par_test.c &&
      build/bio_par_tsan 60 > build/bio_par_tsan.log 2>&1 && ! grep -q ThreadSanitizer build/bio_par_tsan.log"
+run "the mix: no organ past its room, the limiter light, every ritual (D41)" sh -c \
+    "cc -O2 -Wall -Wno-unused-function -DBIO_STATS $I -o build/bio_mixcheck tools/bio_mixcheck.c -lm && build/bio_mixcheck check"
 run "the renderer" cc -O2 -Wall -Wextra -Werror -Wno-unused-function $I -o build/bio_render tools/bio_render.c
 if [ -f firmware/src/bioforge.c ]; then
     CF="-O2 -Wall -Werror -Wno-unused-function -DDINGHY_HOST -DAPP_VER=\"test\" -Ifirmware/hal -Ifirmware/src -Ifirmware/gen"
