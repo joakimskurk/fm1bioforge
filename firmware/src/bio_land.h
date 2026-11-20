@@ -56,6 +56,8 @@ static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_
     case L_HARPSI:                              /* the quill: the brightness falls over DECAY's time, a click */
         v->lx[0] = 32767;
         v->lx[1] = 32767;
+        v->lu[2] = 0;                           /* (CHORD, D40: the strum's clock) */
+        for (k = 0; k < 6u; k++) v->cph[k] = 0;
         v->lx[2] = bio_decay(BIO_SB, bio_tau(bio_map_ms(p[P_DECAY], 30, 160, 1200) / 2u + 1u));
         break;
     default: break;
@@ -241,7 +243,9 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
     case L_CHOIR: {   /* three throats a little apart (MOTION) through three formants: BODY the vowel (U O A E I),
                          TEXTURE their breath */
         int32_t m = bio_clamp(body * 41 + bio_mul15(life->breath, 300), 0, 4 * 1024 - 1), f[3], d = mot * 7;
-        uint32_t vi = (uint32_t)m >> 10, j, i2 = bio_inc(v->lf + d), i3 = bio_inc(v->lf - d);
+        uint32_t vi = (uint32_t)m >> 10, j, i2, i3;
+        i2 = bio_inc(v->lf + (v->ch_n > 0u ? v->ch_lf[0] : 0) + d);   /* (CHORD, D40: the other throats sing its notes) */
+        i3 = bio_inc(v->lf + (v->ch_n > 1u ? v->ch_lf[1] : 0) - d);
         int32_t fr = m & 1023;
         for (j = 0; j < 3u; j++) {
             int32_t a0 = bio_lf_hz(BIO_VOWEL[vi][j]), a1 = bio_lf_hz(BIO_VOWEL[vi < 4u ? vi + 1u : 4u][j]);
@@ -572,9 +576,12 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
     case L_HARPSI: {   /* (D39) a plucked string, harpsichord to lute: two ranks (8' and 4', a few cents apart: MOTION how
                           far) of narrow pulses (TEXTURE: plucked near the end, nasal, to the middle, hollow, the 4' rank
                           coming in), their brightness falling with DECAY's time from where BODY puts it, a click of the
-                          quill; the 8' to one side, the 4' to the other */
+                          quill; the 8' to one side, the 4' to the other. CHORD (D40): strummed, a string each 18 ms
+                          after the root, to either side in turn */
         uint32_t w = 1288490189u - (uint32_t)(100 - tex) * 9019431u, i4 = bio_inc(v->lf + 12 * BIO_SEMI + 40 + mot * 12);
-        int32_t lfc, g4 = 6000 + tex * 200, cl0 = v->lx[1], cls;
+        uint32_t ci[3], j, cn = v->ch_n;
+        int32_t lfc, g4 = 6000 + tex * 200, cl0 = v->lx[1], cls, cg = BIO_CHORD_G[cn];
+        for (j = 0; j < cn; j++) ci[j] = bio_inc(v->lf + v->ch_lf[j] + 30 * (int32_t)j);
         lfc = bio_map_lf((uint32_t)body, 500, 2000, 7000) + bio_mul15(v->lx[0], 4 * 65536 / 2);
         bio_svf_set(&v->f1, lfc, bio_q_k(8));
         bio_svf_set(&v->f2, lfc + 1500, bio_q_k(8));
@@ -587,6 +594,18 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
             v->pa += inc; v->pb += i4;
             r8 = bio_pulse(v->pa, inc, w);
             r4 = bio_mul15(bio_pulse(v->pb, i4, w), g4);
+            if (cn) {                           /* (the strum: each string from its time on) */
+                if (v->lu[2] < 4000u) v->lu[2]++;
+                for (j = 0; j < cn; j++)
+                    if (v->lu[2] > (j + 1u) * 794u) {
+                        int32_t x;
+                        v->cph[j] += ci[j];
+                        x = bio_pulse(v->cph[j], ci[j], w);
+                        if (j & 1u) r4 += x; else r8 += x;
+                    }
+                r8 = bio_mul15(r8, cg);
+                r4 = bio_mul15(r4, cg);
+            }
             cl0 += cls;
             c = bio_mul15(bio_svf_bp(&v->f3, bio_noise(&v->rnd)), cl0);
             yl = bio_svf(&v->f1, r8 + c, &bp);

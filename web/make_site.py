@@ -41,7 +41,20 @@ BLOCKS, BLK, KEEP = 20, 0x30, 0x2F
 APP = {"build/web/bioforge.wasm": "bioforge.wasm", "web/app/worklet.js": "worklet.js", "web/app/play.js": "play.js"}
 SCREENS = ("seq", "land", "mut")            # (a few: the page is the FM-1 itself)
 DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each; tools/make_demos.sh
-            # renders every script, the page carries these eight)
+            # renders every script, the page carries these ten)
+    ("25_catacomb", "CATACOMB",
+     "Dungeon synth, 60 BPM, E Aeolian, in a cathedral: a choir sings the chords (i, VI, III, VII: CHORD on CHOIR), a "
+     "harpsichord strums them, an organ's bourdon under them on the roots, a frame drum and a deep one, wind; the tape a "
+     "little worn."),
+    ("23_crypt", "CRYPT",
+     "Dungeon synth, 66 BPM, D harmonic minor: a pipe organ's chords in full registration (i, VI, iv, V), a string "
+     "machine's slow melody over them, a harpsichord arpeggiating each chord, a bass pedal, a deep drum, wind; a vast room."),
+    ("26_oracle", "ORACLE",
+     "Sci-fi, 96 BPM, F# Dorian: a choir pad holding open sevenths, brass stabs of the chords off the beat, a bass "
+     "arpeggio in sixteenths, a glass melody from the nervous system, a kick, a snare's crack, hats; a long ping-pong."),
+    ("24_stargate", "STARGATE",
+     "Sci-fi, Berlin school, 108 BPM, A Aeolian: a bass sequence in sixteenths, a brass lead that swells open and bends "
+     "in late, strings on open sevenths high, a glass arpeggio, a soft kick on the four, hats, a clap; a long delay."),
     ("2_rust", "RITUAL 01 · RUST",
      "Grim dark industrial ambience with a pulse and a melody, 108 BPM. A drone for a body (a MASS of octaves and a "
      "fifth on D1, a CLUSTER of semitones over it), a smouldering rumble and a wash of noise; a deep sub kick and its "
@@ -51,16 +64,9 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
      "Dark ambient meets noise, 110 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
      "crackling, the reverb and the delay breathing with it; ticks of six squares off the beat, sparks in time; wide, "
      "drifting dub chords off the beat into a dark delay, a bass on the off-beats, a wide drone and a choir in a cave."),
-    ("5_frozen", "FROZEN",
-     "Rhythm made of noise. Each 16th a slice of noise with its own band, length, shape and place; the register locks "
-     "them, so the same noise comes back every bar and is the groove. LOOP down: slice after slice slips to new noise; "
-     "back to LOCK: what it has become stays."),
     ("16_grinder", "GRINDER",
      "Industrial techno, 140 BPM, E Phrygian dominant: a hard driven kick, a crushed snare, metal hats, a rolling bass "
      "between the kicks, an iron stab, slices of metal noise locked; the crusher on. The hard, bright end."),
-    ("20_lament", "LAMENT",
-     "A melody, 92 BPM, C harmonic minor: a choir sings four bars (i, iv, V with its raised seventh, i), glass arped up "
-     "and down through each chord, the bass on the roots, a soft kick and a clap far off, a hall."),
     ("21_shrine", "SHRINE",
      "Sweetness, ruptured: E Lydian, no beat but a clock. Glass arped up and down a major ninth, a choir on the sharp "
      "fourth, chimes; all of it through a wavering tape (WARP), and the nervous system cutting into it (RUPTURE): a "

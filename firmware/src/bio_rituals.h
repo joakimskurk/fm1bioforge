@@ -986,10 +986,10 @@ static void rit_crypt(seq_scene_t *sc)
    kick on the four, hats, a clap; a long delay, a hall */
 static void rit_stargate(seq_scene_t *sc)
 {
-    static const uint8_t MEL[10][3] = {
-        {0, 6, 69}, {6, 2, 72}, {8, 8, 71}, {16, 12, 67}, {28, 4, 64}, {32, 6, 69}, {38, 2, 76}, {40, 8, 74},
-        {48, 16, 72}, {0, 0, 0}};
-    static const uint8_t ROOT[4] = {45, 41, 43, 40};   /* A F G E */
+    static const uint8_t MEL[10][3] = {   /* (in D's own space: the KEY, A, moves it up a fifth) */
+        {0, 6, 62}, {6, 2, 65}, {8, 8, 64}, {16, 12, 60}, {28, 4, 57}, {32, 6, 62}, {38, 2, 69}, {40, 8, 67},
+        {48, 16, 65}, {0, 0, 0}};
+    static const uint8_t ROOT[4] = {38, 46, 48, 45};   /* A F G E (in D's space: D B-flat C A) */
     static const char *const SEQ = "x.xxx.x.xx.xx.x.";
     uint32_t k, j;
     seq_scene_blank(sc, 0x57A6Eu);
@@ -1003,15 +1003,15 @@ static void rit_stargate(seq_scene_t *sc)
     rit_model(sc, O_DRONE, L_STRINGS, 55, 70, 50, 60);
     sc->p[O_DRONE][P_A] = 30; sc->p[O_DRONE][P_R] = 50;
     rit_arp(sc, O_DRONE, ARP_CHORD, 4, 2, 1, 6);   /* (sevenths, open) */
-    for (k = 0; k < 4u; k++) seq_put(sc, O_DRONE, k * 16u, 16 * 96 - 10, ROOT[k] + 24u, 80, 0);
+    for (k = 0; k < 4u; k++) seq_put(sc, O_DRONE, k * 16u, 16 * 96 - 10, ROOT[k] + (k ? 12u : 24u), 80, 0);
     rit_model(sc, O_SPASM, L_GLASS, 40, 40, 40, 30);
     sc->p[O_SPASM][P_PAN] = 30;
     rit_arp(sc, O_SPASM, ARP_UP, 1, 2, 1, 5);
-    for (k = 0; k < 4u; k++) seq_put(sc, O_SPASM, k * 16u, 16 * 96 - 6, ROOT[k] + 24u, 70, 0);
+    for (k = 0; k < 4u; k++) seq_put(sc, O_SPASM, k * 16u, 16 * 96 - 6, ROOT[k] + (k ? 12u : 24u), 70, 0);
     sc->p[O_BASS][P_D1] = 55; sc->p[O_BASS][P_D] = 30; sc->p[O_BASS][P_A] = 0;
     for (k = 0; k < 4u; k++)
         for (j = 0; j < 16u; j++)
-            if (SEQ[j] == 'x') seq_put(sc, O_BASS, k * 16u + j, 80, ROOT[k] - 12u + (j == 6u || j == 12u ? 12u : 0u), j % 4u ? 80 : 100, 0);
+            if (SEQ[j] == 'x') seq_put(sc, O_BASS, k * 16u + j, 80, ROOT[k] - (k ? 24u : 12u) + (j == 6u || j == 12u ? 12u : 0u), j % 4u ? 80 : 100, 0);
     rit_perc(sc, O_HEART, "SUB KICK", 50);
     sc->p[O_HEART][P_LEVEL] = 76;
     rit_steps(sc, O_HEART, "x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.x.", 60, 100, 96);
@@ -1030,15 +1030,108 @@ static void rit_stargate(seq_scene_t *sc)
     sc->mix.pump = 25; sc->mix.dark = 12; sc->mix.master = 82;
     sc->tur.loop = 100; sc->tur.depth = 6;
 }
+/* RITUAL: CATACOMB (D40). Dungeon synth, 60 BPM, E AEOLIAN, in a CATHEDRAL: a choir singing the chords (CHORD on
+   CHOIR: e minor, C, G, D), a harpsichord strumming them on the beat and the off-beat, an organ's bourdon
+   on the roots under it, a frame drum and a deep one, wind; the tape a little worn */
+static void rit_catacomb(seq_scene_t *sc)
+{
+    static const uint8_t ROOT[4] = {50, 46, 53, 48};   /* i VI III VII: E C G D (in D's own space: D B-flat F C) */
+    static const char *const ST = "x.......x...x...";
+    uint32_t k, j;
+    seq_scene_blank(sc, 0xCA7ACu);
+    rit_name(sc, "CATACOMB");
+    rit_key(sc, 2, 1);
+    sc->bpm10 = 600;
+    for (k = 0; k < BIO_NORG; k++) sc->tr[k].len = 64;
+    rit_model(sc, O_VOICE, L_CHOIR, 30, 25, 55, 60);
+    sc->p[O_VOICE][P_A] = 55; sc->p[O_VOICE][P_R] = 65;
+    rit_arp(sc, O_VOICE, ARP_CHORD, 4, 1, 0, 6);
+    for (k = 0; k < 4u; k++) seq_put(sc, O_VOICE, k * 16u, 16 * 96 - 12, ROOT[k] + 12u, 86, 0);
+    rit_model(sc, O_SPASM, L_HARPSI, 40, 25, 30, 55);
+    sc->p[O_SPASM][P_A] = 0; sc->p[O_SPASM][P_S] = 0; sc->p[O_SPASM][P_R] = 40; sc->p[O_SPASM][P_PAN] = 36;
+    rit_arp(sc, O_SPASM, ARP_CHORD, 4, 2, 0, 6);
+    for (k = 0; k < 4u; k++)
+        for (j = 0; j < 16u; j++)
+            if (ST[j] == 'x') seq_put(sc, O_SPASM, k * 16u + j, 3 * 96, ROOT[k] + 12u, j ? 74 : 92, 0);
+    rit_model(sc, O_BASS, L_ORGAN, 10, 95, 20, 60);   /* (the bourdon: the 16' under a flute) */
+    sc->p[O_BASS][P_A] = 20; sc->p[O_BASS][P_S] = 90; sc->p[O_BASS][P_R] = 50;
+    for (k = 0; k < 4u; k++) seq_put(sc, O_BASS, k * 16u, 16 * 96 - 12, ROOT[k] - 12u, 84, 0);
+    rit_perc(sc, O_HEART, "DEEP KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 74;
+    rit_steps(sc, O_HEART, "x...............x.......x.......x...............x.......x...x...", 60, 100, 96);
+    rit_perc(sc, O_BONE, "THUMP", 64);
+    sc->p[O_BONE][P_LEVEL] = 60;
+    rit_steps(sc, O_BONE, "....x.......x.g......x.....x..g.....x.......x.g......x.....x..g.", 60, 76, 48);
+    rit_perc(sc, O_NOISE, "WASH", 50);
+    sc->p[O_NOISE][P_LEVEL] = 36;
+    seq_put(sc, O_NOISE, 0, 64 * 96 - 8, 60, 70, 0);
+    sc->mix.lvl[CH_VOICE] = 70; sc->mix.lvl[CH_SPASM] = 60; sc->mix.lvl[CH_BASS] = 58; sc->mix.lvl[CH_DRUM] = 68;
+    sc->mix.lvl[CH_NOISE] = 30;
+    sc->mix.sb[CH_VOICE] = 85; sc->mix.sb[CH_SPASM] = 75; sc->mix.sa[CH_SPASM] = 40; sc->mix.sb[CH_BASS] = 40;
+    sc->mix.sb[CH_DRUM] = 60; sc->mix.sb[CH_NOISE] = 70;
+    sc->fx.d_time = 6; sc->fx.d_fb = 40; sc->fx.d_mix = 24; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 30;
+    sc->fx.r_space = 5; sc->fx.r_mix = 34; sc->fx.r_decay = 60; sc->fx.r_size = 90; sc->fx.r_damp = 50; sc->fx.c_mix = 0;
+    sc->mix.warp = 30; sc->mix.dark = 30; sc->mix.master = 84;
+    sc->tur.loop = 100; sc->tur.depth = 6;
+}
+/* RITUAL: ORACLE (D40). Sci-fi, 96 BPM, F# DORIAN: a choir pad holding the chords (CHORD 7TH, open), brass stabs of
+   them off the beat (CHORD on BRASS), a bass arpeggio in sixteenths, a glass melody from the register, a kick, a
+   snare's crack, hats; a long ping-pong, a hall */
+static void rit_oracle(seq_scene_t *sc)
+{
+    static const uint8_t ROOT[4] = {38, 36, 41, 43};   /* F# E A B (in D's own space: D C F G) */
+    static const char *const ST = "...x.....x....x.";
+    uint32_t k, j;
+    seq_scene_blank(sc, 0x0AC1Eu);
+    rit_name(sc, "ORACLE");
+    rit_key(sc, 4, 10);
+    sc->bpm10 = 960;
+    for (k = 0; k < BIO_NORG; k++) sc->tr[k].len = 64;
+    rit_model(sc, O_DRONE, L_CHOIR, 55, 30, 40, 60);
+    sc->p[O_DRONE][P_A] = 40; sc->p[O_DRONE][P_R] = 50;
+    rit_arp(sc, O_DRONE, ARP_CHORD, 4, 2, 1, 6);
+    for (k = 0; k < 4u; k++) seq_put(sc, O_DRONE, k * 16u, 16 * 96 - 10, ROOT[k] + 24u, 80, 0);
+    rit_model(sc, O_SPASM, L_BRASS, 40, 80, 20, 40);
+    sc->p[O_SPASM][P_A] = 0; sc->p[O_SPASM][P_PAN] = 60;
+    rit_arp(sc, O_SPASM, ARP_CHORD, 4, 1, 0, 6);
+    for (k = 0; k < 4u; k++)
+        for (j = 0; j < 16u; j++)
+            if (ST[j] == 'x') seq_put(sc, O_SPASM, k * 16u + j, 72, ROOT[k] + 12u, 88, 0);
+    sc->p[O_BASS][P_D1] = 45; sc->p[O_BASS][P_D] = 35; sc->p[O_BASS][P_A] = 0;
+    rit_arp(sc, O_BASS, ARP_UPDN, 2, 1, 0, 5);
+    for (k = 0; k < 4u; k++) seq_put(sc, O_BASS, k * 16u, 16 * 96 - 6, ROOT[k] - 12u, 92, 0);
+    rit_model(sc, O_VOICE, L_GLASS, 45, 40, 45, 40);
+    sc->p[O_VOICE][P_PAN] = 35;
+    sc->tr[O_VOICE].len = 16;
+    rit_steps(sc, O_VOICE, "x.....x.....x...", 66, 70, 2 * 96);
+    sc->tur.wail = 2;
+    rit_perc(sc, O_HEART, "SUB KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 78;
+    rit_steps(sc, O_HEART, "x.......x.x.....x.......x.......x.......x.x.....x.......x...x...", 60, 100, 96);
+    rit_perc(sc, O_BONE, "DIGI SNR", 54);
+    sc->p[O_BONE][P_LEVEL] = 58;
+    rit_steps(sc, O_BONE, "....x.......x.......x.......x.......x.......x.......x.......x.g.", 60, 86, 48);
+    rit_perc(sc, O_TEETH, "SIX HAT", 42);
+    rit_steps(sc, O_TEETH, "x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.xxx.", 60, 58, 24);
+    sc->mix.lvl[CH_DRONE] = 52; sc->mix.lvl[CH_SPASM] = 58; sc->mix.lvl[CH_BASS] = 70; sc->mix.lvl[CH_VOICE] = 56;
+    sc->mix.lvl[CH_DRUM] = 74;
+    sc->mix.sb[CH_DRONE] = 80; sc->mix.sa[CH_SPASM] = 60; sc->mix.sb[CH_SPASM] = 50; sc->mix.sa[CH_VOICE] = 70;
+    sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_DRUM] = 22;
+    sc->fx.d_time = 5; sc->fx.d_fb = 55; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 55; sc->fx.d_tone = 40;
+    sc->fx.r_space = 0; sc->fx.r_mix = 30; sc->fx.r_decay = 65; sc->fx.r_size = 80; sc->fx.c_mix = 0;
+    sc->fx.r_duck = 30;
+    sc->mix.pump = 20; sc->mix.dark = 10; sc->mix.master = 82;
+    sc->tur.loop = 92; sc->tur.depth = 8;
+}
 static void rit_empty(seq_scene_t *sc) { seq_scene_blank(sc, 0x7E3u); rit_name(sc, "EMPTY BODY"); }
 /* (the first four are the scenes before anything is saved: the document's start, then rhythm made of noise, D20) */
 static const rit_fn BIO_RITUAL[] = {rit_awaken, rit_rust, rit_abyss, rit_ash, rit_frozen, rit_stream, rit_wall, rit_data,
                                     rit_embers, rit_foundry, rit_orbit, rit_innards, rit_static, rit_splice, rit_void,
                                     rit_lament, rit_grinder, rit_spine, rit_ossuary, rit_tendon, rit_shrine, rit_mirage,
-                                    rit_crypt, rit_stargate, rit_empty};
+                                    rit_crypt, rit_stargate, rit_catacomb, rit_oracle, rit_empty};
 static const char *const BIO_RITUAL_NAME[] = {"AWAKENING", "RUST", "ABYSS", "ASH", "FROZEN", "STREAM", "WALL", "DATA",
                                               "EMBERS", "FOUNDRY", "ORBIT", "INNARDS", "STATIC CULT", "SPLICE", "VOID",
                                               "LAMENT", "GRINDER", "SPINE", "OSSUARY", "TENDON", "SHRINE", "MIRAGE",
-                                              "CRYPT", "STARGATE", "EMPTY BODY"};
+                                              "CRYPT", "STARGATE", "CATACOMB", "ORACLE", "EMPTY BODY"};
 #define BIO_NRITUAL (sizeof BIO_RITUAL / sizeof BIO_RITUAL[0])
 #endif

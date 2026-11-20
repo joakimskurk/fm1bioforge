@@ -1,0 +1,8 @@
+# Demo: CATACOMB (a factory ritual, D40): dungeon synth, 60 BPM, E Aeolian, in a CATHEDRAL. A choir singing the chords
+# (i VI III VII), a harpsichord strumming them, an organ's bourdon on the roots, a frame drum and a deep one, wind
+100 btndown 3
+200 enc 6 24
+300 btnup 3
+400 btn 12
+32400 btn 12
+38400 end

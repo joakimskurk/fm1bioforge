@@ -544,14 +544,17 @@ static void test_perc(void)
     /* SPACE: the reverb's rooms are other rooms (ROOM's lines shorter, METAL's the shortest, VAST's the longest) */
     {
         uint32_t L[BIO_NSPACE], sp;
+        int32_t G[BIO_NSPACE];
         for (sp = 0; sp < BIO_NSPACE; sp++) {
             setup(&eng, &sq, scn, und, red);
             eng.tick = 0;
             eng.fx.r_space = (uint8_t)sp;
             run(&eng, 1, 0);
             L[sp] = eng.rlen[0];
+            G[sp] = eng.rg[0];
         }
         check(L[3] < L[1] && L[1] < L[0] && L[0] < L[2] && L[2] <= L[4], "SPACE: METAL < ROOM < HALL < CAVE <= VAST, the reverb's lines");
+        check(L[5] == L[4] && G[5] > G[4] && eng.rpre > 1550u, "SPACE CATHEDRAL: VAST's lines, longer (more of each pass kept), its walls far");
     }
     /* the factory rituals: each plays, in range, and each is its own */
     for (i = 0; i < BIO_NRITUAL; i++) {
@@ -788,6 +791,33 @@ static void test_chord(void)
     seq_stop(&sq);
 }
 
+/* SONG (D40): a scene with BARS moves on to its THEN when it has played them, bar for bar; one asked for wins */
+static uint32_t song_bar_of(void) { return sq.ticks / SEQ_BAR; }
+static void test_song(void)
+{
+    uint32_t seen[8], n = 0, last = ~0u, b, ok;
+    setup(&eng, &sq, scn, und, red);
+    seq_scene_blank(&scn[0], 0x50u); scn[0].song_bars = 1; scn[0].song_next = 1;   /* 1 bar, then R01 */
+    seq_scene_blank(&scn[1], 0x51u); scn[1].song_bars = 2; scn[1].song_next = 3;   /* 2 bars, then R03 */
+    seq_scene_blank(&scn[3], 0x53u); scn[3].song_bars = 0;                       /* R03 for ever */
+    seq_play(&sq);
+    for (b = 0; b < 400u && n < 8u; b++) {      /* (120 BPM: a bar is 2 s, 345 blocks of 256) */
+        run(&eng, 1, 0);
+        if (sq.cur != last) { last = sq.cur; seen[n++] = sq.cur << 8 | song_bar_of(); }
+    }
+    for (; b < 3000u; b++) { run(&eng, 1, 0); if (sq.cur != last) { last = sq.cur; if (n < 8u) seen[n++] = sq.cur << 8 | song_bar_of(); } }
+    ok = n == 3u && seen[0] == 0u && seen[1] == (1u << 8 | 1u) && seen[2] == (3u << 8 | 3u);
+    if (!ok) { uint32_t j; printf("     song:"); for (j = 0; j < n; j++) printf(" R%u@%u", (unsigned)(seen[j] >> 8), (unsigned)(seen[j] & 255u)); printf("\n"); }
+    check(ok, "SONG: R00 one bar, R01 two, then R03 for ever (each on its bar)");
+    seq_stop(&sq);
+    sq.cur = sq.next = 0;
+    seq_play(&sq);
+    sq.next = 2;                                 /* asked for during R00's bar: R02 wins over its THEN (R01) */
+    run(&eng, 360, 0);
+    check(sq.cur == 2u, "SONG: a scene asked for wins over the THEN");
+    seq_stop(&sq);
+}
+
 /* D35: SCREW is the 8th just played at half speed (its zero crossings half as many); DROP is silence; WARP keeps the
    loudness but not the samples; RUPTURE's cuts, with the register locked, come back where they were each time round */
 static void test_unorthodox(void)
@@ -877,6 +907,7 @@ int main(void)
     test_key();
     test_arp();
     test_chord();
+    test_song();
     test_unorthodox();
     printf("%d of %d checks passed\n", checks - fails, checks);
     return fails ? 1 : 0;

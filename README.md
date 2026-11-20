@@ -1,6 +1,7 @@
 # BIOFORGE for the M-VAVE FM-1
 
-**A biomechanical rhythm machine and synth that sounds like its own disturbing machinery.** Rhythm comes from
+**A biomechanical sci-fi dungeon synth and groovebox that sounds like its own disturbing machinery.** Pipe organs,
+string machines, choirs and harpsichords in cathedral rooms; the brass and sequences of old science fiction; rhythm from
 pressure, fracture, friction and vents in resonant bodies. Tonal organs add mass, breath, nerve discharges and an
 artificial throat. You play the keys straight into the pattern memory. A Turing register works as a nervous system:
 it locks the sound and the rhythm in place, and changes them slowly.
@@ -22,7 +23,7 @@ it locks the sound and the rhythm in place, and changes them slowly.
 > emulator) in CI. It has not been tried on an actual device yet. Install it at your own risk.
 
 This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an idea document,
-*BIOFORGE idédokument v3.0*, fitted to the FM-1: 27 keys, 14 buttons, 7 encoders, one core without an FPU and a
+*BIOFORGE idédokument v3.0*, fitted to the FM-1: 27 keys, 14 buttons, 7 encoders, two cores without an FPU and a
 240 x 240 screen. [docs/bioforge/PLAN.md](docs/bioforge/PLAN.md) says what was kept and how it was fitted.
 [DECISIONS.md](docs/bioforge/DECISIONS.md) says why.
 
@@ -55,7 +56,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
   the key is held); **cosmic** GLASS (inharmonic partials beating, rough with phase modulation and a detuned twin), BELL (dirty FM: two
   carriers apart, the modulator fed back on itself, a floor of grit, driven), CHOIR (three throats through vowels);
   **the body** BLOOD (a pulse with the beat), BUBBLE (rising drops), SLIME (a wet squelch).
-- **Rooms.** The reverb's SPACE (FX, again, again): HALL, ROOM, CAVE, METAL (a ringing tank) or VAST.
+- **Rooms.** The reverb's SPACE (FX, again, again): HALL, ROOM, CAVE, METAL (a ringing tank), VAST or CATHEDRAL (as big as
+  VAST, three times as long, darker, its walls far).
 - **A deep kick.** A drum organ's MODEL KICK: a sine swept down to its pitch, held, a long decay, drive, then low-passed
   so it keeps almost no top. DEEP KICK, SUB KICK and DUB KICK on the SOUND knob.
 - **PUMP and RUMBLE.** PUMP: HEART ducks the other channels and the delay's and reverb's returns, back by the next
@@ -107,7 +109,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
     140 BPM, the hard end), SPINE (a half-time broken beat, 170 BPM), OSSUARY (no beat at all, C# Locrian), TENDON
     (seven eighths), SHRINE (sweetness, ruptured: E Lydian through a wavering tape, the register cutting into it), MIRAGE
     (a loop chopped and screwed by the register), CRYPT (dungeon synth: an organ, strings, a harpsichord, D harmonic
-    minor), STARGATE (sci-fi, Berlin school: a brass lead over a bass sequence) and EMPTY BODY. The one in flash stays until you SAVE.
+    minor), STARGATE (sci-fi, Berlin school: a brass lead over a bass sequence), CATACOMB (a choir singing chords, a
+    strummed harpsichord, a cathedral), ORACLE (sci-fi: a choir pad, brass stabs, a bass arpeggio) and EMPTY BODY. The one in flash stays until you SAVE.
   - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
 ## Using it
@@ -126,7 +129,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 | **LFO** | MUT: the spine. **Held:** white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK. |
 | **FX** | Delay, reverb, crush; again: their times and colours; again: the reverb's SPACE. |
 | **GLO** | Tempo, swing, quantise and its strength; SHIFT: OVERDUB or REPLACE, the step length, the key LEDs, the MIDI channel. |
-| **GLO** again | The notes: KEY (D .. C#: the synths and NOISE move to it, the drums stay) and SCALE (PHRYGIAN, AEOLIAN, LOCRIAN, HARM MINOR, PHRYG DOM, WHOLE TONE, PENTA MIN, CHROMATIC, LYDIAN, MAJOR, DORIAN, HIRAJOSHI: WAIL and the ARP pick from it); the focused synth's ARP (UP, DOWN, UP-DN, NERVE: the register picks) and its RATE; SHIFT: its RANGE (1 to 3 octaves), CHORD (TRIAD, 7TH, 9TH, SUS4, FIFTHS), GATE. |
+| **GLO** again | The notes: KEY (D .. C#: the synths and NOISE move to it, the drums stay) and SCALE (PHRYGIAN, AEOLIAN, LOCRIAN, HARM MINOR, PHRYG DOM, WHOLE TONE, PENTA MIN, CHROMATIC, LYDIAN, MAJOR, DORIAN, HIRAJOSHI: WAIL and the ARP pick from it); the focused synth's ARP (UP, DOWN, UP-DN, NERVE: the register picks; CHORD: the whole chord at once, on ORGAN, STRINGS, BRASS, CHOIR and HARPSI, which strums it) and its RATE; SHIFT: its RANGE (1 to 3 octaves; CHORD: 2 and 3 open), CHORD (TRIAD, 7TH, 9TH, SUS4, FIFTHS), GATE. |
+| **GLO** again | SONG: each of the four scenes plays its BARS (1 .. 64; OFF: for ever), THEN the scene after it, so the scenes chain into a piece; PRESETS still asks for another, which wins. |
 | **ARP** | **Held:** BURST on the white keys: STUTTER, INVERT (the register), FREEZE (the reverb), SPASM (a nerve burst); SCAR on keys 5 to 10: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR, SCREW, DROP (the last pressed plays). |
 | **SAVE** | The scene to flash (playing: when it stops). SHIFT: every edited scene. Left alone, stopped and quiet, a scene saves itself. |
 | **PLAY** | Start, stop. SHIFT + PLAY: PANIC (every voice silent, the memory kept). |

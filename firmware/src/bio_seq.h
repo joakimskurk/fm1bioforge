@@ -23,7 +23,7 @@
 #define SEQ_BAR (16u * SEQ_TPS)
 #define SEQ_MAGIC 0x39464F42u                   /* "BOF9": the scene's format (2: PUMP; 3: 24 parameters; 4: SPACE; 5: RUMBLE;
                                                    6: DARK; 7: DUCK; 8: WARP, RUPTURE; 9: four MODELs more, D39, so a
-                                                   MODEL's value means another) */
+                                                   MODEL's value means another; and SONG, D40) */
 #define SEQ_NUNDO 16u
 #define SEQ_NREDO 8u
 
@@ -53,7 +53,10 @@ typedef struct {
     bio_fxp_t fx;
     bio_tur_set_t tur;
     char name[12];
+    uint8_t song_bars, song_next, spad[2];      /* SONG (D40): played this many bars (SEQ_SONG_BARS; 0: for ever), then
+                                                   the scene song_next */
 } seq_scene_t;
+static const uint8_t SEQ_SONG_BARS[8] = {0, 1, 2, 4, 8, 16, 32, 64};
 
 static const uint16_t SEQ_QGRID[5] = {0, 48, 96, 192, 384};   /* OFF 1/32 1/16 1/8 1/4 */
 static const char *const SEQ_QNAME[5] = {"OFF", "1/32", "1/16", "1/8", "1/4"};
@@ -68,6 +71,7 @@ typedef struct {
     /* the transport (ISR) */
     volatile uint32_t playing, ticks, frac;     /* ticks since PLAY, its fraction (Q16) */
     volatile uint32_t step_seen, bar;
+    uint32_t sbars;                             /* SONG (D40): the bars the scene has played since it came */
     uint32_t cursor[BIO_NORG], ver_seen[BIO_NORG];
     volatile uint32_t ver[BIO_NORG];            /* (main) a track was edited: the ISR looks again */
     uint32_t off_t[BIO_NORG];                   /* the sounding note's end (ticks since PLAY + 1; 0: none) */
@@ -388,11 +392,21 @@ static void seq_tick(bio_t *e, void *ctx)
         s->e->grid = g;
         s->e->grid_on = 1;
     }
+    /* SONG (D40): a scene with BARS moves on to its THEN when it has played them (unless another was asked for) */
+    if (t1 / SEQ_BAR != t0 / SEQ_BAR && t0) {
+        const seq_scene_t *c = &s->sc[s->cur];
+        uint32_t nb = SEQ_SONG_BARS[c->song_bars & 7u];
+        if (nb && ++s->sbars >= nb) {
+            s->sbars = 0;
+            if (s->next == s->cur) s->next = c->song_next % SEQ_NSCENE;
+        }
+    }
     /* the next scene, on the bar */
     if (s->next != s->cur && t1 / SEQ_BAR != t0 / SEQ_BAR) {
         uint32_t o;
         for (o = 0; o < BIO_NORG; o++) bio_release(s->e, o, 255u);
         s->cur = s->next;
+        s->sbars = 0;
         for (o = 0; o < BIO_NORG; o++) s->ver_seen[o] = ~0u;
         seq_noise_clear(s);                     /* (another scene, its own noise) */
         seq_tempo(s);
@@ -562,6 +576,7 @@ static void seq_play(seq_t *s)
     SEQ_LOCK();
     s->ticks = s->frac = 0;
     s->bar = 0;
+    s->sbars = 0;
     s->nghost = 0;
     s->rup_end = 0;
     s->e->scar.want_auto = 0;
@@ -846,6 +861,8 @@ static void seq_scene_blank(seq_scene_t *sc, uint32_t seed)
     sc->fx = BIO_FX_INIT;
     sc->tur = BIO_TUR_INIT;
     for (k = 0; k < sizeof sc->name; k++) sc->name[k] = 0;
+    sc->song_bars = sc->song_next = 0;
+    sc->spad[0] = sc->spad[1] = 0;
 }
 static void seq_put(seq_scene_t *sc, uint32_t trk, uint32_t step, uint32_t len_ticks, uint32_t note, uint32_t vel, uint32_t fl)
 {

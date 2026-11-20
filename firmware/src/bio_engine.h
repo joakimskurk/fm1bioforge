@@ -30,11 +30,12 @@ typedef struct {
     uint8_t d_time, d_fb, d_tone, d_ping, d_mix, d_rev;   /* BLOOD DELAY: time (a division), feedback, tone, ping-pong, return, to the reverb */
     uint8_t r_size, r_decay, r_damp, r_pre, r_mix;        /* BILE REVERB */
     uint8_t c_drive, c_rate, c_bits, c_fold, c_mix;       /* MARROW CRUSH */
-    uint8_t r_space;                                      /* the reverb's SPACE (D21): HALL ROOM CAVE METAL VAST */
+    uint8_t r_space;                                      /* the reverb's SPACE (D21): HALL ROOM CAVE METAL VAST
+                                                             CATHEDRAL (D40) */
     uint8_t r_duck;                                       /* the kick ducks the returns (D25), apart from PUMP */
 } bio_fxp_t;
-#define BIO_NSPACE 5u
-static const char *const BIO_SPACE_NAME[BIO_NSPACE] = {"HALL", "ROOM", "CAVE", "METAL", "VAST"};
+#define BIO_NSPACE 6u
+static const char *const BIO_SPACE_NAME[BIO_NSPACE] = {"HALL", "ROOM", "CAVE", "METAL", "VAST", "CATHEDRAL"};
 
 /* the delay's divisions, in 1/96 of a beat (a 16th is 24): 1/32 1/16 3/32 1/8 3/16 1/4 3/8 1/2 3/4 1 bar */
 static const uint16_t BIO_DIV[10] = {12, 24, 36, 48, 72, 96, 144, 192, 288, 384};
@@ -257,10 +258,11 @@ static void bio_fx_coefs(bio_t *e)
 {
     static const uint16_t RL[4] = {1109, 1361, 1621, 1871};
     /* SPACE: the lines' lengths and the decay (x/256), the damping (lf), more pre-delay. ROOM small and short; CAVE
-       big, dark, late; METAL lines so short their echoes are a pitch: a ringing tank; VAST the biggest, long, open */
-    static const uint16_t SL[BIO_NSPACE] = {256, 115, 333, 46, 420}, ST[BIO_NSPACE] = {256, 128, 410, 300, 563};
-    static const int32_t SD[BIO_NSPACE] = {0, 0, -98304, 131072, 32768};
-    static const uint16_t SP[BIO_NSPACE] = {0, 0, 1100, 0, 400};
+       big, dark, late; METAL lines so short their echoes are a pitch: a ringing tank; VAST the biggest, long, open;
+       CATHEDRAL (D40) as big, three times as long, darker, the walls far (its first echo 70 ms late) */
+    static const uint16_t SL[BIO_NSPACE] = {256, 115, 333, 46, 420, 420}, ST[BIO_NSPACE] = {256, 128, 410, 300, 563, 900};
+    static const int32_t SD[BIO_NSPACE] = {0, 0, -98304, 131072, 32768, -65536};
+    static const uint16_t SP[BIO_NSPACE] = {0, 0, 1100, 0, 400, 1550};
     const bio_fxp_t *f = &e->fx;
     uint32_t k, t60, sp = f->r_space < BIO_NSPACE ? f->r_space : 0u;
     /* the reverb's decay: 0.25..12 s, 2.8 s at 23 (INIT) */

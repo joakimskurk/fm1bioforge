@@ -404,3 +404,25 @@ MODELs for any synth (the four macros as each says; integers only; each wide in 
 - The scene's format is "BOF9" (a MODEL's value means another now that there are 17): scenes saved before are not read.
 - CPU on a computer: CRYPT 2 530 instructions a frame, STARGATE 2 383 (the worst case 3 408).
 - Sent to the user as a first draft, before more of the round is built on it.
+
+**D40 (2026-11-20) The groovebox for the dungeon: chords everywhere, a cathedral, a song.** The user, again: make every
+improvement that can be made now; a sci-fi dungeon synth / groovebox. With both cores at work (D38) there is room:
+- **CHOIR and HARPSI play CHORD** too: the choir's two other throats sing the chord's notes (no cost: they were a unison
+  a little apart); the harpsichord strums it, a string each 18 ms after the root, to either side in turn. With ORGAN,
+  STRINGS and BRASS (D39) the dungeon's voices all play chords.
+- **CATHEDRAL**, a sixth SPACE for the reverb: VAST's lines, three times as long a decay, a damping an octave darker, the
+  walls far (the first echo 70 ms late).
+- **SONG** (GLO, its third page): each of the four scenes plays its BARS (1, 2, 4, 8, 16, 32, 64; OFF: for ever), THEN
+  the scene it names, on the bar. The scenes chain into a piece; the page lists the four, what follows each, how far
+  the playing one is. A scene asked for with PRESETS wins over the THEN. In the scene (the format stays "BOF9": it was
+  never released). Tested: R00 a bar, R01 two, R03 for ever, each on its bar; a scene asked for wins.
+- Two rituals: **CATACOMB** (60 BPM, E Aeolian, the cathedral: a choir singing i VI III VII, a harpsichord strumming
+  them, an organ's bourdon, a frame drum, wind) and **ORACLE** (96 BPM, F# Dorian: a choir pad on open sevenths, brass
+  stabs of the chords off the beat, a bass arpeggio, a glass melody from the register, a groove).
+- **STARGATE fixed**: its notes were written as they sound (A minor), but a scene's notes are in D's own space (the KEY
+  moves them), so it played a fifth up against the scale's chords and its melody clashed. Now in D's space, it sounds in
+  A minor.
+- The page: a sci-fi dungeon synth and groovebox; its demos CATACOMB, CRYPT, ORACLE and STARGATE first (ten in all:
+  FROZEN and LAMENT left out of the page, their scripts kept).
+- CPU on a computer: CATACOMB 2 382 instructions a frame, ORACLE 2 182, CRYPT 2 807, STARGATE 2 573; the worst case
+  3 438.

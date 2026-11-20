@@ -93,7 +93,7 @@ static void touched(void) { ui.dirty[sq.cur] = 1; ui.dirty_draw |= D_STATUS; ui.
 enum { KT_NONE, KT_P, KT_LVL, KT_SA, KT_SB, KT_SC, KT_MASTER, KT_RIB, KT_TDEPTH, KT_TLEN, KT_TCLK, KT_TRATTLE,
        KT_TROUTE, KT_TWAIL, KT_TSCALE, KT_FX, KT_BPM, KT_SWING, KT_QUANT, KT_QSTR, KT_RECMODE, KT_STEPLEN, KT_KEYLED,
        KT_MIDICH, KT_CURSOR, KT_EVLEN, KT_EVVEL, KT_EVCH, KT_TRLEN, KT_EVRAT, KT_EVNUDGE, KT_EVNOTE, KT_PUMP, KT_KIT,
-       KT_RUMBLE, KT_DARK, KT_KEY, KT_SCALEM, KT_ARP, KT_ARATE, KT_ARANGE, KT_ACHORD, KT_AGATE, KT_WARP, KT_RUPTURE };
+       KT_RUMBLE, KT_DARK, KT_KEY, KT_SCALEM, KT_ARP, KT_ARATE, KT_ARANGE, KT_ACHORD, KT_AGATE, KT_WARP, KT_RUPTURE, KT_SBARS, KT_SNEXT };
 typedef struct { uint8_t type, idx; const char *name; } knob_t;
 
 static const char *const DRUM_DEEP[8] = {"PRESS", "FRACT", "FRIC", "VENT", "RESO", "MATTER", "DRIVE", "MODEL"};
@@ -204,9 +204,14 @@ static knob_t knob_for(uint32_t k)
         }
         break;
     }
-    default: {                                  /* GLO; again: the notes (D31) */
+    default: {                                  /* GLO; again: the notes (D31); again: the SONG (D40) */
         static const char *const A[4] = {"BPM", "SWING", "QUANT", "Q-STR"}, *const B[4] = {"REC", "STEPLEN", "KEYS", "MIDI CH"};
         static const uint8_t TA[4] = {KT_BPM, KT_SWING, KT_QUANT, KT_QSTR}, TB[4] = {KT_RECMODE, KT_STEPLEN, KT_KEYLED, KT_MIDICH};
+        if (ui.sub == 2u) {                     /* SONG (D40): this scene's BARS and THEN */
+            n.type = k == 0u ? KT_SBARS : k == 1u ? KT_SNEXT : KT_NONE;
+            n.name = k == 0u ? "BARS" : k == 1u ? "THEN" : "";
+            break;
+        }
         if (ui.sub == 1u) {                     /* KEY SCALE, the focus's ARP (D33); SHIFT: its RANGE CHORD GATE */
             static const char *const N[4] = {"KEY", "SCALE", "ARP", "RATE"}, *const NS[4] = {"RANGE", "CHORD", "GATE", ""};
             static const uint8_t TN[4] = {KT_KEY, KT_SCALEM, KT_ARP, KT_ARATE}, TS[4] = {KT_ARANGE, KT_ACHORD, KT_AGATE, KT_NONE};
@@ -248,6 +253,8 @@ static int32_t knob_get(knob_t n, int32_t *lo, int32_t *hi)
     case KT_DARK: return sc->mix.dark;
     case KT_WARP: return sc->mix.warp;
     case KT_RUPTURE: return sc->tur.rupture;
+    case KT_SBARS: *hi = 7; return sc->song_bars & 7u;
+    case KT_SNEXT: *hi = SEQ_NSCENE - 1u; return sc->song_next % SEQ_NSCENE;
     case KT_KIT:                                /* (the kicks a drum organ's only) */
         *lo = o == O_NOISE ? 1 : 0;
         *hi = (int32_t)(o == O_NOISE ? BIO_NPERC_KIT - BIO_NKICK_KIT : BIO_NPERC_KIT);
@@ -337,6 +344,8 @@ static void knob_turn(knob_t n, int32_t d)
     case KT_DARK: sc->mix.dark = (uint8_t)nv; break;
     case KT_WARP: sc->mix.warp = (uint8_t)nv; break;
     case KT_RUPTURE: sc->tur.rupture = (uint8_t)nv; break;
+    case KT_SBARS: sc->song_bars = (uint8_t)nv; break;
+    case KT_SNEXT: sc->song_next = (uint8_t)nv; break;
     case KT_KIT: {                              /* a sound into the organ (its PAN kept); 0: the drum's own body again */
         uint8_t pan = sc->p[o][P_PAN];
         uint32_t i;
@@ -446,6 +455,8 @@ static void knob_text(knob_t n, char *s)
     case KT_TWAIL: { static const char *const W[4] = {"OFF", "SPASM", "VOICE", "BOTH"}; str_cat(s, W[v & 3]); return; }
     case KT_TRATTLE: if (!v) { str_cat(s, "OFF"); return; } break;
     case KT_DARK: case KT_RUMBLE: case KT_PUMP: case KT_WARP: case KT_RUPTURE: if (!v) { str_cat(s, "OFF"); return; } break;
+    case KT_SBARS: if (!v) { str_cat(s, "OFF"); return; } u2s(s, SEQ_SONG_BARS[v & 7]); return;
+    case KT_SNEXT: p = str_cat(s, "R0"); u2s(p, (uint32_t)v); return;
     case KT_FX:
         if (n.idx == 0u) { str_cat(s, BIO_DIV_NAME[v < 10 ? v : 4]); return; }
         if (n.idx == 3u) { str_cat(s, v ? "ON" : "OFF"); return; }
@@ -1107,6 +1118,31 @@ static void draw_glo(void)
     seq_track_t *t = &sc->tr[cur_org()];
     char s[48], *p;
     cv_at(0, 49, 240, 134);
+    if (ui.sub == 2u) {                         /* SONG (D40): the four scenes, how long each plays and what follows */
+        uint32_t i;
+        cv_t5(12, 8, "SONG", COL_GREEN, 3);
+        cv_t5(110, 10, "EACH SCENE ITS BARS,", COL_BONE_D, 1);
+        cv_t5(110, 20, "THEN THE ONE AFTER IT", COL_BONE_D, 1);
+        for (i = 0; i < SEQ_NSCENE; i++) {
+            const seq_scene_t *c = &scenes[i];
+            uint32_t on = i == sq.cur, y = 40u + i * 18u;
+            p = str_cat(s, "R0"); p = u2s(p, i); p = str_cat(p, " ");
+            p = str_cat(p, c->name[0] ? c->name : "-");
+            cv_t5(14, (int32_t)y, s, on ? COL_GREEN : i == sq.next ? COL_FLESH : COL_BONE, 1);
+            if (c->song_bars & 7u) {
+                p = u2s(s, SEQ_SONG_BARS[c->song_bars & 7u]);
+                p = str_cat(p, c->song_bars == 1u ? " BAR > R0" : " BARS > R0");
+                u2s(p, c->song_next % SEQ_NSCENE);
+            } else str_cat(s, "FOR EVER");
+            cv_t5(120, (int32_t)y, s, c->song_bars ? (on ? COL_GREEN : COL_BONE) : COL_DIM, 1);
+            if (on && (c->song_bars & 7u)) {   /* how far it is */
+                uint32_t nb = SEQ_SONG_BARS[c->song_bars & 7u], w = (sq.sbars % nb) * 100u / nb;
+                cv_rect(120, (int32_t)y + 9, (int32_t)w, 2, COL_GREEN_D);
+            }
+        }
+        cv_out();
+        return;
+    }
     if (ui.sub == 1u) {                         /* the notes (D31): the KEY, its SCALE, the notes of it */
         uint32_t r = (2u + bio_key_root(&sc->tur)) % 12u, m = bio_key_scale(&sc->tur), c = bio_scale_count(m), j;
         static const char *const W[4] = {"OFF", "SPASM", "VOICE", "SPASM VOICE"};
@@ -1224,7 +1260,8 @@ static void leds(void)
 static void page_to(uint32_t pg)
 {
     if (ui.page == pg) {                        /* again: the page under it */
-        uint32_t nsub = pg == PG_SEQ ? 1u : pg == PG_FX ? 3u : 2u;   /* (GLO again: the notes, D31) */
+        uint32_t nsub = pg == PG_SEQ ? 1u : pg == PG_FX || pg == PG_GLO ? 3u : 2u;   /* (GLO again: the notes, D31; again:
+                                                   the SONG, D40) */
         ui.sub = (ui.sub + 1u) % nsub;
     } else {
         ui.page = pg;
@@ -1468,7 +1505,7 @@ static void app_main(void)
         /* drawing: what changed; the moving pages ~25 times a second */
         {
             uint32_t ph = sq.playing ? sq.ticks / SEQ_TPS : ~0u;
-            if (ph != ph_seen) { ph_seen = ph; if (ui.page == PG_SEQ) ui.dirty_draw |= D_MAIN; }
+            if (ph != ph_seen) { ph_seen = ph; if (ui.page == PG_SEQ || (ui.page == PG_GLO && ui.sub == 2u)) ui.dirty_draw |= D_MAIN; }
             if (sq.tur.clocks != ui.tur_seen) { ui.tur_seen = sq.tur.clocks; if (ui.page == PG_MUT) ui.dirty_draw |= D_MAIN; }
             if ((ui.page == PG_MIX || ui.page == PG_SYN) && fm1_ms - t_draw > 40u) ui.dirty_draw |= D_MAIN;
             if (ui.msg && fm1_ms - ui.t_msg >= 1500u) { ui.msg = 0; ui.dirty_draw |= D_STATUS; }

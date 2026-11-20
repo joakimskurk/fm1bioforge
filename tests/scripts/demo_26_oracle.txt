@@ -1,0 +1,8 @@
+# Demo: ORACLE (a factory ritual, D40): sci-fi, 96 BPM, F# Dorian. A choir pad holding open sevenths, brass stabs of the
+# chords off the beat, a bass arpeggio, a glass melody from the register, a kick, a snare's crack, hats
+100 btndown 3
+200 enc 6 25
+300 btnup 3
+400 btn 12
+20400 btn 12
+25400 end
