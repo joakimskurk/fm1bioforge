@@ -21,6 +21,11 @@ run "the engine and the memory compile without a warning (-Wextra -Werror)" \
 run "the tests" build/bio_test
 run "the tests under ASan and UBSan (a signed overflow is a bug on the FM-1 too)" sh -c \
     "cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=undefined -Wall -Wno-unused-function $I -o build/bio_test_san tests/bio_test.c && build/bio_test_san > build/bio_test_san.log"
+run "the render on two cores: the same output in every split (D38)" sh -c \
+    "cc -O2 -Wall -Wextra -Werror -Wno-unused-function $I -pthread -o build/bio_par_test tests/bio_par_test.c && build/bio_par_test"
+run "again under ThreadSanitizer (gcc's: a race is a bug on the FM-1 too)" sh -c \
+    "gcc -O1 -g -fsanitize=thread -Wall -Wno-unused-function $I -pthread -o build/bio_par_tsan tests/bio_par_test.c &&
+     build/bio_par_tsan 60 > build/bio_par_tsan.log 2>&1 && ! grep -q ThreadSanitizer build/bio_par_tsan.log"
 run "the renderer" cc -O2 -Wall -Wextra -Werror -Wno-unused-function $I -o build/bio_render tools/bio_render.c
 if [ -f firmware/src/bioforge.c ]; then
     CF="-O2 -Wall -Werror -Wno-unused-function -DDINGHY_HOST -DAPP_VER=\"test\" -Ifirmware/hal -Ifirmware/src -Ifirmware/gen"

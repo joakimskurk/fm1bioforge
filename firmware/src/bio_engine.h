@@ -43,6 +43,18 @@ static const char *const BIO_DIV_NAME[10] = {"1/32", "1/16", "3/32", "1/8", "3/1
 typedef struct bio_s bio_t;
 typedef void (*bio_tick_fn)(bio_t *e, void *ctx);
 
+/* the second core (D38). Each sub-block's work is ten units that share no state: the four drums, the four tonal
+ * organs, NOISE, and the delay with the reverb (on the sends of the sub-block before: a sub-block late, 0.73 ms).
+ * The firmware gives the engine these three; it hands a share of the units over, renders the rest, waits, and mixes.
+ * Whoever renders a unit, the output is the same, bit for bit (tests/bio_test.c, under ThreadSanitizer too).
+ * Unset (the host tools, the page): every unit here. */
+enum { BIO_U_FX = BIO_NORG, BIO_NUNIT };
+typedef struct {
+    int (*run)(void (*fn)(uint32_t), uint32_t arg);   /* 1: the second core has fn(arg); 0: do it here */
+    int (*wait)(void);                                /* 0: done; else it did not finish: the units again here */
+    uint32_t (*ticks)(void);                          /* a clock both cores read (the units' costs: the split) */
+} bio_par_t;
+
 struct bio_s {
     /* the organs */
     bio_drum_t drum[4];
@@ -97,6 +109,22 @@ struct bio_s {
     /* SCAR (D29): the output's last 0.37 s, and the BURST that plays it back; the grid from the sequencer */
     bio_scar_t scar;
     uint32_t grid, grid_on;                     /* bit j: the j-th division (16th, 8th, quarter) began this sub-block */
+    /* the second core (D38): the units' shared inputs and private outputs, their costs, the split */
+    bio_par_t par;
+    bio_life_t life;                            /* this sub-block's life (each tonal unit its own BREATH) */
+    int32_t br4;                                /* the four-bar BREATH, and the bar of four (the noise drift) */
+    uint32_t bar4;
+    int32_t rib_d[4][BIO_SB];                   /* each drum's excitation, summed into rib_in after */
+    int32_t fx_sa[BIO_SB], fx_sb[BIO_SB], fx_rduck;   /* the last sub-block's sends: the FX unit's input */
+    int32_t fx_l[BIO_SB], fx_r[BIO_SB];         /* the delay's and the reverb's returns, for this sub-block */
+    uint32_t ucost[BIO_NUNIT];                  /* each unit's time (ticks), smoothed */
+    int32_t par_force;                          /* -1: the split by cost; else this mask (the tests) */
+    uint32_t par_mask;                          /* the units it had, the last sub-block */
+    volatile uint32_t c1_busy, c0_wait;         /* ticks: the second core's in its units, this core's waiting
+                                                   (summed; the app reads and clears them) */
+    volatile uint32_t c0_part[4];               /* ticks on this core: the tick and life, its units, the wait, the
+                                                   mix to the end (summed; the app reads and clears them) */
+    uint32_t par_fail;                          /* hand-offs that did not come back (then: one core) */
     /* the meters (peak per channel, the last block), the load */
     int32_t meter[BIO_NCH];
     int32_t ob[BIO_NORG][BIO_SB], os[BIO_NORG][BIO_SB];   /* each organ's sub-block, and its side (width) */
@@ -138,6 +166,18 @@ static void bio_init(bio_t *e)
     e->fx_seen = ~0u;
     e->dark_seen = ~0u;
     e->drift_to = 0;
+    e->par_force = -1;
+}
+
+/* CHORD (D39): the notes that sound over a synth's next notes (semitones over the root; n 0: the root alone) */
+static void bio_chord(bio_t *e, uint32_t org, uint32_t n, const int8_t *semi)
+{
+    bio_tone_t *v;
+    uint32_t k;
+    if (org < 4u || org >= O_NOISE) return;
+    v = &e->tone[org - 4u];
+    v->ch_n = n > 3u ? 3u : n;
+    for (k = 0; k < v->ch_n; k++) v->ch_lf[k] = (int32_t)semi[k] * BIO_SEMI;
 }
 
 /* a note on: drums strike their body; the tonal organs play it. locks: the step's four macros (NULL: none) */
@@ -263,6 +303,213 @@ static inline int32_t bio_rd(const int16_t *b, uint32_t mask, uint32_t w, int32_
 /* a mix level 0..100 to Q15 (a fader's law: the square) */
 static inline int32_t bio_fader(uint32_t v) { if (v > 100u) v = 100u; return (int32_t)(v * v * 32767u / 10000u); }
 
+/* the FX unit (D38): BLOOD DELAY and BILE REVERB on the last sub-block's sends (fx_sa, fx_sb), their returns into
+ * fx_l, fx_r for this one. Its own state only: it may run on the second core while the organs render. */
+static void bio_fx_unit(bio_t *e)
+{
+    uint32_t k;
+    for (k = 0; k < BIO_SB; k++) e->fx_l[k] = e->fx_r[k] = 0;
+    /* BLOOD DELAY: stereo, darker each time round, ping-pong, a send on into the reverb */
+    {
+        int32_t fb = (int32_t)(e->fx.d_fb > 85u ? 85u : e->fx.d_fb) * 327, ret = bio_mul15(bio_fader(e->fx.d_mix), e->fx_rduck);
+        int32_t torev = (int32_t)(e->fx.d_rev > 100u ? 100u : e->fx.d_rev) * 327;   /* (all of it, if asked: D28) */
+        e->dtime_to = bio_dly_time(e);
+        if (!e->dtime) e->dtime = e->dtime_to;
+        for (k = 0; k < BIO_SB; k++) {
+            int32_t yl, yr, fl, fr2;
+            e->dtime += (e->dtime_to - e->dtime) >> 11;   /* a time change slides (tape), never jumps */
+            yl = bio_rd(e->dl, BIO_DLY_N - 1u, e->dw, e->dtime);
+            yr = bio_rd(e->dr, BIO_DLY_N - 1u, e->dw, e->dtime + (e->fx.d_ping ? 0 : 1100 << 8 >> 4));
+            fl = bio_op_lp(&e->dtl, yl);
+            fr2 = bio_op_lp(&e->dtr, yr);
+            e->dw = (e->dw + 1u) & (BIO_DLY_N - 1u);
+            if (e->fx.d_ping) {
+                e->dl[e->dw] = (int16_t)bio_sat(e->fx_sa[k] + bio_mul15(fr2, fb));
+                e->dr[e->dw] = (int16_t)bio_sat(bio_mul15(fl, fb));
+            } else {
+                e->dl[e->dw] = (int16_t)bio_sat(e->fx_sa[k] + bio_mul15(fl, fb));
+                e->dr[e->dw] = (int16_t)bio_sat(e->fx_sa[k] + bio_mul15(fr2, fb));
+            }
+            e->fx_l[k] += bio_mul15(yl, ret) * 4;   /* (+12 dB: a return of 50 the delay as loud as what went in, D36) */
+            e->fx_r[k] += bio_mul15(yr, ret) * 4;
+            e->fx_sb[k] += bio_mul15((yl + yr) >> 1, torev);
+        }
+    }
+    /* BILE REVERB: FDN4 at half rate, two diffusers, damping, a slow modulation; FREEZE */
+    {
+        int32_t ret = bio_mul15(bio_fader(e->fx.r_mix), e->fx_rduck);   /* (DUCK: the returns breathe with the kick) */
+        uint32_t fz = e->freeze;
+        int32_t m0 = (int32_t)(bio_sin(e->rlfo) >> 11), m2 = (int32_t)(bio_sin(e->rlfo * 3u + 0x5000000u) >> 11);
+        e->rlfo += 64000u * (BIO_SB / 2u);  /* ~0.33 Hz: its movement once a sub-block */
+        for (k = 0; k < BIO_SB; k++) {
+            int32_t in = bio_op_lp(&e->rin, e->fx_sb[k]);   /* (what would fold back at half rate, down first) */
+            if (!(k & 1u)) {
+                e->rhalf = in;
+            } else {
+                int32_t x = fz ? 0 : (e->rhalf + in) >> 2, y[4], a, b, c, d;
+                uint32_t j;
+                e->pre[e->pw] = (int16_t)bio_sat(x);
+                {
+                    int32_t i = (int32_t)e->pw - (int32_t)e->rpre;
+                    x = e->pre[i < 0 ? i + (int32_t)BIO_PRE_N : i];
+                }
+                if (++e->pw >= BIO_PRE_N) e->pw = 0;
+                /* two allpasses: the diffusion */
+                {
+                    int32_t z = e->ap1[e->a1w], v = x - (z >> 1);
+                    e->ap1[e->a1w] = (int16_t)bio_sat(v);
+                    x = z + (v >> 1);
+                    if (++e->a1w >= BIO_AP1) e->a1w = 0;
+                    z = e->ap2[e->a2w];
+                    v = x - (z >> 1);
+                    e->ap2[e->a2w] = (int16_t)bio_sat(v);
+                    x = z + (v >> 1);
+                    if (++e->a2w >= BIO_AP2) e->a2w = 0;
+                    z = e->ap3[e->a3w];
+                    v = x - (z >> 1);
+                    e->ap3[e->a3w] = (int16_t)bio_sat(v);
+                    x = z + (v >> 1);
+                    if (++e->a3w >= BIO_AP3) e->a3w = 0;
+                    z = e->ap4[e->a4w];
+                    v = x - (z >> 1);
+                    e->ap4[e->a4w] = (int16_t)bio_sat(v);
+                    x = z + (v >> 1);
+                    if (++e->a4w >= BIO_AP4) e->a4w = 0;
+                }
+                for (j = 0; j < 4u; j++) {
+                    int32_t dd = (int32_t)e->rlen[j] << 8;
+                    if (j == 0u) dd += m0 * 16;
+                    if (j == 2u) dd += m2 * 16;
+                    {
+                        int32_t di = dd >> 8, fr = dd & 255, i0 = (int32_t)e->rw - di, i1;
+                        if (i0 < 0) i0 += (int32_t)BIO_REV_L;
+                        i1 = i0 ? i0 - 1 : (int32_t)BIO_REV_L - 1;
+                        y[j] = e->rv[j][i0] + (((e->rv[j][i1] - e->rv[j][i0]) * fr) >> 8);
+                    }
+                    y[j] = bio_op_lp(&e->rdamp[j], y[j]);
+                    {                       /* an allpass in each line (67, 101, 139, 173: the tail thickens fast) */
+                        static const uint8_t LA[4] = {67, 101, 139, 173};
+                        int32_t z = e->lap[j][(e->law - LA[j]) & (BIO_LAP - 1u)], v = y[j] - (z >> 1);
+                        e->lap[j][e->law] = (int16_t)bio_sat(v);
+                        y[j] = z + (v >> 1);
+                    }
+                }
+                e->law = (e->law + 1u) & (BIO_LAP - 1u);
+                /* Hadamard: orthogonal, so the loop keeps what the gains say */
+                a = y[0] + y[1]; b = y[0] - y[1]; c = y[2] + y[3]; d = y[2] - y[3];
+                {
+                    int32_t h0 = (a + c) >> 1, h1 = (b + d) >> 1, h2 = (a - c) >> 1, h3 = (b - d) >> 1;
+                    int32_t g0 = fz ? 32702 : e->rg[0], g1 = fz ? 32702 : e->rg[1];
+                    int32_t g2 = fz ? 32702 : e->rg[2], g3 = fz ? 32702 : e->rg[3];
+                    e->rv[0][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h0 * g0, 15) + x);
+                    e->rv[1][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h1 * g1, 15) + x);
+                    e->rv[2][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h2 * g2, 15) - x);
+                    e->rv[3][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h3 * g3, 15) - x);
+                }
+                if (++e->rw >= BIO_REV_L) e->rw = 0;
+                e->rprev_l = e->rout_l;
+                e->rprev_r = e->rout_r;
+                e->rout_l = y[0] + y[2];
+                e->rout_r = y[1] + y[3];
+            }
+            {                               /* back to the full rate: halfway, then there */
+                int32_t l = k & 1u ? e->rout_l : (e->rprev_l + e->rout_l) >> 1;
+                int32_t r = k & 1u ? e->rout_r : (e->rprev_r + e->rout_r) >> 1;
+                l = bio_op_hp(&e->rhp_l, bio_op_lp(&e->rol, l));
+                r = bio_op_hp(&e->rhp_r, bio_op_lp(&e->ror, r));
+                e->fx_l[k] += bio_mul15(l, ret) * 4;   /* (+12 dB: D36) */
+                e->fx_r[k] += bio_mul15(r, ret) * 4;
+            }
+        }
+    }
+}
+
+/* one unit of the sub-block (D38): the drums and the tonal organs into their own ob, os (and a drum's rib_d), NOISE,
+ * the FX. Each touches its own state and reads what core 0 set before the hand-off, nothing another unit writes */
+static void bio_unit(bio_t *e, uint32_t u)
+{
+    uint32_t k, t0 = e->par.ticks ? e->par.ticks() : 0u;
+    if (u < 4u) {                               /* a drum (a noise one's DRIFT: its band steps bar by bar, a new place
+                                                   each of four, then again: a sweep was a wind, D24) */
+        bio_drum_t *d = &e->drum[u];
+        uint32_t nm = d->nm;
+        for (k = 0; k < BIO_SB; k++) e->ob[u][k] = e->os[u][k] = e->rib_d[u][k] = 0;
+        if (d->perc) {
+            int32_t to = bio_mul15((int32_t)(bio_hash(0xD71Fu + u, e->bar4) >> 16) - 32768, d->np.drift);
+            d->np.lfm += (to - d->np.lfm) / 8;  /* (6 ms: the step, not a click) */
+        }
+        bio_drum_ctl(d, u, e->drift, u == O_CLAW ? e->nerve_scrape : u == O_TEETH ? e->nerve_metal : 0);
+        if (e->shed && u != e->focus && nm > 2u) d->nm = 2;   /* (the transients stay; the ring thins) */
+        bio_drum_render(d, u, e->ob[u], e->os[u], e->rib_d[u], BIO_SB);
+        d->nm = nm;
+    } else if (u < O_NOISE) {                   /* a tonal organ: its parameters with the note's locks and the nerve's
+                                                   ROT on TEXTURE */
+        bio_tone_t *v = &e->tone[u - 4u];
+        for (k = 0; k < BIO_SB; k++) e->ob[u][k] = e->os[u][k] = 0;
+        if (v->awake) {
+            uint8_t pe[BIO_NP];
+            bio_life_t life = e->life;
+            uint32_t bars;
+            for (k = 0; k < BIO_NP; k++) pe[k] = e->p[u][k];
+            for (k = 0; k < 4u; k++) if (e->lk[u][k] != BIO_NOLOCK) pe[k] = e->lk[u][k];
+            pe[P_TEXTURE] = (uint8_t)bio_clamp((int32_t)pe[P_TEXTURE] + e->nerve_tex, 0, 100);
+            /* BREATH: DRONE's over 1..32 bars (8 at INIT), the others' 4 */
+            if (u == O_DRONE) bars = e->p[u][P_D5] <= 50u ? 1u + (uint32_t)e->p[u][P_D5] * 7u / 50u : 8u + ((uint32_t)e->p[u][P_D5] - 50u) * 24u / 50u;
+            else bars = 4u;
+            life.breath = bio_sin(e->beat_q16 * (16384u / bars));   /* a turn every 4 x bars beats */
+            bio_tone_render(v, u, pe, &life, e->ob[u], e->os[u], BIO_SB);
+        }
+    } else if (u == O_NOISE) {                  /* NOISE: the perc voice; BREATH (D8) lifts and lowers a long one */
+        for (k = 0; k < BIO_SB; k++) e->ob[O_NOISE][k] = e->os[O_NOISE][k] = 0;
+        if (e->noise.awake) {
+            int32_t depth = (int32_t)e->p[O_NOISE][P_D8] * 160, g;   /* (4 bars) */
+            {
+                int32_t to = bio_mul15((int32_t)(bio_hash(0xD71Fu + O_NOISE, e->bar4) >> 16) - 32768, e->noise.drift);
+                e->noise.lfm += (to - e->noise.lfm) / 8;
+            }
+            bio_perc_render(&e->noise, e->ob[O_NOISE], e->os[O_NOISE], BIO_SB);
+            g = bio_clamp(32767 - bio_mul15(depth, (32767 - e->br4) / 2), 0, 32767);
+            if (depth) for (k = 0; k < BIO_SB; k++) { e->ob[O_NOISE][k] = bio_mul15(e->ob[O_NOISE][k], g); e->os[O_NOISE][k] = bio_mul15(e->os[O_NOISE][k], g); }
+        }
+    } else {
+        bio_fx_unit(e);
+    }
+    if (e->par.ticks) {                         /* its cost, smoothed over 8 sub-blocks (6 ms) */
+        uint32_t d = e->par.ticks() - t0;
+        e->ucost[u] = e->ucost[u] - (e->ucost[u] >> 3) + (d >> 3);
+    }
+}
+
+/* the second core's job: the units in the mask, of the engine rendering now */
+static bio_t *volatile bio_par_e;
+static void bio_par_job(uint32_t mask)
+{
+    bio_t *e = bio_par_e;
+    uint32_t u, t0 = e->par.ticks ? e->par.ticks() : 0u;
+    for (u = 0; u < BIO_NUNIT; u++)
+        if (mask >> u & 1u) bio_unit(e, u);
+    if (e->par.ticks) e->c1_busy += e->par.ticks() - t0;
+}
+
+/* which units go over: the costliest first, each to the core with less so far (core 0 on a tie); a unit that costs
+ * nothing stays. (A forced mask for the tests.) */
+static uint32_t bio_par_split(const bio_t *e)
+{
+    uint32_t ord[BIO_NUNIT], n = 0, i, j, c0 = 0, c1 = 0, m = 0;
+    if (e->par_force >= 0) return (uint32_t)e->par_force & ((1u << BIO_NUNIT) - 1u);
+    for (i = 0; i < BIO_NUNIT; i++) {
+        if (!e->ucost[i]) continue;
+        for (j = n++; j > 0 && e->ucost[ord[j - 1u]] < e->ucost[i]; j--) ord[j] = ord[j - 1u];
+        ord[j] = i;
+    }
+    for (i = 0; i < n; i++) {
+        uint32_t c = e->ucost[ord[i]];
+        if (c1 < c0) { c1 += c; m |= 1u << ord[i]; }
+        else c0 += c;
+    }
+    return m;
+}
+
 static void bio_render(bio_t *e, int32_t *out, uint32_t n)
 {
     uint32_t off, o, k;
@@ -275,10 +522,8 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
     }
     for (off = 0; off + BIO_SB <= n; off += BIO_SB) {
         int32_t dryl[BIO_SB], dryr[BIO_SB], sa[BIO_SB], sb[BIO_SB], sc[BIO_SB];
-        int32_t chg[BIO_NCH], ga[BIO_NCH], gb[BIO_NCH], gc[BIO_NCH], peak = 0, tg, gstep, br4, rduck;
-        uint32_t bar4;
-        bio_life_t life;
-        uint8_t pe[BIO_NP];
+        int32_t chg[BIO_NCH], ga[BIO_NCH], gb[BIO_NCH], gc[BIO_NCH], peak = 0, tg, gstep, rduck;
+        uint32_t u, mask = 0, tp0 = e->par.ticks ? e->par.ticks() : 0u, tp1, tp2;
         if (e->tick) e->tick(e, e->tick_ctx);
         /* life: HEART PRESSURE (fast up, 140 ms down), NERVE DRIFT (a slow random walk), the beat */
         {
@@ -291,52 +536,35 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             e->drift += (e->drift_to - e->drift) >> 9;
             e->beat_q16 += e->beat_inc;
         }
-        life.heart = e->heart;
-        life.drift = e->drift;
-        life.cv = e->nerve_cv;
-        life.beat = e->beat_q16;
-        for (k = 0; k < BIO_SB; k++) e->rib_in[k] = 0;
-        for (o = 0; o < BIO_NORG; o++)
-            for (k = 0; k < BIO_SB; k++) e->ob[o][k] = e->os[o][k] = 0;
-        /* the drums (a noise one's DRIFT: its band steps bar by bar, a new place each of four, then again: a sweep
-           was a wind, D24) */
-        br4 = bio_sin(e->beat_q16 * (16384u / 4u));
-        bar4 = (e->beat_q16 >> 18) & 3u;
-        for (o = 0; o < 4u; o++) {
-            uint32_t nm = e->drum[o].nm;
-            if (e->drum[o].perc) {
-                int32_t to = bio_mul15((int32_t)(bio_hash(0xD71Fu + o, bar4) >> 16) - 32768, e->drum[o].np.drift);
-                e->drum[o].np.lfm += (to - e->drum[o].np.lfm) / 8;   /* (6 ms: the step, not a click) */
+        e->life.heart = e->heart;
+        e->life.drift = e->drift;
+        e->life.cv = e->nerve_cv;
+        e->life.beat = e->beat_q16;
+        e->br4 = bio_sin(e->beat_q16 * (16384u / 4u));
+        e->bar4 = (e->beat_q16 >> 18) & 3u;
+        /* the units (D38): a share to the second core, the rest here, then wait for it */
+        if (e->par.run && e->par.wait) {
+            mask = bio_par_split(e);
+            if (mask) {
+                bio_par_e = e;
+                if (!e->par.run(bio_par_job, mask)) mask = 0;
             }
-            bio_drum_ctl(&e->drum[o], o, e->drift, o == O_CLAW ? e->nerve_scrape : o == O_TEETH ? e->nerve_metal : 0);
-            if (e->shed && o != e->focus && nm > 2u) e->drum[o].nm = 2;   /* (the transients stay; the ring thins) */
-            bio_drum_render(&e->drum[o], o, e->ob[o], e->os[o], e->rib_in, BIO_SB);
-            e->drum[o].nm = nm;
         }
-        /* the tonal organs: their parameters with the note's locks and the nerve's ROT on TEXTURE */
-        if (e->noise.awake) {                   /* NOISE: the perc voice; BREATH (D8) lifts and lowers a long one */
-            int32_t br = br4, depth = (int32_t)e->p[O_NOISE][P_D8] * 160, g;   /* (4 bars) */
-            {
-                int32_t to = bio_mul15((int32_t)(bio_hash(0xD71Fu + O_NOISE, bar4) >> 16) - 32768, e->noise.drift);
-                e->noise.lfm += (to - e->noise.lfm) / 8;
+        e->par_mask = mask;
+        tp1 = e->par.ticks ? e->par.ticks() : 0u;
+        for (u = 0; u < BIO_NUNIT; u++)
+            if (!(mask >> u & 1u)) bio_unit(e, u);
+        tp2 = e->par.ticks ? e->par.ticks() : 0u;
+        if (mask) {
+            uint32_t t0 = tp2;
+            if (e->par.wait() != 0) {           /* it did not come back (and is held now): its units here, once */
+                e->par_fail++;
+                for (u = 0; u < BIO_NUNIT; u++)
+                    if (mask >> u & 1u) bio_unit(e, u);
             }
-            bio_perc_render(&e->noise, e->ob[O_NOISE], e->os[O_NOISE], BIO_SB);
-            g = bio_clamp(32767 - bio_mul15(depth, (32767 - br) / 2), 0, 32767);
-            if (depth) for (k = 0; k < BIO_SB; k++) { e->ob[O_NOISE][k] = bio_mul15(e->ob[O_NOISE][k], g); e->os[O_NOISE][k] = bio_mul15(e->os[O_NOISE][k], g); }
+            if (e->par.ticks) e->c0_wait += e->par.ticks() - t0;
         }
-        for (o = 4u; o < O_NOISE; o++) {
-            bio_tone_t *v = &e->tone[o - 4u];
-            uint32_t bars;
-            if (!v->awake) continue;
-            for (k = 0; k < BIO_NP; k++) pe[k] = e->p[o][k];
-            for (k = 0; k < 4u; k++) if (e->lk[o][k] != BIO_NOLOCK) pe[k] = e->lk[o][k];
-            pe[P_TEXTURE] = (uint8_t)bio_clamp((int32_t)pe[P_TEXTURE] + e->nerve_tex, 0, 100);
-            /* BREATH: DRONE's over 1..32 bars (8 at INIT), the others' 4 */
-            if (o == O_DRONE) bars = e->p[o][P_D5] <= 50u ? 1u + (uint32_t)e->p[o][P_D5] * 7u / 50u : 8u + ((uint32_t)e->p[o][P_D5] - 50u) * 24u / 50u;
-            else bars = 4u;
-            life.breath = bio_sin(e->beat_q16 * (16384u / bars));   /* a turn every 4 x bars beats */
-            bio_tone_render(v, o, pe, &life, e->ob[o], e->os[o], BIO_SB);
-        }
+        for (k = 0; k < BIO_SB; k++) e->rib_in[k] = e->rib_d[0][k] + e->rib_d[1][k] + e->rib_d[2][k] + e->rib_d[3][k];
         {                                       /* the scope */
             uint32_t so = e->scope_org < BIO_NORG ? e->scope_org : 0u, w = e->scope_w;
             for (k = 0; k < BIO_SB; k += 4u) e->scope[w++ & 255u] = (int16_t)bio_sat(e->ob[so][k]);
@@ -410,119 +638,14 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             (void)used;
         }
         rduck = 32767 - bio_mul15(e->duck, (int32_t)(e->fx.r_duck > 100u ? 100u : e->fx.r_duck) * 285);
-        /* BLOOD DELAY: stereo, darker each time round, ping-pong, a send on into the reverb */
-        {
-            int32_t fb = (int32_t)(e->fx.d_fb > 85u ? 85u : e->fx.d_fb) * 327, ret = bio_mul15(bio_fader(e->fx.d_mix), rduck);
-            int32_t torev = (int32_t)(e->fx.d_rev > 100u ? 100u : e->fx.d_rev) * 327;   /* (all of it, if asked: D28) */
-            e->dtime_to = bio_dly_time(e);
-            if (!e->dtime) e->dtime = e->dtime_to;
-            for (k = 0; k < BIO_SB; k++) {
-                int32_t yl, yr, fl, fr2;
-                e->dtime += (e->dtime_to - e->dtime) >> 11;   /* a time change slides (tape), never jumps */
-                yl = bio_rd(e->dl, BIO_DLY_N - 1u, e->dw, e->dtime);
-                yr = bio_rd(e->dr, BIO_DLY_N - 1u, e->dw, e->dtime + (e->fx.d_ping ? 0 : 1100 << 8 >> 4));
-                fl = bio_op_lp(&e->dtl, yl);
-                fr2 = bio_op_lp(&e->dtr, yr);
-                e->dw = (e->dw + 1u) & (BIO_DLY_N - 1u);
-                if (e->fx.d_ping) {
-                    e->dl[e->dw] = (int16_t)bio_sat(sa[k] + bio_mul15(fr2, fb));
-                    e->dr[e->dw] = (int16_t)bio_sat(bio_mul15(fl, fb));
-                } else {
-                    e->dl[e->dw] = (int16_t)bio_sat(sa[k] + bio_mul15(fl, fb));
-                    e->dr[e->dw] = (int16_t)bio_sat(sa[k] + bio_mul15(fr2, fb));
-                }
-                dryl[k] += bio_mul15(yl, ret) * 4;   /* (+12 dB: a return of 50 the delay as loud as what went in, D36) */
-                dryr[k] += bio_mul15(yr, ret) * 4;
-                sb[k] += bio_mul15((yl + yr) >> 1, torev);
-            }
+        /* the delay and the reverb (the FX unit): their returns now, this sub-block's sends for the next */
+        for (k = 0; k < BIO_SB; k++) {
+            dryl[k] += e->fx_l[k];
+            dryr[k] += e->fx_r[k];
+            e->fx_sa[k] = sa[k];
+            e->fx_sb[k] = sb[k];
         }
-        /* BILE REVERB: FDN4 at half rate, two diffusers, damping, a slow modulation; FREEZE */
-        {
-            int32_t ret = bio_mul15(bio_fader(e->fx.r_mix), rduck);   /* (DUCK: the returns breathe with the kick) */
-            uint32_t fz = e->freeze;
-            int32_t m0 = (int32_t)(bio_sin(e->rlfo) >> 11), m2 = (int32_t)(bio_sin(e->rlfo * 3u + 0x5000000u) >> 11);
-            e->rlfo += 64000u * (BIO_SB / 2u);  /* ~0.33 Hz: its movement once a sub-block */
-            for (k = 0; k < BIO_SB; k++) {
-                int32_t in = bio_op_lp(&e->rin, sb[k]);   /* (what would fold back at half rate, down first) */
-                if (!(k & 1u)) {
-                    e->rhalf = in;
-                } else {
-                    int32_t x = fz ? 0 : (e->rhalf + in) >> 2, y[4], a, b, c, d;
-                    uint32_t j;
-                    e->pre[e->pw] = (int16_t)bio_sat(x);
-                    {
-                        int32_t i = (int32_t)e->pw - (int32_t)e->rpre;
-                        x = e->pre[i < 0 ? i + (int32_t)BIO_PRE_N : i];
-                    }
-                    if (++e->pw >= BIO_PRE_N) e->pw = 0;
-                    /* two allpasses: the diffusion */
-                    {
-                        int32_t z = e->ap1[e->a1w], v = x - (z >> 1);
-                        e->ap1[e->a1w] = (int16_t)bio_sat(v);
-                        x = z + (v >> 1);
-                        if (++e->a1w >= BIO_AP1) e->a1w = 0;
-                        z = e->ap2[e->a2w];
-                        v = x - (z >> 1);
-                        e->ap2[e->a2w] = (int16_t)bio_sat(v);
-                        x = z + (v >> 1);
-                        if (++e->a2w >= BIO_AP2) e->a2w = 0;
-                        z = e->ap3[e->a3w];
-                        v = x - (z >> 1);
-                        e->ap3[e->a3w] = (int16_t)bio_sat(v);
-                        x = z + (v >> 1);
-                        if (++e->a3w >= BIO_AP3) e->a3w = 0;
-                        z = e->ap4[e->a4w];
-                        v = x - (z >> 1);
-                        e->ap4[e->a4w] = (int16_t)bio_sat(v);
-                        x = z + (v >> 1);
-                        if (++e->a4w >= BIO_AP4) e->a4w = 0;
-                    }
-                    for (j = 0; j < 4u; j++) {
-                        int32_t dd = (int32_t)e->rlen[j] << 8;
-                        if (j == 0u) dd += m0 * 16;
-                        if (j == 2u) dd += m2 * 16;
-                        {
-                            int32_t di = dd >> 8, fr = dd & 255, i0 = (int32_t)e->rw - di, i1;
-                            if (i0 < 0) i0 += (int32_t)BIO_REV_L;
-                            i1 = i0 ? i0 - 1 : (int32_t)BIO_REV_L - 1;
-                            y[j] = e->rv[j][i0] + (((e->rv[j][i1] - e->rv[j][i0]) * fr) >> 8);
-                        }
-                        y[j] = bio_op_lp(&e->rdamp[j], y[j]);
-                        {                       /* an allpass in each line (67, 101, 139, 173: the tail thickens fast) */
-                            static const uint8_t LA[4] = {67, 101, 139, 173};
-                            int32_t z = e->lap[j][(e->law - LA[j]) & (BIO_LAP - 1u)], v = y[j] - (z >> 1);
-                            e->lap[j][e->law] = (int16_t)bio_sat(v);
-                            y[j] = z + (v >> 1);
-                        }
-                    }
-                    e->law = (e->law + 1u) & (BIO_LAP - 1u);
-                    /* Hadamard: orthogonal, so the loop keeps what the gains say */
-                    a = y[0] + y[1]; b = y[0] - y[1]; c = y[2] + y[3]; d = y[2] - y[3];
-                    {
-                        int32_t h0 = (a + c) >> 1, h1 = (b + d) >> 1, h2 = (a - c) >> 1, h3 = (b - d) >> 1;
-                        int32_t g0 = fz ? 32702 : e->rg[0], g1 = fz ? 32702 : e->rg[1];
-                        int32_t g2 = fz ? 32702 : e->rg[2], g3 = fz ? 32702 : e->rg[3];
-                        e->rv[0][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h0 * g0, 15) + x);
-                        e->rv[1][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h1 * g1, 15) + x);
-                        e->rv[2][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h2 * g2, 15) - x);
-                        e->rv[3][e->rw] = (int16_t)bio_sat((int32_t)bio_rz64((int64_t)h3 * g3, 15) - x);
-                    }
-                    if (++e->rw >= BIO_REV_L) e->rw = 0;
-                    e->rprev_l = e->rout_l;
-                    e->rprev_r = e->rout_r;
-                    e->rout_l = y[0] + y[2];
-                    e->rout_r = y[1] + y[3];
-                }
-                {                               /* back to the full rate: halfway, then there */
-                    int32_t l = k & 1u ? e->rout_l : (e->rprev_l + e->rout_l) >> 1;
-                    int32_t r = k & 1u ? e->rout_r : (e->rprev_r + e->rout_r) >> 1;
-                    l = bio_op_hp(&e->rhp_l, bio_op_lp(&e->rol, l));
-                    r = bio_op_hp(&e->rhp_r, bio_op_lp(&e->ror, r));
-                    dryl[k] += bio_mul15(l, ret) * 4;   /* (+12 dB: D36) */
-                    dryr[k] += bio_mul15(r, ret) * 4;
-                }
-            }
-        }
+        e->fx_rduck = rduck;
         /* RUMBLE: HEART, an eighth of the rate, two lines of 37 and 53 ms feeding each other (orthogonal) through a
            low-pass each, about 2 s long; back up to the full rate smoothly, ducked by PUMP */
         if (e->mix.rumble) {
@@ -610,6 +733,12 @@ static void bio_render(bio_t *e, int32_t *out, uint32_t n)
             }
         }
         e->frames += BIO_SB;
+        if (e->par.ticks) {
+            uint32_t t3 = e->par.ticks();
+            e->c0_part[0] += tp1 - tp0;
+            e->c0_part[1] += tp2 - tp1;
+            e->c0_part[3] += t3 - tp2;          /* (the wait in it: taken out by the app, c0_wait) */
+        }
     }
     for (o = 0; o < BIO_NCH; o++) e->meter[o] = meter[o];
 }

@@ -1,0 +1,9 @@
+# Demo: CRYPT (a factory ritual, D39): dungeon synth, 66 BPM, D harmonic minor. A pipe organ on the roots (i VI iv V), a
+# string machine's slow melody, a harpsichord arpeggiating each chord, a bass pedal, a deep drum and a hand drum, wind;
+# a vast stone room, the tape wavering a little
+100 btndown 3
+200 enc 6 22
+300 btnup 3
+400 btn 12
+30400 btn 12
+35400 end

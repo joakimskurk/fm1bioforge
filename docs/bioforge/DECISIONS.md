@@ -344,3 +344,57 @@ screen's panels), dark under the words. An EARLY ALPHA stamp on the logo and a n
 its sounds, controls and the way it keeps scenes still change), and in the installer's box. Three screens (SEQ, a
 landscape, MUT), eight demos (RUST, ABYSS, FROZEN, GRINDER, LAMENT, SHRINE, MIRAGE, SCAR; the scripts render them all),
 the spectra and the link preview in graphite and green. 7.7 MB in all (was 16.8).
+
+**D38 (2026-11-20) The render on both cores.** The user: now each core can compute half of the sound. The FM-1's
+AC791N has two cores; BIOFORGE ran on one. The second core's code is SLOOP's (`bac9c05`: X0X's HAL by Charles Vestal,
+after Melodee by Kerem Kilic, with X0X's hardening, carried by SLOOP 2.8.3), all GPL-3.0, credited in LICENSING.md;
+it is the one departure in Dinghy's own files (PLATFORM.md lists each).
+- **The work in units.** Each sub-block (32 frames) is ten units that share no state: the four drums, the four tonal
+  organs, NOISE, and the delay with the reverb. The sequencer's tick and the life signals come first, on core 0; then a
+  share of the units goes to core 1 in one job, core 0 renders the rest, waits for it, and mixes (the rib, the channels,
+  the rumble, the crush, the master, SCAR). Whoever renders a unit, the output is the same, bit for bit:
+  `tests/bio_par_test.c` renders every ritual and the worst case on one core, deferred, on a real thread with a random
+  split each block and with the split by cost, and with lost jobs, and the hashes must all match (and again under
+  ThreadSanitizer: no race).
+- **The delay and the reverb a sub-block late** (0.73 ms, a pre-delay nobody hears): they work on the last
+  sub-block's sends, so they can run beside the organs instead of after them. The only change to the sound; a dry
+  render is the same as before, sample for sample.
+- **The split** follows each unit's measured time (TIMER4, which both cores read, smoothed over 8 sub-blocks): the
+  costliest first, each to the core that has less so far; a unit asleep costs nothing and stays.
+- **The second core started at power-on**, before the audio and the timers, held first thing at boot, the supplies
+  raised to M-VAVE's own levels (X0X: at the boot loader's, with both cores busy, some units read wrong), proved by a
+  self-test job. A unit whose core 1 does not report in, misreads a job (the check word), faults or is late (8 ms) is
+  given up: held, and one core until power-off; the units of that sub-block are rendered again on core 0.
+- **Measured in fm1-emu** (`09aeae3`, the pin moved to it: it models the PC limits as an FM-1 has them), THE
+  AWAKENING: the engine's share of core 0 37 % -> 22 % of the 5.8 ms; the interrupts 45.9 % -> 31.6 % of the chip;
+  core 1's stack 664 B deep of its 2 816. With a core 1 that misreads (`--flaky-core1`, 7 766 misreads in 5 s): given
+  up, one core (40 %), the sound unbroken. `tools/emu_check.sh` checks both (the second core running and rendering;
+  given up and playing on). On a computer the engine costs 2.5 % more in one piece (2 795 instructions a frame, was
+  2 727): the units' own buffers.
+- The MIX page's CPU figure is core 0's, then core 1's after a plus ("CPU 22+18%").
+
+**D39 (2026-11-20) A sci-fi dungeon synth: four voices, two scenes (a draft).** The user: this becomes a sci-fi dungeon
+synth / groovebox; make every improvement that can be made now. Dungeon synth lives on an organ, a string machine and a
+harpsichord in a minor key in a vast room; its sci-fi side on the big polysynths' brass and Berlin-school sequences. Four
+MODELs for any synth (the four macros as each says; integers only; each wide in its own way):
+- **ORGAN**: ranks of 8', 4', 2 2/3', 2' and 16', each a few cents off the others, drawn in by TEXTURE (a flute, a
+  principal, then the mixture and the bourdon), BODY the pipes' voice (flute to reed), MOTION the tremulant (5.6 Hz),
+  a chiff of wind as a pipe speaks (25 ms); the ranks to either side of the case.
+- **STRINGS**: a string machine: three saws a note, each with its octave (TEXTURE), their pitches swayed by an
+  ensemble (0.65 and 5.5 Hz, a third of a turn apart: MOTION), one to each side and one between; BODY the low-pass.
+- **BRASS**: two saws a few cents apart and a pulse an octave under them, driven, through a resonant low-pass that
+  swells open with the note (25 ms) and falls back to a third (150 ms): TEXTURE how far, BODY from where; MOTION a
+  vibrato that grows in over half a second.
+- **HARPSI**: two ranks (8', 4') of narrow pulses (TEXTURE: plucked near the end, nasal, to the middle, hollow), their
+  brightness falling over DECAY's time, a click of the quill; MOTION how far apart the ranks are tuned.
+- Two factory rituals: **CRYPT** (66 BPM, D harmonic minor: the organ on i VI iv V, the strings' melody, the harpsichord
+  arpeggiating the chords, a bass pedal, a deep drum, wind, VAST, a little WARP) and **STARGATE** (108 BPM, A Aeolian:
+  a bass sequence in sixteenths, the brass lead, strings high, a glass arpeggio, a soft four, hats, a clap).
+- **CHORD**, an ARP mode (GLO's notes page): the note sounds as its chord in the scene's scale, at once (the ARP's
+  CHORD knob: TRIAD, 7TH, 9TH, SUS4, FIFTHS, the first four notes; RANGE 1 close, 2 and 3 open, the second note an
+  octave up). ORGAN, STRINGS and BRASS play it (each extra note an 8' and a 4', two saws, two saws: their level
+  1 / sqrt(n)); the other voices the root alone. Dungeon synth is chords: CRYPT's organ plays its four chords so,
+  STARGATE's strings open sevenths. Live keys too.
+- The scene's format is "BOF9" (a MODEL's value means another now that there are 17): scenes saved before are not read.
+- CPU on a computer: CRYPT 2 530 instructions a frame, STARGATE 2 383 (the worst case 3 408).
+- Sent to the user as a first draft, before more of the round is built on it.

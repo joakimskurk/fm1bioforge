@@ -145,7 +145,7 @@ int main(int argc, char **argv)
     }
     if (!strcmp(argv[1], "lands") && argc > 2) {   /* the landscapes (bio_land.h), each 3 s on an organ it suits */
         static const uint8_t ORG[BIO_NLAND] = {0, O_DRONE, O_DRONE, O_BASS, O_DRONE, O_SPASM, O_VOICE, O_BASS, O_VOICE, O_BASS, O_SPASM,
-                                               O_DRONE, O_DRONE};
+                                               O_DRONE, O_DRONE, O_DRONE, O_VOICE, O_VOICE, O_SPASM};
         static const uint8_t PH[4][4] = {{26, 29, 26, 33}, {38, 38, 38, 38}, {62, 67, 69, 74}, {50, 50, 50, 50}};
         static int32_t buf[512];
         int16_t pcm[512];

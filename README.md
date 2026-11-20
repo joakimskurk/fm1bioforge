@@ -63,6 +63,9 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
 - **DUB** chords: a synth's MODEL DUB, a minor chord through a low-pass that each note opens, for the delay.
 - **The drone's body.** MASS (octaves and a fifth) and CLUSTER (semitones): thick drones under a breathing low-pass,
   with grit and their own width. **DARK** (MIX's sends, SHIFT, KNOB 4) rolls the whole top off.
+- **The dungeon and the stars** (D39): ORGAN (a pipe organ, its ranks drawn in by TEXTURE, a chiff, the tremulant),
+  STRINGS (a string machine with its ensemble), BRASS (a big polysynth's brass that swells open, the vibrato growing
+  in), HARPSI (a plucked string, harpsichord to lute).
 - **Four macros an organ.** BODY, TEXTURE, MOTION and DECAY are on the first page. The depth is behind them.
 - **The keys go into the memory.**
   - **LIVE REC**: press PLAY, then REC, and play.
@@ -103,7 +106,8 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
     SPLICE (broken, glitched), VOID (slow and wide), LAMENT (a melody, C harmonic minor), GRINDER (industrial techno,
     140 BPM, the hard end), SPINE (a half-time broken beat, 170 BPM), OSSUARY (no beat at all, C# Locrian), TENDON
     (seven eighths), SHRINE (sweetness, ruptured: E Lydian through a wavering tape, the register cutting into it), MIRAGE
-    (a loop chopped and screwed by the register) and EMPTY BODY. The one in flash stays until you SAVE.
+    (a loop chopped and screwed by the register), CRYPT (dungeon synth: an organ, strings, a harpsichord, D harmonic
+    minor), STARGATE (sci-fi, Berlin school: a brass lead over a bass sequence) and EMPTY BODY. The one in flash stays until you SAVE.
   - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
 ## Using it
@@ -192,7 +196,9 @@ make web      # the page: the demos, BIOFORGE for the browser (clang, lld), its 
 
 - **Platform.** Dinghy 0.5 (zvenson), imported as source and left alone but for names ([PLATFORM.md](PLATFORM.md)).
   It is built on [Felucca](https://github.com/hugelton/Felucca) by Leo Kuroshita (Hügelton Instruments) and carried
-  by [SLOOP](https://github.com/isod89/sloop-fm1) (isod89), with the SMK-37 layer by genkigenki. The package's
+  by [SLOOP](https://github.com/isod89/sloop-fm1) (isod89), with the SMK-37 layer by genkigenki. The second core is
+  SLOOP's, from [X0X](https://github.com/charlesvestal/fm1-x0x) (Charles Vestal) after
+  [Melodee](https://github.com/keremimo/melodee) (Kerem Kilic) (D38, in Dinghy's files: PLATFORM.md). The package's
   identity is `FM-1_908XY` (`90800` a dev build).
 - **The nervous system** follows the documented behaviour of the
   [Turing Machine](https://www.musicthing.co.uk/Turing-Machine/) by Tom Whitwell (Music Thing Modular): its LOOP,

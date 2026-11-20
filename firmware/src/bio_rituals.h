@@ -934,15 +934,111 @@ static void rit_mirage(seq_scene_t *sc)
     sc->mix.sa[CH_SPASM] = 72;
     /* (D36: the FM voices into the delay and the reverb, much more: they were heard dry) */
 }
+/* RITUAL: CRYPT (D39). Dungeon synth, 66 BPM, D HARMONIC MINOR: a pipe organ's chords (CHORD), its full registration
+   (i, VI, iv, V: D B-flat G A), a string machine's slow melody over it, a harpsichord arpeggiating each chord in
+   eighths, a pedal of the bass under them, a deep drum on one and a hand drum late in the bar, wind; in a vast stone
+   room, the tape wavering a little */
+static void rit_crypt(seq_scene_t *sc)
+{
+    static const uint8_t MEL[12][3] = {   /* step, length (steps), note (D's own space: the KEY is D) */
+        {0, 12, 74}, {12, 4, 73}, {16, 8, 70}, {24, 8, 69}, {32, 12, 67}, {44, 4, 69}, {48, 6, 70}, {54, 2, 69},
+        {56, 8, 73}, {0, 0, 0}};
+    static const uint8_t ROOT[4] = {50, 46, 43, 45};   /* D B-flat G A */
+    uint32_t k;
+    seq_scene_blank(sc, 0xC4E97u);
+    rit_name(sc, "CRYPT");
+    rit_key(sc, 0, 3);
+    sc->bpm10 = 660;
+    for (k = 0; k < BIO_NORG; k++) sc->tr[k].len = 64;
+    rit_model(sc, O_DRONE, L_ORGAN, 35, 80, 30, 60);
+    sc->p[O_DRONE][P_A] = 12; sc->p[O_DRONE][P_R] = 40; sc->p[O_DRONE][P_S] = 100;
+    rit_arp(sc, O_DRONE, ARP_CHORD, 4, 1, 0, 6);   /* (the organ's chords: CHORD, a triad in the scale) */
+    for (k = 0; k < 4u; k++) seq_put(sc, O_DRONE, k * 16u, 16 * 96 - 10, ROOT[k], 88, 0);
+    rit_model(sc, O_VOICE, L_STRINGS, 40, 45, 60, 60);
+    sc->p[O_VOICE][P_A] = 45; sc->p[O_VOICE][P_R] = 55;
+    for (k = 0; MEL[k][1]; k++) seq_put(sc, O_VOICE, MEL[k][0], (uint32_t)MEL[k][1] * 96u - 8u, MEL[k][2], 90, 0);
+    rit_model(sc, O_SPASM, L_HARPSI, 45, 30, 30, 45);
+    sc->p[O_SPASM][P_A] = 0; sc->p[O_SPASM][P_S] = 0; sc->p[O_SPASM][P_R] = 30; sc->p[O_SPASM][P_PAN] = 62;
+    rit_arp(sc, O_SPASM, ARP_UPDN, 4, 1, 0, 6);
+    for (k = 0; k < 4u; k++) seq_put(sc, O_SPASM, k * 16u, 16 * 96 - 6, ROOT[k] + 12u, 84, 0);
+    sc->p[O_BASS][P_D1] = 20; sc->p[O_BASS][P_D] = 90; sc->p[O_BASS][P_A] = 30; sc->p[O_BASS][P_S] = 80;
+    for (k = 0; k < 4u; k++) seq_put(sc, O_BASS, k * 16u, 15 * 96, ROOT[k] - 12u, 90, 0);
+    rit_perc(sc, O_HEART, "DEEP KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 78;
+    rit_steps(sc, O_HEART, "x...............x.........x.....x...............x.........x..x..", 60, 100, 96);
+    rit_perc(sc, O_BONE, "THUMP", 40);
+    sc->p[O_BONE][P_LEVEL] = 66;
+    rit_steps(sc, O_BONE, "........x.....g.........x.....g.........x.....g.........x...g.g.", 60, 80, 48);
+    rit_perc(sc, O_NOISE, "WASH", 50);
+    sc->p[O_NOISE][P_LEVEL] = 40;
+    seq_put(sc, O_NOISE, 0, 64 * 96 - 8, 60, 70, 0);
+    sc->mix.lvl[CH_DRONE] = 66; sc->mix.lvl[CH_VOICE] = 70; sc->mix.lvl[CH_SPASM] = 56; sc->mix.lvl[CH_BASS] = 60;
+    sc->mix.lvl[CH_DRUM] = 70; sc->mix.lvl[CH_NOISE] = 34;
+    sc->mix.sb[CH_DRONE] = 70; sc->mix.sb[CH_VOICE] = 80; sc->mix.sb[CH_SPASM] = 70; sc->mix.sa[CH_SPASM] = 50;
+    sc->mix.sa[CH_VOICE] = 30; sc->mix.sb[CH_DRUM] = 50; sc->mix.sb[CH_NOISE] = 60;
+    sc->fx.d_time = 5; sc->fx.d_fb = 45; sc->fx.d_mix = 30; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 30;
+    sc->fx.r_space = 4; sc->fx.r_mix = 36; sc->fx.r_decay = 85; sc->fx.r_size = 95; sc->fx.r_damp = 55; sc->fx.c_mix = 0;
+    sc->mix.warp = 22; sc->mix.dark = 25; sc->mix.master = 84;
+    sc->tur.loop = 100; sc->tur.depth = 6;
+}
+/* RITUAL: STARGATE (D39). Sci-fi, Berlin school, 108 BPM, A AEOLIAN: a bass sequence in sixteenths, a brass lead that
+   swells and bends in late (vibrato), a string machine holding open sevenths high (CHORD), a glass arpeggio in triplets, a soft
+   kick on the four, hats, a clap; a long delay, a hall */
+static void rit_stargate(seq_scene_t *sc)
+{
+    static const uint8_t MEL[10][3] = {
+        {0, 6, 69}, {6, 2, 72}, {8, 8, 71}, {16, 12, 67}, {28, 4, 64}, {32, 6, 69}, {38, 2, 76}, {40, 8, 74},
+        {48, 16, 72}, {0, 0, 0}};
+    static const uint8_t ROOT[4] = {45, 41, 43, 40};   /* A F G E */
+    static const char *const SEQ = "x.xxx.x.xx.xx.x.";
+    uint32_t k, j;
+    seq_scene_blank(sc, 0x57A6Eu);
+    rit_name(sc, "STARGATE");
+    rit_key(sc, 7, 1);
+    sc->bpm10 = 1080;
+    for (k = 0; k < BIO_NORG; k++) sc->tr[k].len = 64;
+    rit_model(sc, O_VOICE, L_BRASS, 45, 70, 60, 50);
+    sc->p[O_VOICE][P_A] = 20; sc->p[O_VOICE][P_R] = 45; sc->p[O_VOICE][P_D4] = 30;
+    for (k = 0; MEL[k][1]; k++) seq_put(sc, O_VOICE, MEL[k][0], (uint32_t)MEL[k][1] * 96u - 8u, MEL[k][2], 92, 0);
+    rit_model(sc, O_DRONE, L_STRINGS, 55, 70, 50, 60);
+    sc->p[O_DRONE][P_A] = 30; sc->p[O_DRONE][P_R] = 50;
+    rit_arp(sc, O_DRONE, ARP_CHORD, 4, 2, 1, 6);   /* (sevenths, open) */
+    for (k = 0; k < 4u; k++) seq_put(sc, O_DRONE, k * 16u, 16 * 96 - 10, ROOT[k] + 24u, 80, 0);
+    rit_model(sc, O_SPASM, L_GLASS, 40, 40, 40, 30);
+    sc->p[O_SPASM][P_PAN] = 30;
+    rit_arp(sc, O_SPASM, ARP_UP, 1, 2, 1, 5);
+    for (k = 0; k < 4u; k++) seq_put(sc, O_SPASM, k * 16u, 16 * 96 - 6, ROOT[k] + 24u, 70, 0);
+    sc->p[O_BASS][P_D1] = 55; sc->p[O_BASS][P_D] = 30; sc->p[O_BASS][P_A] = 0;
+    for (k = 0; k < 4u; k++)
+        for (j = 0; j < 16u; j++)
+            if (SEQ[j] == 'x') seq_put(sc, O_BASS, k * 16u + j, 80, ROOT[k] - 12u + (j == 6u || j == 12u ? 12u : 0u), j % 4u ? 80 : 100, 0);
+    rit_perc(sc, O_HEART, "SUB KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 76;
+    rit_steps(sc, O_HEART, "x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.x.", 60, 100, 96);
+    rit_perc(sc, O_BONE, "CLAP", 56);
+    sc->p[O_BONE][P_LEVEL] = 60;
+    rit_steps(sc, O_BONE, "....x.......x.......x.......x.......x.......x.......x.......x...", 60, 84, 48);
+    rit_perc(sc, O_TEETH, "SIX HAT", 44);
+    rit_steps(sc, O_TEETH, "..x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.xx.x", 60, 66, 24);
+    sc->mix.lvl[CH_VOICE] = 72; sc->mix.lvl[CH_DRONE] = 48; sc->mix.lvl[CH_SPASM] = 50; sc->mix.lvl[CH_BASS] = 72;
+    sc->mix.lvl[CH_DRUM] = 74;
+    sc->mix.sa[CH_VOICE] = 50; sc->mix.sb[CH_VOICE] = 60; sc->mix.sb[CH_DRONE] = 80; sc->mix.sa[CH_SPASM] = 70;
+    sc->mix.sb[CH_SPASM] = 60; sc->mix.sb[CH_DRUM] = 24;
+    sc->fx.d_time = 4; sc->fx.d_fb = 50; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 50; sc->fx.d_tone = 40;
+    sc->fx.r_space = 0; sc->fx.r_mix = 30; sc->fx.r_decay = 70; sc->fx.r_size = 85; sc->fx.c_mix = 0;
+    sc->fx.r_duck = 30;
+    sc->mix.pump = 25; sc->mix.dark = 12; sc->mix.master = 82;
+    sc->tur.loop = 100; sc->tur.depth = 6;
+}
 static void rit_empty(seq_scene_t *sc) { seq_scene_blank(sc, 0x7E3u); rit_name(sc, "EMPTY BODY"); }
 /* (the first four are the scenes before anything is saved: the document's start, then rhythm made of noise, D20) */
 static const rit_fn BIO_RITUAL[] = {rit_awaken, rit_rust, rit_abyss, rit_ash, rit_frozen, rit_stream, rit_wall, rit_data,
                                     rit_embers, rit_foundry, rit_orbit, rit_innards, rit_static, rit_splice, rit_void,
                                     rit_lament, rit_grinder, rit_spine, rit_ossuary, rit_tendon, rit_shrine, rit_mirage,
-                                    rit_empty};
+                                    rit_crypt, rit_stargate, rit_empty};
 static const char *const BIO_RITUAL_NAME[] = {"AWAKENING", "RUST", "ABYSS", "ASH", "FROZEN", "STREAM", "WALL", "DATA",
                                               "EMBERS", "FOUNDRY", "ORBIT", "INNARDS", "STATIC CULT", "SPLICE", "VOID",
                                               "LAMENT", "GRINDER", "SPINE", "OSSUARY", "TENDON", "SHRINE", "MIRAGE",
-                                              "EMPTY BODY"};
+                                              "CRYPT", "STARGATE", "EMPTY BODY"};
 #define BIO_NRITUAL (sizeof BIO_RITUAL / sizeof BIO_RITUAL[0])
 #endif

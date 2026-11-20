@@ -1,0 +1,9 @@
+# Demo: STARGATE (a factory ritual, D39): sci-fi, Berlin school, 108 BPM, A Aeolian. A bass sequence in sixteenths, a
+# brass lead that swells and bends in late, strings holding the chords, a glass arpeggio, a soft kick on the four, hats,
+# a clap; a long delay, a hall
+100 btndown 3
+200 enc 6 23
+300 btnup 3
+400 btn 12
+20400 btn 12
+25400 end

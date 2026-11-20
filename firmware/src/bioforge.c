@@ -46,6 +46,12 @@ static seq_scene_t scenes[SEQ_NSCENE];          /* (in RAM: the pool keeps the e
 static seq_undo_t undo_buf[SEQ_NUNDO], redo_buf[SEQ_NREDO];
 static seq_t sq;
 static volatile uint32_t eng_off, isr_load, t_audio;
+static volatile uint32_t c1_load;               /* the second core's share of the 5.8 ms in its units (D38), % */
+static uint32_t load_q8[6];                     /* the figures below smoothed (x 256: an integer mean settles where it
+                                                   is, not 15 points under it, D38) */
+static volatile uint32_t emu_fig[7];            /* isr_load, c1_load, core1_state, then core 0's parts (the tick, its
+                                                   units, the wait, the mix to the end), %: fm1-emu reads them by their
+                                                   address (tools/emu_check.sh, build/bioforge.syms) */
 
 enum { PG_MIX, PG_SEQ, PG_SYN, PG_MUT, PG_FX, PG_GLO, PG_N };
 static const char *const PG_NAME[PG_N] = {"MIX", "SEQ", "SYN", "MUT", "FX", "GLO"};
@@ -875,6 +881,10 @@ static void draw_mix(void)
     p = str_cat(s, ui.sub ? "REVERB SENDS  " : "");
     p = str_cat(p, "CPU ");
     p = u2s(p, isr_load);
+    if (core1_state == CORE1_OK) {              /* (D38) the second core's share after it */
+        p = str_cat(p, "+");
+        p = u2s(p, c1_load);
+    }
     str_cat(p, "%");
     cv_t5(232 - t5w(s, 1), 121, s, COL_DIM, 1);
     cv_out();
@@ -1000,7 +1010,7 @@ static void draw_syn(void)
             i2s(p, (int32_t)v->note / 12 - 1);
             cv_t5(176, 84, s, COL_GREEN, 2);
         }
-        if (o == O_VOICE) cv_t5(10, 104, "U  O  A  E  I", COL_DIM, 1);
+        if ((o == O_VOICE && !md) || md == L_CHOIR) cv_t5(10, 104, "U  O  A  E  I", COL_DIM, 1);   /* (the vowels: a throat's) */
     }
     cv_out();
 }
@@ -1345,13 +1355,34 @@ static void encoders_in(void)
         if ((e = fm1_enc_take(ENC_KNOB1 + k)) != 0) { knob_turn(knob_for(k), accel(e)); ui.sel_alone = 0; }   /* (SEL held for it: not a tap) */
 }
 
+static uint32_t load_smooth(uint32_t i, uint32_t ticks)   /* % of the 5.8 ms (139 320 ticks), over 16 calls */
+{
+    load_q8[i] = load_q8[i] - (load_q8[i] >> 4) + ((ticks + 696u) / 1393u << 4);
+    return (load_q8[i] + 128u) >> 8;
+}
 static void app_audio(int32_t *out, uint32_t n)
 {
     uint32_t t0 = app_ticks(), d;
     t_audio = t0;
     if (!eng_off) bio_render(&eng, out, n);
     d = app_ticks() - t0;
-    isr_load = (isr_load * 15u + d / 1393u) / 16u;   /* % of the 5.8 ms (139 320 ticks) */
+    isr_load = load_smooth(0, d);
+    d = eng.c1_busy;                            /* (its jobs are all back: the render waited for each) */
+    eng.c1_busy = 0;
+    c1_load = load_smooth(1, d);
+    emu_fig[0] = isr_load;
+    emu_fig[1] = c1_load;
+    emu_fig[2] = core1_state;
+    {
+        uint32_t k, w = eng.c0_wait;
+        eng.c0_wait = 0;
+        eng.c0_part[2] = w;
+        eng.c0_part[3] -= w < eng.c0_part[3] ? w : eng.c0_part[3];
+        for (k = 0; k < 4u; k++) {
+            emu_fig[3u + k] = load_smooth(2u + k, eng.c0_part[k]);
+            eng.c0_part[k] = 0;
+        }
+    }
 }
 
 #ifdef DINGHY_WEB
@@ -1373,6 +1404,14 @@ static void app_main(void)
         if (!blob_load(0, &s, sizeof s) && s.ver == 1u && s.scene < SEQ_NSCENE && s.focus <= 9u) set = s;
     }
     bio_init(&eng);
+#ifndef BIO_CORES
+#define BIO_CORES 2                             /* (1: the render on one core, to measure against: DINGHY_DEFS=-DBIO_CORES=1) */
+#endif
+    if (core1_state == CORE1_OK && BIO_CORES > 1) {   /* the second core renders a share of each sub-block (D38) */
+        eng.par.run = core1_run;
+        eng.par.wait = core1_wait;
+        eng.par.ticks = app_ticks;
+    }
     defaults();
     scenes_load();
     sq.cur = sq.next = set.scene;

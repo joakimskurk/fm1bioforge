@@ -504,6 +504,9 @@ typedef struct {
     int32_t peak, last;
     int32_t lx[8];                              /* a landscape's state (bio_land.h) */
     uint32_t lu[4], lph;                        /* (lph: DUB's chorus, a phase) */
+    uint32_t ch_n;                              /* CHORD (D39): the notes over the root that sound with it (0..3), */
+    int32_t ch_lf[3];                           /*   how far over it (lf); ORGAN, STRINGS and BRASS play them */
+    uint32_t cph[6];                            /*   their phases */
 } bio_tone_t;
 static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_t seed);
 static inline uint32_t bio_land_of(uint32_t v);

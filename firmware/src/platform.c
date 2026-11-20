@@ -13,6 +13,9 @@
  *   screen              240 x 240, lcd_fill, draw_text_box with FONT_S (16 px) / FONT_L (32 px) (gfx.c); LCD_IDLE
  *   storage             settings, NBLOB blobs of one sector, NSLOT slots of SLOT_SECT sectors, each with a CRC (store.h)
  *   crash screen        the PC of a fault, then a reboot
+ *   second core         core1_run(fn, arg) / core1_wait() / core1_state (BIOFORGE D38: SLOOP 2.8.3's, from X0X,
+ *                       hal/fm1_cpu1.h): started at power-on and proved; one job at a time from the audio ISR; a
+ *                       unit whose core 1 misreads or is late runs on one core until power-off. The host: none
  *
  * The app (dinghy.c) includes this file first and supplies:
  *   static void app_audio(int32_t *out, uint32_t n)   audio ISR: n stereo frames, L R L R, Q15 (+-32767), out is zero
@@ -50,12 +53,17 @@ enum { ENC_SELECT = 0, ENC_ALGORITHM = 1, ENC_KNOB1 = 2, ENC_KNOB2 = 3, ENC_KNOB
 #else
 #include "../../tests/host.c"                  /* on a computer: a fake FM-1 (tests/host.c) */
 #endif
+enum { CORE1_OFF, CORE1_NOSTART, CORE1_FAILED, CORE1_OK };   /* (the host has no second core: the app renders alone) */
+static const uint8_t core1_state = CORE1_OFF;
+static int core1_run(void (*fn)(uint32_t), uint32_t arg) { (void)fn; (void)arg; return 0; }
+static int core1_wait(void) { return 0; }
 #else
 #include <stdint.h>
 #include "fm1_time.h"
 #include "fm1_sys.h"
 #include "fm1_irq.h"
 #include "fm1_guard.h"
+#include "fm1_cpu1.h"                           /* the second core (BIOFORGE D38, as SLOOP 2.8.3) */
 #if BOARD_SMK37
 #include "smk_input.h"                          /* keys with velocity, buttons, 8 encoders, LEDs, pads, faders, wheels */
 static void fm1_led_key_glow(uint32_t id, int on) { (void)id; (void)on; }   /* (no key LEDs: the pads glow) */
@@ -430,6 +438,8 @@ static void fm1_fault(const fm1_crash_t *c)
 {
     char b[12];
     uint32_t i, t0, v[3] = {c->vec, c->pc, c->rets};
+    if (fm1_c1_on)                              /* (SLOOP 2.8.3, X0X ed35a45) a crash beside the second core: one */
+        fm1_cpu1_bar();                         /* core until power-off (a misread on core 0 can't be caught) */
     fm1_audio_stop();
     lcd_fill(0, 0, 240, 240, RGB(160, 0, 0));
     draw_text_box(0, 20, 240, &FONT_S, APP_NAME " CRASH", C_WHITE, 1);
@@ -445,12 +455,58 @@ static void fm1_fault(const fm1_crash_t *c)
     fm1_reboot();
 }
 
+/* ---- the second core (BIOFORGE D38; SLOOP 2.8.3's cpu1.c, by Andre Rezemini, over X0X's hal/fm1_cpu1.h): started
+ * at power-on, before the audio and the timers (X0X: started later, it never reached its entry), proved with a
+ * self-test job. The reserved top of RAM is not locked yet (fm1_guard_lock_top comes after): its entry word can be
+ * written. The PC limits are opened for the start (it boots through the chip's ROM) and armed again after. */
+enum { CORE1_OFF, CORE1_NOSTART, CORE1_FAILED, CORE1_OK };   /* not started / did not report in / wrong or late / running */
+static uint8_t core1_state = CORE1_OFF;
+static volatile uint32_t core1_test_out;
+static uint32_t core1_lcg(uint32_t x)           /* 64 steps of an LCG: the self-test's work */
+{
+    uint32_t i;
+    for (i = 0; i < 64u; i++)
+        x = x * 1664525u + 1013904223u;
+    return x;
+}
+static void core1_selftest(uint32_t arg) { core1_test_out = core1_lcg(arg); }   /* on core 1, from the flash */
+static void core1_boot(void)
+{
+    fm1_guard_pc_open();
+    if (fm1_cpu1_start() != 0) {
+        fm1_guard_enable(FM1_GUARD_PC);
+        core1_state = CORE1_NOSTART;
+        return;
+    }
+    fm1_guard_enable(FM1_GUARD_PC);
+    core1_test_out = 0;
+    if (!fm1_cpu1_run(core1_selftest, 20261120u) || fm1_cpu1_wait() != 0 || core1_test_out != core1_lcg(20261120u)) {
+        fm1_cpu1_hold();                        /* answered, but wrong or late: one core from here on */
+        core1_state = CORE1_FAILED;
+        return;
+    }
+    core1_state = CORE1_OK;
+}
+/* the app's: hand a job over (1: core 1 has it), wait for it (0: done; -1: it did not, and core 1 is held now) */
+static int core1_run(void (*fn)(uint32_t), uint32_t arg) { return core1_state == CORE1_OK ? fm1_cpu1_run(fn, arg) : 0; }
+static int core1_wait(void)
+{
+    if (fm1_cpu1_wait() == 0)
+        return 0;
+    core1_state = CORE1_FAILED;                 /* (fm1_cpu1_wait held it and set the bar: one core until power-off) */
+    return -1;
+}
+
 void fm1_cstart(void)
 {
     extern uint32_t _data_start[], _data_end[], _data_load[], _bss_start[], _bss_end[];
-    extern uint32_t _pool_start[], _pool_end[], _rt_start[], _rt_end[], _rt_load[];
+    extern uint32_t _pool_start[], _pool_end[], _rt_start[], _rt_end[], _rt_load[], _c1_start[], _c1_end[], _c1_load[];
     uint32_t *s, *d, p3, boot_mode;
+    fm1_cpu1_halt();                            /* (SLOOP 2.8.3, X0X 20353c9) a second core left running by the reset would
+                                                 * read the RAM cleared below (fm1_sys.h: registers only) */
     fm1_time_init();
+    fm1_supplies_stock();                       /* (SLOOP 2.7, from X0X 1.0.9) VDC14 1.60 V, SYSVDD 1.38 V, as M-VAVE's own
+                                                 * firmware: both cores read the flash and the SRAM right (fm1_sys.h) */
     fm1_reset_reason();
     p3 = fm1_boot.p3_rst;
     fm1_wdt_arm(0x0D);
@@ -464,6 +520,7 @@ void fm1_cstart(void)
     for (d = _pool_start; d < _pool_end; d++) *d = 0;
     for (s = _data_load, d = _data_start; d < _data_end; s++, d++) *d = *s;
     for (s = _rt_load, d = _rt_start; d < _rt_end; s++, d++) *d = *s;
+    for (s = _c1_load, d = _c1_start; d < _c1_end; s++, d++) *d = *s;   /* the second core's waiting loop */
     fm1_mailbox_clear();
     fm1_guard_enable(FM1_GUARD_STACK | FM1_GUARD_WRITE | FM1_GUARD_BUS | FM1_GUARD_PC);
     fm1_boot.p3_rst = (uint8_t)p3;
@@ -484,6 +541,7 @@ void fm1_cstart(void)
     smk_trim_read();                            /* (after fm1_input_init: it sets the defaults first) */
     smk_owner_check();
 #endif
+    core1_boot();                               /* (before the audio and the timers; if it does not answer: one core) */
     fm1_audio_init(abuf, HALF_WORDS, isr_alnk0, 3);   /* (abuf is zero: .bss) */
     usb_start();
 #if FELUCCA_UART

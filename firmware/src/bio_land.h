@@ -13,9 +13,10 @@
 #include "bio_dsp.h"
 
 enum { L_OWN, L_HUM, L_STEEL, L_PISTON, L_GLASS, L_BELL, L_CHOIR, L_BLOOD, L_BUBBLE, L_SLIME, L_DUB, L_MASS, L_CLUSTER,
-       BIO_NLAND };
+       L_ORGAN, L_STRINGS, L_BRASS, L_HARPSI, BIO_NLAND };
 static const char *const BIO_LAND_NAME[BIO_NLAND] = {"OWN", "HUM", "STEEL", "PISTON", "GLASS", "BELL", "CHOIR", "BLOOD",
-                                                     "BUBBLE", "SLIME", "DUB", "MASS", "CLUSTER"};
+                                                     "BUBBLE", "SLIME", "DUB", "MASS", "CLUSTER", "ORGAN", "STRINGS",
+                                                     "BRASS", "HARPSI"};
 static const char *const BIO_OWN_NAME[4] = {"MUSCLE", "WOMB", "NERVE", "THROAT"};   /* BASS DRONE SPASM VOICE as they are */
 #define BIO_LAND(i) ((uint8_t)(((i) * 101u + 50u) / BIO_NLAND))   /* a model as MODEL's value (the middle of its share) */
 static inline uint32_t bio_land_of(uint32_t v) { v = v * BIO_NLAND / 101u; return v < BIO_NLAND ? v : BIO_NLAND - 1u; }
@@ -28,6 +29,7 @@ static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_
                                                    filters, so it does not click) */
         for (k = 0; k < 8u; k++) v->lx[k] = 0;
         for (k = 0; k < 4u; k++) v->lu[k] = 0;
+        for (k = 0; k < 6u; k++) v->cph[k] = 0;
         v->pa = v->pb = v->pc = v->pd = 0;
         v->f1.ic1 = v->f1.ic2 = v->f2.ic1 = v->f2.ic2 = v->f3.ic1 = v->f3.ic2 = v->f4.ic1 = v->f4.ic2 = 0;
     }
@@ -49,9 +51,19 @@ static void bio_land_on(bio_tone_t *v, uint32_t model, const uint8_t *p, uint32_
         v->lx[0] = 32767;
         v->lx[1] = bio_decay(BIO_SB, bio_tau(bio_map_ms(p[P_DECAY], 20, 150, 1500) / 3u + 1u));
         break;
+    case L_ORGAN: v->lx[0] = 32767; break;      /* (D39) the chiff, at the pipe's speech */
+    case L_BRASS: v->lx[0] = 0; v->lx[1] = 32767; v->lx[2] = 0; break;   /* the filter's swell, its fall, the vibrato */
+    case L_HARPSI:                              /* the quill: the brightness falls over DECAY's time, a click */
+        v->lx[0] = 32767;
+        v->lx[1] = 32767;
+        v->lx[2] = bio_decay(BIO_SB, bio_tau(bio_map_ms(p[P_DECAY], 30, 160, 1200) / 2u + 1u));
+        break;
     default: break;
     }
 }
+
+/* CHORD (D39): a voice's level with n notes over its root (1 / sqrt(n + 1)) */
+static const int32_t BIO_CHORD_G[4] = {32767, 23170, 18919, 16384};
 
 /* the steel's modes (a plate's), the glass's partials, the bell's ratios: their log2 (Q16) */
 static const int32_t BIO_STEEL_LF[4] = {0, 44018, 71711, 92144};       /* 1, 1.593, 2.135, 2.65 */
@@ -398,6 +410,190 @@ static void bio_land_render(bio_tone_t *v, uint32_t model, const uint8_t *p, con
             y = bio_svf(&v->f1, o, &bp) + (cl ? 0 : bio_sin(v->pd) / 3);   /* (MASS: the sine under it) */
             e0 += step;
             y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_ORGAN: {   /* (D39) a pipe organ: ranks of 8', 4', 2 2/3', 2' and 16', each a little off the others, drawn in by
+                         TEXTURE (a flute alone, a principal, then the mixture and the bourdon under it); BODY the pipes'
+                         voice, flute to reed (driven); MOTION the tremulant (the wind shaking, the pitch with it); a
+                         chiff of wind as each pipe speaks. The ranks stand apart in the case: 4' and 2' to one side,
+                         2 2/3' and 16' to the other */
+        int32_t t = tex * 328, g4 = 9830 + bio_mul15(t, 16384), g3 = bio_clamp((t - 9830) * 7 / 10, 0, 32767);
+        int32_t g2 = bio_clamp((t - 16384) * 8 / 10, 0, 32767), g16 = bio_clamp((t - 22937) * 3 / 2, 0, 32767);
+        int32_t gm = bio_clamp((t - 27852) * 2, 0, 32767), drv = 4096 + body * 160, trem, ch0 = v->lx[0], chs;
+        uint32_t i4, i3, i16, ci[6], j, cn = v->ch_n;
+        int32_t cg = BIO_CHORD_G[cn];
+        v->lph += bio_inc(bio_lf_hz(5) + 9000) * n;   /* the tremulant: 5.6 Hz */
+        trem = bio_mul15(bio_sin(v->lph), mot * 120);
+        inc = bio_inc(v->lf + bio_mul15(life->drift, 400) + bio_mul15(trem, 160));
+        i4 = bio_inc(v->lf + 12 * BIO_SEMI + 90 + bio_mul15(trem, 160));
+        i3 = bio_inc(v->lf + 19 * BIO_SEMI - 60 + bio_mul15(trem, 160));
+        i16 = bio_inc(v->lf - 12 * BIO_SEMI - 50);
+        for (j = 0; j < cn; j++) {              /* CHORD: each note its 8' and 4' */
+            ci[2u * j] = bio_inc(v->lf + v->ch_lf[j] + 70 * (int32_t)j - 40 + bio_mul15(trem, 160));
+            ci[2u * j + 1u] = bio_inc(v->lf + v->ch_lf[j] + 12 * BIO_SEMI + 50 + bio_mul15(trem, 160));
+        }
+        bio_svf_set(&v->f1, v->lf + 3 * 65536 / 2 > bio_lf_hz(12000) ? bio_lf_hz(12000) : v->lf + 3 * 65536 / 2, bio_q_k(20));
+        v->lx[0] = bio_mul15(v->lx[0], 29000);  /* (the chiff: 25 ms) */
+        chs = (v->lx[0] - ch0) / (int32_t)n;
+        for (k = 0; k < n; k++) {
+            int32_t r8, r4, r3, r2, r16, mx, c, bp;
+            v->pa += inc; v->pb += i4; v->pc += i3; v->pd += i16;
+            r8 = bio_flesh(bio_sin(v->pa), drv);
+            r4 = bio_mul15(bio_flesh(bio_sin(v->pb), drv), g4);
+            r3 = bio_mul15(bio_sin(v->pc), g3);
+            r2 = bio_mul15(bio_sin(v->pb * 2u), g2);
+            r16 = bio_mul15(bio_sin(v->pd), g16);
+            mx = gm ? bio_mul15((bio_sin(v->pc * 2u) + bio_sin(v->pb * 4u)) / 2, gm) : 0;   /* (the mixture: 1 1/3', 1') */
+            ch0 += chs;
+            (void)bio_svf(&v->f1, bio_noise(&v->rnd), &bp);
+            c = bio_mul15(bp, bio_mul15(ch0, 9000 + body * 60));
+            y = (r8 + r4 + r3 + r2 + r16 + mx) / 3 + c;
+            if (cn) {                           /* (CHORD: its notes, each to a side in turn) */
+                int32_t cs = 0, cx;
+                for (j = 0; j < cn; j++) {
+                    v->cph[2u * j] += ci[2u * j];
+                    v->cph[2u * j + 1u] += ci[2u * j + 1u];
+                    cx = (bio_flesh(bio_sin(v->cph[2u * j]), drv) + bio_mul15(bio_flesh(bio_sin(v->cph[2u * j + 1u]), drv), g4)) / 2;
+                    y += cx;
+                    cs += j & 1u ? -cx : cx;
+                }
+                r4 += cs;
+                y = bio_mul15(y, cg);
+            }
+            y = bio_mul15(y, 32767 - bio_abs(trem) * 2);
+            e0 += step;
+            if (side) side[k] += bio_mul15(bio_mul15((r4 + r2 - r3 - r16) / 4 + c / 2, e0), a);
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, y), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_STRINGS: {   /* (D39) a string machine: three saws a note, each with its octave (TEXTURE how much of it), their
+                           pitches swayed by an ensemble (two slow and fast sways, a third of a turn apart: MOTION how
+                           deep), one to each side and one between; BODY the low-pass, the breath moving it a little */
+        uint32_t j, ii[3], io[3], ci[6], cn = v->ch_n;
+        int32_t sl, sf, oct = tex * 300, dep = mot * 3 + 20, lfc, cg = BIO_CHORD_G[cn];
+        v->lph += bio_inc(bio_lf_hz(1) - 40000) * n;   /* (0.65 Hz) */
+        v->lu[0] += bio_inc(bio_lf_hz(6) - 8000) * n;  /* (5.5 Hz) */
+        for (j = 0; j < 3u; j++) {
+            sl = bio_sin(v->lph + j * 1431655765u);
+            sf = bio_sin(v->lu[0] + j * 1431655765u);
+            ii[j] = bio_inc(v->lf + bio_mul15(sl, dep * 8) + bio_mul15(sf, dep * 3) + ((int32_t)j - 1) * 300 +
+                            bio_mul15(life->drift, 400));
+            io[j] = ii[j] * 2u;
+        }
+        for (j = 0; j < cn; j++) {              /* CHORD: each note two saws, swayed as the first and the third */
+            int32_t s0 = bio_sin(v->lph + j * 715827882u), s2 = bio_sin(v->lu[0] + j * 715827882u + 2863311530u);
+            ci[2u * j] = bio_inc(v->lf + v->ch_lf[j] + bio_mul15(s0, dep * 8) - 300);
+            ci[2u * j + 1u] = bio_inc(v->lf + v->ch_lf[j] + bio_mul15(s2, dep * 3) + 300);
+        }
+        lfc = bio_map_lf((uint32_t)body, 300, 2200, 9000) + bio_mul15(life->breath, 8000);
+        bio_svf_set(&v->f1, lfc, bio_q_k(9));
+        bio_svf_set(&v->f2, lfc + 900, bio_q_k(9));
+        for (k = 0; k < n; k++) {
+            int32_t s0, s1, s2, yl, yr, bp;
+            v->pa += ii[0]; v->pb += ii[1]; v->pc += ii[2];
+            s0 = bio_saw(v->pa, ii[0]) + bio_mul15(bio_saw(v->pa * 2u, io[0]), oct);
+            s1 = bio_saw(v->pb, ii[1]) + bio_mul15(bio_saw(v->pb * 2u, io[1]), oct);
+            s2 = bio_saw(v->pc, ii[2]) + bio_mul15(bio_saw(v->pc * 2u, io[2]), oct);
+            if (cn) {                           /* (CHORD: one saw of each note to each side) */
+                uint32_t q;
+                for (q = 0; q < cn; q++) {
+                    v->cph[2u * q] += ci[2u * q];
+                    v->cph[2u * q + 1u] += ci[2u * q + 1u];
+                    s0 += bio_saw(v->cph[2u * q], ci[2u * q]);
+                    s2 += bio_saw(v->cph[2u * q + 1u], ci[2u * q + 1u]);
+                }
+                s0 = bio_mul15(s0, cg); s1 = bio_mul15(s1, cg); s2 = bio_mul15(s2, cg);
+            }
+            yl = bio_svf(&v->f1, (s0 + s1 / 2) / 3, &bp);
+            yr = bio_svf(&v->f2, (s2 + s1 / 2) / 3, &bp);
+            e0 += step;
+            if (side) side[k] += bio_mul15(bio_mul15((yl - yr) / 2, e0), a);
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, (yl + yr) / 2), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_BRASS: {   /* (D39) a brass of the late seventies' big polysynths: two saws apart (one each side) and a pulse
+                         under them through a resonant low-pass that swells open with the note and falls back (TEXTURE how
+                         far, BODY where it starts: 100 .. 600 .. 3000 Hz), driven; MOTION a vibrato that grows in after
+                         the attack. The nerve opens it too */
+        int32_t lfc, vib, sw = v->lx[0], fl = v->lx[1], cg = BIO_CHORD_G[v->ch_n];
+        uint32_t il, ir, ci[6], j, cn = v->ch_n;
+        v->lx[0] += (32767 - v->lx[0]) / 12;    /* (the swell: 25 ms) */
+        v->lx[1] = 11000 + bio_mul15(v->lx[1] - 11000, 32600);   /* (the fall to a third: 150 ms) */
+        v->lx[2] += ((mot * 327) - v->lx[2]) / 700;   /* (the vibrato grows in over half a second) */
+        v->lph += bio_inc(bio_lf_hz(5) + 3000) * n;
+        vib = bio_mul15(bio_sin(v->lph), bio_mul15(v->lx[2], 1200));
+        il = bio_inc(v->lf + 260 + vib + bio_mul15(life->drift, 400));
+        ir = bio_inc(v->lf - 260 + vib);
+        for (j = 0; j < cn; j++) {              /* CHORD: each note two saws apart, one each side */
+            ci[2u * j] = bio_inc(v->lf + v->ch_lf[j] + 200 + vib);
+            ci[2u * j + 1u] = bio_inc(v->lf + v->ch_lf[j] - 220 + vib);
+        }
+        lfc = bio_map_lf((uint32_t)body, 100, 600, 3000) + bio_mul15(bio_mul15(sw, fl), tex * 2000) +
+              bio_mul15(life->cv, 20000);
+        bio_svf_set(&v->f1, lfc, bio_q_k(16));
+        bio_svf_set(&v->f2, lfc + 400, bio_q_k(16));
+        (void)fl;
+        for (k = 0; k < n; k++) {
+            int32_t sq, yl, yr, bp;
+            v->pa += il; v->pb += ir; v->pc += il / 2u;
+            int32_t xl, xr;
+            sq = bio_pulse(v->pc, il / 2u, 2147483648u) / 3;
+            xl = bio_saw(v->pa, il) + sq;
+            xr = bio_saw(v->pb, ir) + sq;
+            if (cn) {                           /* (CHORD: its notes into both filters, driven together) */
+                for (j = 0; j < cn; j++) {
+                    v->cph[2u * j] += ci[2u * j];
+                    v->cph[2u * j + 1u] += ci[2u * j + 1u];
+                    xl += bio_saw(v->cph[2u * j], ci[2u * j]);
+                    xr += bio_saw(v->cph[2u * j + 1u], ci[2u * j + 1u]);
+                }
+                xl = bio_mul15(xl, cg);
+                xr = bio_mul15(xr, cg);
+            }
+            yl = bio_svf(&v->f1, bio_flesh(xl, 7000), &bp);
+            yr = bio_svf(&v->f2, bio_flesh(xr, 7000), &bp);
+            e0 += step;
+            if (side) side[k] += bio_mul15(bio_mul15((yl - yr) / 4, e0), a);
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, (yl + yr) / 2), e0), a) * 2;
+            out[k] += y;
+            if (bio_abs(y) > pk) pk = bio_abs(y);
+        }
+        break;
+    }
+    case L_HARPSI: {   /* (D39) a plucked string, harpsichord to lute: two ranks (8' and 4', a few cents apart: MOTION how
+                          far) of narrow pulses (TEXTURE: plucked near the end, nasal, to the middle, hollow, the 4' rank
+                          coming in), their brightness falling with DECAY's time from where BODY puts it, a click of the
+                          quill; the 8' to one side, the 4' to the other */
+        uint32_t w = 1288490189u - (uint32_t)(100 - tex) * 9019431u, i4 = bio_inc(v->lf + 12 * BIO_SEMI + 40 + mot * 12);
+        int32_t lfc, g4 = 6000 + tex * 200, cl0 = v->lx[1], cls;
+        lfc = bio_map_lf((uint32_t)body, 500, 2000, 7000) + bio_mul15(v->lx[0], 4 * 65536 / 2);
+        bio_svf_set(&v->f1, lfc, bio_q_k(8));
+        bio_svf_set(&v->f2, lfc + 1500, bio_q_k(8));
+        bio_svf_set(&v->f3, bio_lf_hz(3500), bio_q_k(10));
+        v->lx[0] = bio_mul30(v->lx[0], v->lx[2]);
+        v->lx[1] = bio_mul15(v->lx[1], 12000);  /* (the click: 2 ms) */
+        cls = (v->lx[1] - cl0) / (int32_t)n;
+        for (k = 0; k < n; k++) {
+            int32_t r8, r4, yl, yr, bp, c;
+            v->pa += inc; v->pb += i4;
+            r8 = bio_pulse(v->pa, inc, w);
+            r4 = bio_mul15(bio_pulse(v->pb, i4, w), g4);
+            cl0 += cls;
+            c = bio_mul15(bio_svf_bp(&v->f3, bio_noise(&v->rnd)), cl0);
+            yl = bio_svf(&v->f1, r8 + c, &bp);
+            yr = bio_svf(&v->f2, r4 + c, &bp);
+            e0 += step;
+            if (side) side[k] += bio_mul15(bio_mul15((yl - yr) * 2 / 3, e0), a);
+            y = bio_mul15(bio_mul15(bio_dc(&v->dc, (yl + yr) * 4 / 3), e0), a) * 2;
             out[k] += y;
             if (bio_abs(y) > pk) pk = bio_abs(y);
         }

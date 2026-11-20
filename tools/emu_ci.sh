@@ -3,7 +3,7 @@
 # CI: fm1-emu (joakimeriksson/fm1-emu, pinned) built from source, then BIOFORGE's package run in it
 # (tools/emu_check.sh): how much of the chip it takes, its sound after PLAY, its screens.
 set -e
-REV=a0e9a88cba72a6de7368273c82e26867848e281d
+REV=09aeae3e9d78db52c3b9f5ceed93bd1120ccf444
 DIR="$HOME/fm1-emu"
 if [ ! -x "$DIR/target/release/fm1-emu" ]; then
     rm -rf "$DIR"

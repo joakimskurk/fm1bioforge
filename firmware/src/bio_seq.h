@@ -21,8 +21,9 @@
 #define SEQ_MAXLEN 64u
 #define SEQ_NSCENE 4u
 #define SEQ_BAR (16u * SEQ_TPS)
-#define SEQ_MAGIC 0x38464F42u                   /* "BOF8": the scene's format (2: PUMP; 3: 24 parameters; 4: SPACE; 5: RUMBLE;
-                                                   6: DARK; 7: DUCK; 8: WARP, RUPTURE) */
+#define SEQ_MAGIC 0x39464F42u                   /* "BOF9": the scene's format (2: PUMP; 3: 24 parameters; 4: SPACE; 5: RUMBLE;
+                                                   6: DARK; 7: DUCK; 8: WARP, RUPTURE; 9: four MODELs more, D39, so a
+                                                   MODEL's value means another) */
 #define SEQ_NUNDO 16u
 #define SEQ_NREDO 8u
 
@@ -106,8 +107,8 @@ typedef struct {
 } seq_t;
 
 /* ---- the ARP's settings (D33), from a track's three bytes: each 0 its default */
-enum { ARP_OFF, ARP_UP, ARP_DOWN, ARP_UPDN, ARP_NERVE, SEQ_NARP };
-static const char *const SEQ_ARP_NAME[SEQ_NARP] = {"OFF", "UP", "DOWN", "UP-DN", "NERVE"};
+enum { ARP_OFF, ARP_UP, ARP_DOWN, ARP_UPDN, ARP_NERVE, ARP_CHORD, SEQ_NARP };   /* (CHORD: D39, the chord at once) */
+static const char *const SEQ_ARP_NAME[SEQ_NARP] = {"OFF", "UP", "DOWN", "UP-DN", "NERVE", "CHORD"};
 static const uint16_t SEQ_ARP_RATE[6] = {48, 64, 96, 128, 192, 384};   /* 1/32 1/16T 1/16 1/8T 1/8 1/4 */
 static const char *const SEQ_ARP_RATE_NAME[6] = {"1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4"};
 #define SEQ_NCHORD 5u
@@ -129,6 +130,20 @@ static int32_t seq_arp_pitch(const seq_scene_t *sc, const seq_track_t *t, int32_
         for (k = 1; k <= pc; k++) d += b >> k & 1u;   /* the scale's note at or under it: its degree */
         return note - (int32_t)pc + bio_scale_note(m, d + SEQ_CHORD_DEG[c][j]) + 12 * (int32_t)o;
     }
+}
+
+/* CHORD (D39): the note's chord in the scale at once (ORGAN, STRINGS and BRASS play it; the other voices the root):
+   CHORD's chord, RANGE 2 and 3 open (its second note an octave up); any other mode: the root alone */
+static void seq_chord(bio_t *e, const seq_scene_t *sc, const seq_track_t *t, uint32_t trk, int32_t note)
+{
+    int8_t semi[3];
+    uint32_t n = 0, i, N;
+    if (t->arp == ARP_CHORD) {
+        N = SEQ_CHORD_N[seq_arp_chord(t)];
+        for (i = 1; i < N && n < 3u; i++) semi[n++] = (int8_t)(seq_arp_pitch(sc, t, note, i) - note);
+        if (n && seq_arp_range(t) > 1u) semi[0] = (int8_t)(semi[0] + 12);
+    }
+    bio_chord(e, trk, n, semi);
 }
 
 /* ---- quantise and swing: where an event plays (ticks into its track, 0..len; len itself is the next loop's 0) */
@@ -215,7 +230,8 @@ static void seq_fire(seq_t *s, uint32_t trk, const seq_ev_t *ev, uint32_t step)
     if (ev->fl & EV_ACC) vel = vel + 30u > 127u ? 127u : vel + 30u;
     if ((sc->tur.wail & 1u && trk == O_SPASM) || (sc->tur.wail & 2u && trk == O_VOICE))
         note = bio_tur_wail(&s->tur, &sc->tur, note);
-    if (trk >= 4u && t->arp && t->arp < SEQ_NARP) {   /* the ARP (D33): its chord, while the note lasts */
+    if (trk >= 4u && t->arp && t->arp < ARP_CHORD) {   /* the ARP (D33): its chord, while the note lasts */
+        bio_chord(s->e, trk, 0, 0);             /* (its notes one at a time) */
         s->arp_on[trk] = 1;
         s->arp_note[trk] = (uint8_t)bio_clamp(note, 0, 127);
         s->arp_vel[trk] = (uint8_t)vel;
@@ -225,6 +241,7 @@ static void seq_fire(seq_t *s, uint32_t trk, const seq_ev_t *ev, uint32_t step)
         s->arp_n[trk] = 0;
         return;
     }
+    if (trk >= 4u && trk < O_NOISE) seq_chord(s->e, sc, t, trk, note);   /* (CHORD, in D's own space: before the KEY) */
     if (trk >= 4u) note = bio_clamp(note + bio_key_shift(&sc->tur), 0, 127);   /* the KEY (D31): the synths and NOISE */
     len = (uint32_t)(ev->len ? ev->len : SEQ_TPS) * (s->e->spb_q8 >> 8) / 384u;   /* in samples */
     if (bio_is_perc(trk, sc->p[trk])) seed = seq_noise_seed(s, sc, trk, step);
@@ -266,7 +283,7 @@ static void seq_arp(seq_t *s, uint32_t c0, uint32_t c1)
             s->arp_snd[trk] = 0;
         }
         if (!s->arp_on[trk]) continue;
-        if (!t->arp || t->arp >= SEQ_NARP) { s->arp_on[trk] = 0; continue; }   /* (turned off) */
+        if (!t->arp || t->arp >= ARP_CHORD) { s->arp_on[trk] = 0; continue; }   /* (turned off) */
         rate = SEQ_ARP_RATE[seq_arp_rate(t)];
         while ((int32_t)(s->arp_next[trk] - c1) < 0 && n++ < 4u) {
             uint32_t at = s->arp_next[trk], N = SEQ_CHORD_N[seq_arp_chord(t)] * seq_arp_range(t), i = s->arp_n[trk], g, len;
@@ -315,7 +332,10 @@ static void seq_tick(bio_t *e, void *ctx)
                          : in.org == O_CLAW ? BIO_MS(300) : BIO_MS(125);
             int32_t sh = in.org >= 4u ? bio_key_shift(&s->sc[s->cur].tur) : 0;   /* (the KEY: what is recorded is
                                                    the key's own note, what sounds is in the scene's key, D31) */
-            if (in.org >= 4u && s->sc[s->cur].tr[in.org].arp) {   /* an ARP track: the key held, arped (D33) */
+            if (in.org >= 4u && in.org < O_NOISE)   /* (CHORD, D39: the key's own note, D's space) */
+                seq_chord(s->e, &s->sc[s->cur], &s->sc[s->cur].tr[in.org], in.org, in.note);
+            if (in.org >= 4u && s->sc[s->cur].tr[in.org].arp && s->sc[s->cur].tr[in.org].arp < ARP_CHORD) {   /* an ARP
+                                                   track: the key held, arped (D33) */
                 s->arp_on[in.org] = 1;
                 s->arp_note[in.org] = in.note;
                 s->arp_vel[in.org] = in.vel;

@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """tools/emu_check.sh's checks of an fm1-emu run (numpy, Pillow).
   isr REPORT MAX         the interrupts' share of the chip, under MAX %
-  load REPORT            the engine's own isr_load (from the dump), printed
+  load REPORT [STATE]    the engine's own load and the second core's (emu_fig, from the dump); with STATE, the
+                         second core's state must be it (3 running, 2 given up: platform.c CORE1_*)
   sound WAV T0 T1        sound between T0 and T1 s (RMS over -50 dBFS)
   screen BMP...          each screen drawn (not black)"""
 import re
@@ -25,11 +26,24 @@ def main():
         return 0 if tot < float(sys.argv[3]) else 1
     if what == "load":
         txt = Path(sys.argv[2]).read_text(errors="replace")
-        m = re.search(r"^\s*0x[0-9a-f]+: ([0-9a-f]{8})", txt, re.M)
+        m = re.search(r"^\s*0x[0-9a-f]+: ([0-9a-f]{8})(?: ([0-9a-f]{8}) ([0-9a-f]{8}))?((?: [0-9a-f]{8}){4})?", txt, re.M)
         if not m:
-            print("(no dump of isr_load: build/bioforge.syms?)")
+            print("(no dump of emu_fig: build/bioforge.syms?)")
             return 0
         print(f"fm1-emu: the engine measures itself at {int(m.group(1), 16)} % of the audio interrupt's 5.8 ms")
+        if m.group(2) is None:
+            return 0
+        c1, st = int(m.group(2), 16), int(m.group(3), 16)
+        names = {0: "not started", 1: "did not report in", 2: "given up (one core)", 3: "running"}
+        print(f"fm1-emu: the second core {names.get(st, st)}, its share {c1} %")
+        if m.group(4):
+            pt = [int(w, 16) for w in m.group(4).split()]
+            print(f"fm1-emu: core 0: the tick {pt[0]} %, its units {pt[1]} %, waiting {pt[2]} %, the mix to the end {pt[3]} %")
+        if len(sys.argv) > 3:
+            want = int(sys.argv[3])
+            if st != want or (want == 3 and c1 == 0):
+                print(f"fm1-emu: the second core should be {names.get(want, want)}" + (" and rendering" if want == 3 else ""))
+                return 1
         return 0
     if what == "sound":
         import numpy as np

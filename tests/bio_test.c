@@ -732,6 +732,62 @@ static void test_arp(void)
     check(ok, "a scene made blank keeps no ARP of the one before");
 }
 
+/* CHORD (D39): an ARP mode that sounds the note's chord in the scale at once: a held D3 in D Phrygian on CHORD TRIAD
+   gives the voice F and A over it (3 and 7 semitones, RANGE 1), RANGE 2 opens it (the F an octave up); UP after it plays its
+   notes one at a time again (no chord left on the voice); and an ORGAN on CHORD has the three pitches in its sound */
+static void chord_scene(void)                    /* D3 held on DRONE (an ORGAN), CHORD TRIAD, RANGE 1 */
+{
+    setup(&eng, &sq, scn, und, red);
+    seq_scene_blank(&scn[0], 0xC40Du);
+    seq_put(&scn[0], O_DRONE, 0, 16 * 96 - 6, 50, 100, 0);
+    scn[0].tr[O_DRONE].arp = ARP_CHORD;
+    scn[0].tr[O_DRONE].arp_rr = 0x20;           /* RANGE 1: close */
+    scn[0].p[O_DRONE][P_E1] = BIO_LAND(L_ORGAN);
+    scn[0].p[O_DRONE][P_A] = 0;
+    scn[0].fx.r_mix = 0;
+    scn[0].fx.d_mix = 0;
+}
+static void test_chord(void)
+{
+    static int32_t buf[512];
+    uint32_t b, ok;
+    bio_tone_t *v = &eng.tone[O_DRONE - 4u];
+    chord_scene();
+    seq_play(&sq);
+    run(&eng, 30, 0);
+    ok = v->gate && v->note == 50u && v->ch_n == 2u && v->ch_lf[0] == 3 * BIO_SEMI && v->ch_lf[1] == 7 * BIO_SEMI;
+    check(ok, "CHORD: D3 held in D Phrygian, its triad at once (F and A over it, one voice)");
+    {   /* the organ's sound has D3, F3 and A3 in it: a Goertzel at each, against a note not in the chord (E3) */
+        double pw[4] = {0, 0, 0, 0};
+        static const double C2[4] = {1.999562381, 1.999381131, 1.999017591, 1.999448647};   /* 2 cos(2 pi f / 44100) */
+        uint32_t j, k2;
+        for (j = 0; j < 4u; j++) {
+            double c = C2[j], s1 = 0, s2 = 0;
+            chord_scene();
+            seq_play(&sq);
+            run(&eng, 20, 0);
+            for (b = 0; b < 40u; b++) {
+                memset(buf, 0, sizeof buf);
+                bio_render(&eng, buf, 256);
+                for (k2 = 0; k2 < 256u; k2++) { double s0 = (buf[2u * k2] + buf[2u * k2 + 1u]) / 65536.0 + c * s1 - s2; s2 = s1; s1 = s0; }
+            }
+            pw[j] = s1 * s1 + s2 * s2 - c * s1 * s2;
+        }
+        check(pw[0] > 20 * pw[3] && pw[1] > 20 * pw[3] && pw[2] > 20 * pw[3], "CHORD on ORGAN: D3, F3 and A3 sound, E3 not (20x)");
+    }
+    seq_stop(&sq);
+    scn[0].tr[O_DRONE].arp_rr = 0;              /* RANGE 2 (its default): open */
+    seq_play(&sq);
+    run(&eng, 30, 0);
+    check(v->ch_n == 2u && v->ch_lf[0] == 15 * BIO_SEMI && v->ch_lf[1] == 7 * BIO_SEMI, "CHORD RANGE 2: open (the F an octave up)");
+    seq_stop(&sq);
+    scn[0].tr[O_DRONE].arp = ARP_UP;
+    seq_play(&sq);
+    run(&eng, 30, 0);
+    check(v->ch_n == 0u, "ARP UP after CHORD: the notes one at a time, no chord left on the voice");
+    seq_stop(&sq);
+}
+
 /* D35: SCREW is the 8th just played at half speed (its zero crossings half as many); DROP is silence; WARP keeps the
    loudness but not the samples; RUPTURE's cuts, with the register locked, come back where they were each time round */
 static void test_unorthodox(void)
@@ -820,6 +876,7 @@ int main(void)
     test_scar();
     test_key();
     test_arp();
+    test_chord();
     test_unorthodox();
     printf("%d of %d checks passed\n", checks - fails, checks);
     return fails ? 1 : 0;
