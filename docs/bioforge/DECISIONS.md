@@ -351,27 +351,33 @@ after Melodee by Kerem Kilic, with X0X's hardening, carried by SLOOP 2.8.3), all
 it is the one departure in Dinghy's own files (PLATFORM.md lists each).
 - **The work in units.** Each sub-block (32 frames) is ten units that share no state: the four drums, the four tonal
   organs, NOISE, and the delay with the reverb. The sequencer's tick and the life signals come first, on core 0; then a
-  share of the units goes to core 1 in one job, core 0 renders the rest, waits for it, and mixes (the rib, the channels,
-  the rumble, the crush, the master, SCAR). Whoever renders a unit, the output is the same, bit for bit:
-  `tests/bio_par_test.c` renders every ritual and the worst case on one core, deferred, on a real thread with a random
-  split each block and with the split by cost, and with lost jobs, and the hashes must all match (and again under
-  ThreadSanitizer: no race).
-- **The delay and the reverb a sub-block late** (0.73 ms, a pre-delay nobody hears): they work on the last
-  sub-block's sends, so they can run beside the organs instead of after them. The only change to the sound; a dry
-  render is the same as before, sample for sample.
+  share of the units goes to core 1 in one job, and core 0 renders the rest. Whoever renders a unit, the output is the
+  same, bit for bit: `tests/bio_par_test.c` renders every ritual and the worst case on one core, deferred, on a real
+  thread with a random split each block and with the split by cost, and with lost jobs, and the hashes must all match
+  (and again under ThreadSanitizer: no race).
+- **A pipeline.** While the units render sub-block j, core 0 mixes j - 1 (the rib, the channels and their sends, the
+  rumble, the crush, the master, SCAR: 12 % of the 5.8 ms that would otherwise wait for both): the units write into
+  buffers of j's parity, and what the mix needs of a sub-block (the duck, the grid, the tempo, each organ awake) is kept
+  with it. So the output is a sub-block late (0.73 ms) and the delay and the reverb, which work on the sends the mix made,
+  two more (1.45 ms: a pre-delay nobody hears). A dry render is the old one 32 samples later, sample for sample.
 - **The split** follows each unit's measured time (TIMER4, which both cores read, smoothed over 8 sub-blocks): the
-  costliest first, each to the core that has less so far; a unit asleep costs nothing and stays.
+  costliest first, each to the core that has less so far, core 0 starting with its mix; a unit asleep costs nothing and
+  stays.
 - **The second core started at power-on**, before the audio and the timers, held first thing at boot, the supplies
   raised to M-VAVE's own levels (X0X: at the boot loader's, with both cores busy, some units read wrong), proved by a
   self-test job. A unit whose core 1 does not report in, misreads a job (the check word), faults or is late (8 ms) is
   given up: held, and one core until power-off; the units of that sub-block are rendered again on core 0.
+- **The load figures were 15 points low.** They were smoothed as `(x * 15 + new) / 16` in integers, which settles about
+  15 under the truth (and at 0 under 16 %): THE AWAKENING's "37 %" was 44 %, and the CPU rule's 75 % was 90. Now they
+  are smoothed x 256 and rounded.
 - **Measured in fm1-emu** (`09aeae3`, the pin moved to it: it models the PC limits as an FM-1 has them), THE
-  AWAKENING: the engine's share of core 0 37 % -> 22 % of the 5.8 ms; the interrupts 45.9 % -> 31.6 % of the chip;
-  core 1's stack 664 B deep of its 2 816. With a core 1 that misreads (`--flaky-core1`, 7 766 misreads in 5 s): given
-  up, one core (40 %), the sound unbroken. `tools/emu_check.sh` checks both (the second core running and rendering;
-  given up and playing on). On a computer the engine costs 2.5 % more in one piece (2 795 instructions a frame, was
-  2 727): the units' own buffers.
-- The MIX page's CPU figure is core 0's, then core 1's after a plus ("CPU 22+18%").
+  AWAKENING: on one core 44 % of the 5.8 ms; on two, core 0 23 % (the tick 1, its units 9, the mix 12, waiting 1) and
+  core 1 21 %; the interrupts on core 0 43.6 % -> 25.1 % of its time. Core 1's stack 664 B deep of its 2 816. With a
+  core 1 that misreads (`--flaky-core1`, 7 766 misreads in 5 s): given up, one core, the sound unbroken.
+  `tools/emu_check.sh` checks both (the second core running and rendering; given up and playing on) and prints core 0's
+  parts. On a computer the engine costs 2.5 % more in one piece (2 795 instructions a frame, was 2 727): the units' own
+  buffers.
+- The MIX page's CPU figure is core 0's, then core 1's after a plus ("CPU 23+21%").
 
 **D39 (2026-11-20) A sci-fi dungeon synth: four voices, two scenes (a draft).** The user: this becomes a sci-fi dungeon
 synth / groovebox; make every improvement that can be made now. Dungeon synth lives on an organ, a string machine and a

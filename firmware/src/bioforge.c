@@ -1377,7 +1377,6 @@ static void app_audio(int32_t *out, uint32_t n)
         uint32_t k, w = eng.c0_wait;
         eng.c0_wait = 0;
         eng.c0_part[2] = w;
-        eng.c0_part[3] -= w < eng.c0_part[3] ? w : eng.c0_part[3];
         for (k = 0; k < 4u; k++) {
             emu_fig[3u + k] = load_smooth(2u + k, eng.c0_part[k]);
             eng.c0_part[k] = 0;

@@ -188,9 +188,12 @@ make web      # the page: the demos, BIOFORGE for the browser (clang, lld), its 
 - **The memory** is `bio_seq.h` (scenes, tracks, events, recording, undo) and `bio_turing.h` (the register).
 - **The screens** come from `bio_ui.h` and `firmware/gen/bio_art.h`. The art is drawn by `tools/gen_art.py` from
   shapes and numbers: a biomechanical relief of hoses, vertebrae and ribs, chrome frames, valve knobs, rivets, a steel spine and a 5 x 7 font (D26).
-- **Its cost on a computer** (`make perf`, built `-Os`) is about 2 400 instructions a frame for the awakening and
-  2 900 with every organ sounding and every effect on. Over 75 % of the audio interrupt, the drums out of focus ring
+- **Its cost on a computer** (`make perf`, built `-Os`) is about 2 800 instructions a frame for the awakening and
+  3 400 with every organ sounding and every effect on. Over 75 % of the audio interrupt, the drums out of focus ring
   on two modes instead of four.
+- **Both cores** (D38): each sub-block's drums, synths, NOISE and delay with reverb are shared out between the FM-1's
+  two cores, and core 0 mixes the last sub-block while they render: THE AWAKENING takes 23 % and 21 % of the 5.8 ms
+  in fm1-emu (44 % on one). A unit whose second core misreads gives it up and plays on one.
 
 ## Platform, licence and credits
 
