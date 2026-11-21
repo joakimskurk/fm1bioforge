@@ -42,6 +42,12 @@ APP = {"build/web/bioforge.wasm": "bioforge.wasm", "web/app/worklet.js": "workle
 SCREENS = ("seq", "land", "mut")            # (a few: the page is the FM-1 itself)
 DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each; tools/make_demos.sh
             # renders every script, the page carries these ten)
+    ("30_crypt_suite", "THE CRYPT SUITE",
+     "One theme, four bodies: what one machine can be. CRYPT's melody and chords as a dungeon march (a pipe organ, a "
+     "string machine, a harpsichord, war drums), as iron (bowed steel, a piston, an FM bell, metal and a hinge, the "
+     "crusher, the nervous system cutting in), as science fiction in double time (brass, glass, a bass sequence, the "
+     "four on the floor) and as a cathedral with no beat (a choir singing it in harmony); SONG chains them. Played "
+     "live on top: a drop, the register let slip, SCAR's stutter, a bar backwards, a tape stopping, a smear."),
     ("25_catacomb", "CATACOMB",
      "Dungeon synth, 60 BPM, E Aeolian, in a cathedral: a choir sings the chords (i, VI, III, VII: CHORD on CHOIR), a "
      "harpsichord strums them, an organ's bourdon under them on the roots, a frame drum and a deep one, wind; the tape a "
@@ -64,9 +70,6 @@ DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.
      "Dark ambient meets noise, 110 BPM. A deep kick with almost no top on the four and its RUMBLE under it; a fire "
      "crackling, the reverb and the delay breathing with it; ticks of six squares off the beat, sparks in time; wide, "
      "drifting dub chords off the beat into a dark delay, a bass on the off-beats, a wide drone and a choir in a cave."),
-    ("16_grinder", "GRINDER",
-     "Industrial techno, 140 BPM, E Phrygian dominant: a hard driven kick, a crushed snare, metal hats, a rolling bass "
-     "between the kicks, an iron stab, slices of metal noise locked; the crusher on. The hard, bright end."),
     ("21_shrine", "SHRINE",
      "Sweetness, ruptured: E Lydian, no beat but a clock. Glass arped up and down a major ninth, a choir on the sharp "
      "fourth, chimes; all of it through a wavering tape (WARP), and the nervous system cutting into it (RUPTURE): a "

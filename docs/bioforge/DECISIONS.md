@@ -483,3 +483,23 @@ grit goes back as a choice, not as clipping (the user approved a draft of CRYPT)
 - the organs more reed (BODY 76, 55), a little more tape (WARP 10 .. 20), the register's ghosts (RATTLE 20 .. 25);
 - the drums pulled back a little where the crusher lifted them: each still about level with the melody (-3.4 .. -4.6 dB
   against the whole).
+
+**D44 (2026-11-21) THE CRYPT SUITE: one theme, four bodies.** The user: CRYPT sounds fantastic; take it as the start of
+a demo of BIOFORGE's range. One theme (CRYPT's melody and chords, D harmonic minor) in four bodies, so what changes is
+the machine and not the music: three factory rituals, each CRYPT itself with its instruments, drums and room changed
+(`rit_crypt` first, then the changes):
+- **CRYPT:IRON**, industrial, alien: the melody on bowed STEEL, DUB's fifths for the chords, a PISTON running the bass
+  in sixteenths, a dirty BELL arpeggiating, the kick driving, METAL hats, a HINGE, digital GRAIN; the crusher hard, a
+  METAL tank, RUPTURE 30, RATTLE 40.
+- **CRYPT:STAR**, science fiction in double time (132 BPM): BRASS, STRINGS on open sevenths, a GLASS arpeggio, a bass
+  sequence, the four on the floor, a RISE every four bars, a long ping-pong.
+- **CRYPT:NAVE**, no beat: a CHOIR singing the melody in harmony (CHORD on the melody itself), a flute ORGAN, the
+  HARPSI strumming each chord once, war drums far off; the CATHEDRAL, the tape worn.
+- Each balanced as the others (the drums and the melody about level, -3.5 .. -4.6 dB; NAVE the choir in front).
+- **The demo** (`tests/scripts/demo_30_crypt_suite.txt`, 2:07, the firmware itself on the host) loads the four into
+  the scenes (SHIFT + PRESETS), sets SONG (8, 8, 16, 4 bars, round), plays, and performs on top: the drums dropped for a
+  bar (HOME and a white key), the register let slip in IRON (LOOP down, locked again), SCAR's REPEAT 1/16 into STAR, a
+  bar backwards, SCREW (a tape stopping) into NAVE, SMEAR at its end, CRYPT again. First on the page; GRINDER's demo off
+  it (its script kept), ten in all.
+- CPU on a computer: IRON 2 515 instructions a frame, STAR 2 685, NAVE 3 056 (three chords at once), under the worst
+  case (3 469).

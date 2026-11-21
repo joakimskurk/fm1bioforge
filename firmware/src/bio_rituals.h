@@ -1171,15 +1171,126 @@ static void rit_oracle(seq_scene_t *sc)
     sc->tur.loop = 92; sc->tur.depth = 8; sc->tur.rattle = 25;
     sc->mix.warp = 10;
 }
+/* ---- THE CRYPT SUITE (D44): CRYPT's theme (its melody, its chords, D harmonic minor) in three more bodies, each
+   CRYPT itself with its instruments, its drums and its room changed: what one machine can be. SONG chains them */
+static void rit_clear(seq_scene_t *sc, uint32_t trk) { seq_track_clear(&sc->tr[trk], 64); }
+/* CRYPT:IRON. Industrial, alien: the melody on bowed steel, the chords DUB's fifths, a piston running the bass in
+   sixteenths, a dirty FM bell arpeggiating, the kick driving, metal hats, a hinge, digital grain; the crusher hard, a
+   tank of metal for a room, the register cutting into it (RUPTURE) and rattling */
+static void rit_crypt_iron(seq_scene_t *sc)
+{
+    rit_crypt(sc);
+    rit_name(sc, "CRYPT:IRON");
+    rit_model(sc, O_VOICE, L_STEEL, 50, 72, 35, 60);
+    rit_model(sc, O_DRONE, L_DUB, 45, 100, 50, 50);
+    sc->tr[O_DRONE].arp = ARP_OFF;
+    rit_model(sc, O_BASS, L_PISTON, 62, 60, 40, 50);
+    rit_model(sc, O_SPASM, L_BELL, 45, 40, 30, 35);
+    rit_arp(sc, O_SPASM, ARP_UPDN, 2, 2, 0, 5);
+    rit_clear(sc, O_HEART);
+    rit_steps(sc, O_HEART, "x..x..x...x..x..x..x..x...x.x...x..x..x...x..x..x..x..x...x.x.x.", 60, 104, 96);
+    rit_clear(sc, O_TEETH);
+    rit_perc(sc, O_TEETH, "METAL", 60);
+    sc->p[O_TEETH][P_LEVEL] = 62;
+    rit_steps(sc, O_TEETH, "xgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxx", 60, 84, 24);
+    rit_clear(sc, O_CLAW);
+    rit_perc(sc, O_CLAW, "HINGE", 38);
+    sc->p[O_CLAW][P_LEVEL] = 70;
+    rit_steps(sc, O_CLAW, "......x.......x.......x.......x.......x.......x.......x.....x.x.", 60, 90, 48);
+    rit_clear(sc, O_NOISE);
+    rit_perc(sc, O_NOISE, "GRAIN", 54);
+    sc->p[O_NOISE][P_LEVEL] = 92;
+    rit_steps(sc, O_NOISE, "..x...x...x...x...x...x...x...x...x...x...x...x...x...x...xx.x.x", 60, 80, 48);
+    sc->mix.sc[CH_DRUM] = 55; sc->mix.sc[CH_BASS] = 50; sc->mix.sc[CH_SPASM] = 30; sc->mix.sc[CH_DRONE] = 0;
+    sc->fx.c_mix = 36; sc->fx.c_drive = 72; sc->fx.c_rate = 20; sc->fx.c_bits = 30; sc->fx.c_fold = 30;
+    sc->fx.r_space = 3; sc->fx.r_mix = 26; sc->fx.r_decay = 50; sc->fx.r_size = 60;
+    sc->fx.d_time = 4; sc->fx.d_mix = 26; sc->fx.d_fb = 40;
+    sc->mix.lvl[CH_DRUM] = 82; sc->mix.lvl[CH_DRONE] = 44; sc->mix.lvl[CH_BASS] = 66; sc->mix.lvl[CH_NOISE] = 64;
+    sc->mix.warp = 0; sc->tur.rupture = 30; sc->tur.rattle = 40; sc->tur.loop = 94;
+}
+/* CRYPT:STAR. Science fiction, double time (132 BPM): the melody on brass that swells and bends in late, strings on
+   open sevenths, a glass arpeggio in sixteenths, a bass sequence, the four on the floor, a riser every four bars; a
+   long ping-pong, a hall */
+static void rit_crypt_star(seq_scene_t *sc)
+{
+    static const uint8_t ROOT[4] = {50, 46, 43, 45};
+    static const char *const SEQ = "x.xxx.x.xx.xx.x.";
+    uint32_t k, j;
+    rit_crypt(sc);
+    rit_name(sc, "CRYPT:STAR");
+    sc->bpm10 = 1320;
+    rit_model(sc, O_VOICE, L_BRASS, 60, 70, 60, 50);
+    sc->p[O_VOICE][P_A] = 20; sc->p[O_VOICE][P_R] = 45;
+    rit_model(sc, O_DRONE, L_STRINGS, 75, 70, 50, 60);
+    sc->p[O_DRONE][P_A] = 30; sc->p[O_DRONE][P_R] = 50;
+    rit_clear(sc, O_DRONE);                     /* (first: a clear track has no ARP) */
+    rit_arp(sc, O_DRONE, ARP_CHORD, 4, 2, 1, 6);
+    for (k = 0; k < 4u; k++) seq_put(sc, O_DRONE, k * 16u, 16 * 96 - 10, ROOT[k] + 12u, 80, 0);
+    rit_model(sc, O_SPASM, L_GLASS, 40, 40, 30, 30);
+    rit_arp(sc, O_SPASM, ARP_UP, 2, 2, 0, 5);
+    rit_clear(sc, O_BASS);
+    sc->p[O_BASS][P_D1] = 55; sc->p[O_BASS][P_D] = 30; sc->p[O_BASS][P_A] = 0; sc->p[O_BASS][P_S] = 50;
+    for (k = 0; k < 4u; k++)
+        for (j = 0; j < 16u; j++)
+            if (SEQ[j] == 'x') seq_put(sc, O_BASS, k * 16u + j, 80, ROOT[k] - 12u + (j == 6u || j == 12u ? 12u : 0u), j % 4u ? 80 : 100, 0);
+    rit_clear(sc, O_HEART);
+    rit_steps(sc, O_HEART, "x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.x.", 60, 104, 96);
+    rit_clear(sc, O_BONE);
+    rit_steps(sc, O_BONE, "....o.......o.......o.......o.......o.......o.......o.......o.gg", 60, 100, 96);
+    rit_clear(sc, O_TEETH);
+    rit_perc(sc, O_TEETH, "SIX HAT", 40);
+    sc->p[O_TEETH][P_LEVEL] = 66;
+    rit_steps(sc, O_TEETH, "..x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.xx.x", 60, 84, 24);
+    rit_clear(sc, O_CLAW);
+    rit_perc(sc, O_CLAW, "BIT HAT", 62);
+    sc->p[O_CLAW][P_LEVEL] = 58;
+    rit_steps(sc, O_CLAW, "xgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxggg", 60, 80, 24);
+    rit_clear(sc, O_NOISE);
+    rit_perc(sc, O_NOISE, "RISE", 50);
+    sc->p[O_NOISE][P_LEVEL] = 56;
+    seq_put(sc, O_NOISE, 48, 16 * 96 - 8, 60, 90, 0);
+    sc->mix.sc[CH_DRUM] = 40; sc->mix.sc[CH_BASS] = 40; sc->mix.sc[CH_DRONE] = 0;
+    sc->fx.c_mix = 28; sc->fx.c_drive = 60; sc->fx.c_bits = 35; sc->fx.c_fold = 30;
+    sc->fx.d_time = 4; sc->fx.d_fb = 50; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 50;
+    sc->fx.r_space = 0; sc->fx.r_mix = 30; sc->fx.r_decay = 70; sc->fx.r_size = 85;
+    sc->mix.lvl[CH_VOICE] = 72; sc->mix.lvl[CH_DRUM] = 80; sc->mix.lvl[CH_BASS] = 76; sc->mix.lvl[CH_DRONE] = 68;
+    sc->mix.warp = 0; sc->mix.pump = 30; sc->fx.r_duck = 30; sc->tur.rattle = 20;
+}
+/* CRYPT:NAVE. No beat: a choir sings the melody in harmony (CHORD on the melody), a flute organ under it, the
+   harpsichord strumming each chord once, war drums far off on each bar and a roll back; a cathedral, the tape worn */
+static void rit_crypt_nave(seq_scene_t *sc)
+{
+    rit_crypt(sc);
+    rit_name(sc, "CRYPT:NAVE");
+    rit_model(sc, O_VOICE, L_CHOIR, 56, 55, 50, 60);
+    sc->p[O_VOICE][P_A] = 50; sc->p[O_VOICE][P_R] = 65;
+    rit_arp(sc, O_VOICE, ARP_CHORD, 4, 2, 0, 6);
+    rit_model(sc, O_DRONE, L_ORGAN, 20, 30, 50, 60);
+    rit_arp(sc, O_SPASM, ARP_CHORD, 4, 2, 0, 6);
+    rit_clear(sc, O_BASS);
+    rit_clear(sc, O_HEART);
+    rit_clear(sc, O_BONE);
+    rit_clear(sc, O_TEETH);
+    rit_clear(sc, O_CLAW);
+    rit_tom(sc, O_CLAW, "L...............L...............L...............L.......g.g.l.lm", 62, 65, 69, 90);
+    sc->mix.sb[CH_DRUM] = 80;
+    sc->mix.sc[CH_DRUM] = 0; sc->mix.sc[CH_BASS] = 0; sc->mix.sc[CH_DRONE] = 0;
+    sc->fx.c_mix = 0;
+    sc->fx.r_space = 5; sc->fx.r_mix = 44; sc->fx.r_decay = 80; sc->fx.r_size = 95; sc->fx.r_damp = 62;
+    sc->mix.lvl[CH_VOICE] = 64; sc->mix.lvl[CH_DRONE] = 66; sc->mix.lvl[CH_SPASM] = 92; sc->mix.lvl[CH_DRUM] = 78;
+    sc->mix.warp = 30; sc->mix.dark = 10; sc->tur.rattle = 0;
+}
 static void rit_empty(seq_scene_t *sc) { seq_scene_blank(sc, 0x7E3u); rit_name(sc, "EMPTY BODY"); }
 /* (the first four are the scenes before anything is saved: the document's start, then rhythm made of noise, D20) */
 static const rit_fn BIO_RITUAL[] = {rit_awaken, rit_rust, rit_abyss, rit_ash, rit_frozen, rit_stream, rit_wall, rit_data,
                                     rit_embers, rit_foundry, rit_orbit, rit_innards, rit_static, rit_splice, rit_void,
                                     rit_lament, rit_grinder, rit_spine, rit_ossuary, rit_tendon, rit_shrine, rit_mirage,
-                                    rit_crypt, rit_stargate, rit_catacomb, rit_oracle, rit_empty};
+                                    rit_crypt, rit_stargate, rit_catacomb, rit_oracle, rit_crypt_iron, rit_crypt_star,
+                                    rit_crypt_nave, rit_empty};
 static const char *const BIO_RITUAL_NAME[] = {"AWAKENING", "RUST", "ABYSS", "ASH", "FROZEN", "STREAM", "WALL", "DATA",
                                               "EMBERS", "FOUNDRY", "ORBIT", "INNARDS", "STATIC CULT", "SPLICE", "VOID",
                                               "LAMENT", "GRINDER", "SPINE", "OSSUARY", "TENDON", "SHRINE", "MIRAGE",
-                                              "CRYPT", "STARGATE", "CATACOMB", "ORACLE", "EMPTY BODY"};
+                                              "CRYPT", "STARGATE", "CATACOMB", "ORACLE", "CRYPT:IRON", "CRYPT:STAR",
+                                              "CRYPT:NAVE", "EMPTY BODY"};
 #define BIO_NRITUAL (sizeof BIO_RITUAL / sizeof BIO_RITUAL[0])
 #endif

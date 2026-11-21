@@ -110,7 +110,9 @@ This is a [Dinghy 0.5](https://github.com/zvenson/dinghy) app. It comes from an 
     (seven eighths), SHRINE (sweetness, ruptured: E Lydian through a wavering tape, the register cutting into it), MIRAGE
     (a loop chopped and screwed by the register), CRYPT (dungeon synth: an organ, strings, a harpsichord, D harmonic
     minor), STARGATE (sci-fi, Berlin school: a brass lead over a bass sequence), CATACOMB (a choir singing chords, a
-    strummed harpsichord, a cathedral), ORACLE (sci-fi: a choir pad, brass stabs, a bass arpeggio) and EMPTY BODY. The one in flash stays until you SAVE.
+    strummed harpsichord, a cathedral), ORACLE (sci-fi: a choir pad, brass stabs, a bass arpeggio), THE CRYPT SUITE's
+    three more bodies of CRYPT's theme (CRYPT:IRON industrial, CRYPT:STAR science fiction in double time, CRYPT:NAVE a
+    cathedral with no beat: load them into the four scenes and chain them with SONG) and EMPTY BODY. The one in flash stays until you SAVE.
   - Each scene is saved in two flash slots, so a save cut off by a power cut leaves the last good one.
 
 ## Using it
