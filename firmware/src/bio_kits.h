@@ -32,6 +32,9 @@ static const bio_preset_t BIO_PERC_KIT[] = {
     {"THUMP",      PK( 0, 10, 84, 28,  13, 85,   0,  0, 70, 70,  0,   0,   0,  0, 20, 12, 100)},   /* a kick of noise: low, swept, driven */
     {"WASH",       PK(55, 20, 50, 80,  13, 20,  50,  0,  0,  0,  0,  30, 100, 90, 70, 24,  90)},   /* gated noise, held */
     {"FLAM SNR",   PK(60, 30, 55, 32,  4, 15,  60, 30, 40, 50,  0,   0,   0, 30, 30, 24,  96)},   /* two strikes: a flam */
+    {"SNARE",      PK(64, 12, 53, 44,  4, 22,  35,  0, 70, 45,  0,   0,   0, 40, 30, 24, 100)},   /* (D42) a wide crack and
+                                                                       its sizzle, a stick's click (with WAR DRUM under
+                                                                       it on a high note: its shell) */
     {"BIT HAT",    PK(86, 20, 50, 14,  22, 10, 100,  0, 20,  0, 50,   0,   0, 20, 20, 24, 100)},
     {"LASER",      PK(70, 10, 90, 22,  32, 45,  50,  0, 10, 20,  0,   0,   0, 10, 20, 24,  92)},   /* METAL, swept down */
     /* the organic crackles (D21): held, a bed; struck, a burst of it */
@@ -48,12 +51,17 @@ static const bio_preset_t BIO_PERC_KIT[] = {
     {"CIRCUIT",    PK(60, 25, 50, 50,  96, 20,  40,  0,  0, 10,  0,  10, 100, 20, 30, 24,  90)},   /* a byte of a formula, held */
     /* the deep kicks (D22): MODEL KICK, on a drum organ only (bio_kick.h) */
 #define KK(b, t, m, d, tone, drv, kn, hold, a, lvl) {b, t, m, d, tone, drv, kn, hold, 0, 0, 0, 100, a, 0, 0, 0, 24, lvl, 50, 0, 0, 0, 0, 0}
-    {"DEEP KICK",  KK(40, 45, 30, 55,  30, 35, 10, 20,  5, 100)},   /* 44 Hz, two octaves down in 13 ms, half a second */
-    {"SUB KICK",   KK(30, 30, 45, 75,  20, 20,  0, 40,  8, 100)},   /* lower, longer, softer: the floor itself */
-    {"DUB KICK",   KK(50, 55, 25, 45,  40, 50, 25, 10,  4, 100)},   /* tighter, warmer, a knock */
+    {"DEEP KICK",  KK(40, 45, 30, 55,  30, 35, 32, 20,  5, 100)},   /* 44 Hz, two octaves down in 13 ms, half a second */
+    {"SUB KICK",   KK(30, 30, 45, 75,  20, 20, 28, 40,  8, 100)},   /* lower, longer, softer: the floor itself */
+    {"DUB KICK",   KK(50, 55, 25, 45,  40, 50, 36, 10,  4, 100)},   /* (D42: the three a beater's hint, heard on a small
+                                                                       speaker) */   /* tighter, warmer, a knock */
+    {"PUNCH KICK", KK(64, 62, 20, 40,  72, 60, 62,  4,  0, 100)},   /* (D42) 62 Hz from three octaves up, driven, open, a
+                                                                       beater's click: heard on any speaker */
+    {"WAR DRUM",   KK(80, 30, 40, 62,  66, 40, 70,  0,  2, 100)},   /* (D42) a big tom, its skin and its stick: play it
+                                                                       on notes over C4 (each a semitone up) */
 };
 #define BIO_NPERC_KIT (sizeof BIO_PERC_KIT / sizeof BIO_PERC_KIT[0])
-#define BIO_NKICK_KIT 3u                        /* (the last three: a drum organ's only) */
+#define BIO_NKICK_KIT 5u                        /* (the last five: a drum organ's only) */
 
 /* into an organ: a drum organ is switched to MODEL NOISE; the NOISE organ keeps its D8 (BREATH) */
 static void bio_preset_set(uint8_t *dst, const bio_preset_t *k, uint32_t org)

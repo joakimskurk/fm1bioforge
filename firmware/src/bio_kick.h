@@ -1,10 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* BIOFORGE's deep kick (D22): a drum organ's MODEL KICK. A sine falling from a sweep to its pitch, held, then a long
- * decay; drive for weight, then two low-pass poles so it keeps almost no top; a knock (some noise, low) if asked. Its
+ * decay; drive for weight, then two low-pass poles so it keeps almost no top; a knock (some noise, low) if asked, and
+ * with it the beater's click (D42: noise of 1.8 .. 5 kHz for two milliseconds, after the low-pass: without it, on a small
+ * speaker a kick of 45 Hz was not there at all). Its
  * phase runs on through a new hit (no click), its attack is a ramp of 1 ms or more.
  *   BODY its pitch (30 .. 48 .. 80 Hz)        TEXTURE how far it sweeps (0.5 .. 4 octaves)
  *   MOTION how fast (4 .. 25 .. 120 ms)      DECAY its tail (80 ms .. 0.45 .. 3 s, to -40 dB)
- *   D1 TONE the low-pass (60 .. 220 .. 2000 Hz)   D2 DRIVE (0 .. 18 dB)   D3 KNOCK   D4 HOLD (0 .. 200 ms)
+ *   D1 TONE the low-pass (60 .. 220 .. 2000 Hz)   D2 DRIVE (0 .. 18 dB)   D3 KNOCK (and the click)   D4 HOLD (0 .. 200 ms)
  *   ATTACK (1 .. 20 ms), TUNE, LEVEL, PAN as a drum's */
 #ifndef BIO_KICK_H
 #define BIO_KICK_H
@@ -15,8 +17,8 @@ typedef struct {
     uint32_t inc_end, inc_add;                  /* the pitch, and the sweep's extra at its start */
     int32_t pe, pe_k;                           /* the sweep (Q30) and its fall a sample */
     int32_t env, att, dec, amp;                 /* the level (Q30), the attack's step, the decay a sample; the hit (Q15) */
-    bio_op_t lp1, lp2, kn;
-    int32_t drive, knock, kn_env;
+    bio_op_t lp1, lp2, kn, ck, ck2;
+    int32_t drive, knock, kn_env, click, ck_env;
     uint32_t rnd;
     bio_dc_t dc;
     int32_t peak, fade;
@@ -52,9 +54,13 @@ static void bio_kick_hit(bio_kick_t *v, const bio_kick_p_t *p, int32_t note_q8, 
                                        : bio_lf_hz(220) + (bio_lf_hz(2000) - bio_lf_hz(220)) * ((int32_t)p->tone - 50) / 50);
     v->lp2.g = v->lp1.g;
     bio_op_set(&v->kn, bio_lf_hz(900));
+    bio_op_set(&v->ck, bio_lf_hz(1800));
+    bio_op_set(&v->ck2, bio_lf_hz(5000));
     v->drive = (int32_t)(bio_exp2((int32_t)p->drive * 3 * 653) >> 4);   /* 0 .. 18 dB, Q12 */
     v->knock = (int32_t)p->knock * 200;
     v->kn_env = 1 << 15;
+    v->click = (int32_t)p->knock * p->knock * 8;   /* (D42: KNOCK 25 a touch, 60 a beater, 64 full scale) */
+    v->ck_env = 1 << 15;
     v->amp = bio_mul15((int32_t)(vel > 127u ? 127u : vel) * 258, lvl);
     v->rnd = bio_hash(seed, 0x4B1Cu);
     v->fade = 32767;
@@ -86,6 +92,11 @@ static void bio_kick_render(bio_kick_t *v, int32_t *out, uint32_t n, int32_t *pr
             v->kn_env = bio_mul15(v->kn_env, 32000);
         }
         x = bio_op_lp(&v->lp2, bio_op_lp(&v->lp1, x));
+        if (v->click && v->ck_env > 64) {       /* the beater's click: past the low-pass, a millisecond */
+            x += bio_mul15(bio_op_lp(&v->ck2, bio_op_hp(&v->ck, bio_noise(&v->rnd))) * 2, bio_mul15(v->click, v->ck_env));   /* (1.8
+                                                   .. 5 kHz: a beater's, not a sizzle) */
+            v->ck_env = bio_mul15(v->ck_env, 32480);   /* (2 ms) */
+        }
         x = bio_mul15(bio_dc(&v->dc, x), bio_mul15(v->amp, v->fade));
         out[k] += x;
         if (bio_abs(x) > pk) pk = bio_abs(x);

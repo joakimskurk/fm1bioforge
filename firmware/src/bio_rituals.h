@@ -59,6 +59,20 @@ static void rit_steps(seq_scene_t *sc, uint32_t trk, const char *s, uint32_t not
     }
 }
 
+/* toms from a string (D42): 'l' 'm' 'h' a low, middle, high one ('L' 'M' 'H' accented), 'g' a ghost of the low one, '.'
+   a rest; each a step, as rit_steps */
+static void rit_tom(seq_scene_t *sc, uint32_t trk, const char *s, uint32_t lo, uint32_t mid, uint32_t hi, uint32_t vel)
+{
+    uint32_t i;
+    for (i = 0; s[i] && i < SEQ_MAXLEN; i++) {
+        char c = s[i];
+        uint32_t n = c == 'l' || c == 'L' || c == 'g' ? lo : c == 'm' || c == 'M' ? mid : c == 'h' || c == 'H' ? hi : 0u;
+        if (!n) continue;
+        seq_put(sc, trk, i, 96, n, c == 'g' ? vel / 2u : c >= 'a' ? vel : (vel + 24u > 127u ? 127u : vel + 24u),
+                c >= 'A' && c <= 'Z' ? EV_ACC : 0u);
+    }
+}
+
 /* RITUAL: STATIC CULT. Noise as percussion, 132 BPM: HEART a tight body, BONE a flam snare of noise, TEETH ticking
    sixteenths, CLAW metal on the off-beats, NOISE an open hiss, a rolling bass under it; the nerve rattles a little */
 static void rit_static(seq_scene_t *sc)
@@ -964,19 +978,26 @@ static void rit_crypt(seq_scene_t *sc)
     for (k = 0; k < 4u; k++) seq_put(sc, O_SPASM, k * 16u, 16 * 96 - 6, ROOT[k] + 12u, 84, 0);
     sc->p[O_BASS][P_D1] = 20; sc->p[O_BASS][P_D] = 90; sc->p[O_BASS][P_A] = 30; sc->p[O_BASS][P_S] = 80;
     for (k = 0; k < 4u; k++) seq_put(sc, O_BASS, k * 16u, 15 * 96, ROOT[k] - 12u, 90, 0);
-    rit_perc(sc, O_HEART, "DEEP KICK", 50);
-    sc->p[O_HEART][P_LEVEL] = 78;
-    rit_steps(sc, O_HEART, "x...............x.........x.....x...............x.........x..x..", 60, 100, 96);
-    rit_perc(sc, O_BONE, "THUMP", 40);
-    sc->p[O_BONE][P_LEVEL] = 66;
-    rit_steps(sc, O_BONE, "........x.....g.........x.....g.........x.....g.........x...g.g.", 60, 80, 48);
+    /* (D42) a war march: the kick, the snare in half time with its ghosts, war drums, a shaker */
+    rit_perc(sc, O_HEART, "PUNCH KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 92;
+    rit_steps(sc, O_HEART, "x.....x...x.....x.....x...x.....x.....x...x.....x.....x...x..x.x", 60, 104, 96);
+    rit_perc(sc, O_BONE, "SNARE", 52);
+    sc->p[O_BONE][P_LEVEL] = 90;
+    rit_steps(sc, O_BONE, "........o......g........o......g........o......g........o..g.ggo", 60, 100, 96);
+    rit_perc(sc, O_TEETH, "TICK", 62);
+    sc->p[O_TEETH][P_LEVEL] = 64;
+    rit_steps(sc, O_TEETH, "x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.xggg", 60, 84, 24);
+    rit_perc(sc, O_CLAW, "WAR DRUM", 40);
+    sc->p[O_CLAW][P_LEVEL] = 80;
+    rit_tom(sc, O_CLAW, "L..l....m.......L..l....m.....g.L..l....m.......L..l..m.m.hhmmlL", 64, 67, 71, 92);
     rit_perc(sc, O_NOISE, "WASH", 50);
     sc->p[O_NOISE][P_LEVEL] = 40;
     seq_put(sc, O_NOISE, 0, 64 * 96 - 8, 60, 70, 0);
     sc->mix.lvl[CH_DRONE] = 56; sc->mix.lvl[CH_VOICE] = 90; sc->mix.lvl[CH_SPASM] = 74; sc->mix.lvl[CH_BASS] = 54;
-    sc->mix.lvl[CH_DRUM] = 80; sc->mix.lvl[CH_NOISE] = 34;
+    sc->mix.lvl[CH_DRUM] = 74; sc->mix.lvl[CH_NOISE] = 34;
     sc->mix.sb[CH_DRONE] = 70; sc->mix.sb[CH_VOICE] = 80; sc->mix.sb[CH_SPASM] = 70; sc->mix.sa[CH_SPASM] = 50;
-    sc->mix.sa[CH_VOICE] = 30; sc->mix.sb[CH_DRUM] = 50; sc->mix.sb[CH_NOISE] = 60;
+    sc->mix.sa[CH_VOICE] = 30; sc->mix.sb[CH_DRUM] = 38; sc->mix.sb[CH_NOISE] = 60;
     sc->fx.d_time = 5; sc->fx.d_fb = 45; sc->fx.d_mix = 30; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 30;
     sc->fx.r_space = 4; sc->fx.r_mix = 36; sc->fx.r_decay = 85; sc->fx.r_size = 95; sc->fx.r_damp = 68; sc->fx.c_mix = 0;
     sc->mix.warp = 10; sc->mix.dark = 0; sc->mix.master = 84;
@@ -1013,16 +1034,21 @@ static void rit_stargate(seq_scene_t *sc)
     for (k = 0; k < 4u; k++)
         for (j = 0; j < 16u; j++)
             if (SEQ[j] == 'x') seq_put(sc, O_BASS, k * 16u + j, 80, ROOT[k] - (k ? 24u : 12u) + (j == 6u || j == 12u ? 12u : 0u), j % 4u ? 80 : 100, 0);
-    rit_perc(sc, O_HEART, "SUB KICK", 50);
-    sc->p[O_HEART][P_LEVEL] = 76;
-    rit_steps(sc, O_HEART, "x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.x.", 60, 100, 96);
-    rit_perc(sc, O_BONE, "CLAP", 56);
-    sc->p[O_BONE][P_LEVEL] = 60;
-    rit_steps(sc, O_BONE, "....x.......x.......x.......x.......x.......x.......x.......x...", 60, 84, 48);
-    rit_perc(sc, O_TEETH, "SIX HAT", 44);
-    rit_steps(sc, O_TEETH, "..x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.xx.x", 60, 66, 24);
-    sc->mix.lvl[CH_VOICE] = 76; sc->mix.lvl[CH_DRONE] = 66; sc->mix.lvl[CH_SPASM] = 66; sc->mix.lvl[CH_BASS] = 64;
-    sc->mix.lvl[CH_DRUM] = 74;
+    /* (D42) the four on the floor, the snare on two and four, the hats off the beat, a shaker in sixteenths */
+    rit_perc(sc, O_HEART, "PUNCH KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 92;
+    rit_steps(sc, O_HEART, "x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.x.", 60, 104, 96);
+    rit_perc(sc, O_BONE, "SNARE", 56);
+    sc->p[O_BONE][P_LEVEL] = 88;
+    rit_steps(sc, O_BONE, "....o.......o.......o.......o.......o.......o.......o.......o.gg", 60, 100, 96);
+    rit_perc(sc, O_TEETH, "SIX HAT", 40);
+    sc->p[O_TEETH][P_LEVEL] = 66;
+    rit_steps(sc, O_TEETH, "..x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.xx.x", 60, 84, 24);
+    rit_perc(sc, O_CLAW, "TICK", 62);
+    sc->p[O_CLAW][P_LEVEL] = 60;
+    rit_steps(sc, O_CLAW, "xgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxggg", 60, 80, 24);
+    sc->mix.lvl[CH_VOICE] = 76; sc->mix.lvl[CH_DRONE] = 66; sc->mix.lvl[CH_SPASM] = 66; sc->mix.lvl[CH_BASS] = 74;
+    sc->mix.lvl[CH_DRUM] = 80;
     sc->mix.sa[CH_VOICE] = 50; sc->mix.sb[CH_VOICE] = 60; sc->mix.sb[CH_DRONE] = 80; sc->mix.sa[CH_SPASM] = 70;
     sc->mix.sb[CH_SPASM] = 60; sc->mix.sb[CH_DRUM] = 24;
     sc->fx.d_time = 4; sc->fx.d_fb = 50; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 50; sc->fx.d_tone = 40;
@@ -1057,19 +1083,26 @@ static void rit_catacomb(seq_scene_t *sc)
     rit_model(sc, O_BASS, L_ORGAN, 35, 95, 20, 60);   /* (the bourdon: the 16' under a flute) */
     sc->p[O_BASS][P_A] = 20; sc->p[O_BASS][P_S] = 90; sc->p[O_BASS][P_R] = 50;
     for (k = 0; k < 4u; k++) seq_put(sc, O_BASS, k * 16u, 16 * 96 - 12, ROOT[k] - 12u, 84, 0);
-    rit_perc(sc, O_HEART, "DEEP KICK", 50);
-    sc->p[O_HEART][P_LEVEL] = 74;
-    rit_steps(sc, O_HEART, "x...............x.......x.......x...............x.......x...x...", 60, 100, 96);
-    rit_perc(sc, O_BONE, "THUMP", 64);
-    sc->p[O_BONE][P_LEVEL] = 60;
-    rit_steps(sc, O_BONE, "....x.......x.g......x.....x..g.....x.......x.g......x.....x..g.", 60, 76, 48);
+    /* (D42) a procession: the kick on one and three, war drums walking, the snare on four and a roll into the turn */
+    rit_perc(sc, O_HEART, "PUNCH KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 90;
+    rit_steps(sc, O_HEART, "x.......x.......x.......x.....x.x.......x.......x.......x...x.x.", 60, 104, 96);
+    rit_perc(sc, O_CLAW, "WAR DRUM", 60);
+    sc->p[O_CLAW][P_LEVEL] = 82;
+    rit_tom(sc, O_CLAW, "L...l...m...l.g.L...l...m...h.h.L...l...m...l.g.L...l...m.m.hhhh", 62, 65, 69, 92);
+    rit_perc(sc, O_BONE, "SNARE", 44);
+    sc->p[O_BONE][P_LEVEL] = 86;
+    rit_steps(sc, O_BONE, "............o...............o...............o...........RRRo", 60, 96, 96);
+    rit_perc(sc, O_TEETH, "TICK", 40);
+    sc->p[O_TEETH][P_LEVEL] = 58;
+    rit_steps(sc, O_TEETH, "g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.", 60, 80, 24);
     rit_perc(sc, O_NOISE, "WASH", 50);
     sc->p[O_NOISE][P_LEVEL] = 36;
     seq_put(sc, O_NOISE, 0, 64 * 96 - 8, 60, 70, 0);
-    sc->mix.lvl[CH_VOICE] = 64; sc->mix.lvl[CH_SPASM] = 82; sc->mix.lvl[CH_BASS] = 56; sc->mix.lvl[CH_DRUM] = 78;
+    sc->mix.lvl[CH_VOICE] = 64; sc->mix.lvl[CH_SPASM] = 82; sc->mix.lvl[CH_BASS] = 56; sc->mix.lvl[CH_DRUM] = 68;
     sc->mix.lvl[CH_NOISE] = 30;
     sc->mix.sb[CH_VOICE] = 85; sc->mix.sb[CH_SPASM] = 75; sc->mix.sa[CH_SPASM] = 40; sc->mix.sb[CH_BASS] = 40;
-    sc->mix.sb[CH_DRUM] = 60; sc->mix.sb[CH_NOISE] = 70;
+    sc->mix.sb[CH_DRUM] = 42; sc->mix.sb[CH_NOISE] = 70;
     sc->fx.d_time = 6; sc->fx.d_fb = 40; sc->fx.d_mix = 24; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 30;
     sc->fx.r_space = 5; sc->fx.r_mix = 34; sc->fx.r_decay = 60; sc->fx.r_size = 90; sc->fx.r_damp = 66; sc->fx.c_mix = 0;
     sc->mix.warp = 12; sc->mix.dark = 0; sc->mix.master = 92;
@@ -1106,17 +1139,22 @@ static void rit_oracle(seq_scene_t *sc)
     sc->tr[O_VOICE].len = 16;
     rit_steps(sc, O_VOICE, "x.....x.....x...", 54, 70, 2 * 96);
     sc->tur.wail = 2;
-    rit_perc(sc, O_HEART, "SUB KICK", 50);
-    sc->p[O_HEART][P_LEVEL] = 78;
-    rit_steps(sc, O_HEART, "x.......x.x.....x.......x.......x.......x.x.....x.......x...x...", 60, 100, 96);
-    rit_perc(sc, O_BONE, "DIGI SNR", 54);
-    sc->p[O_BONE][P_LEVEL] = 58;
-    rit_steps(sc, O_BONE, "....x.......x.......x.......x.......x.......x.......x.......x.g.", 60, 86, 48);
+    /* (D42) a broken groove: the kick off the beat, the snare on two and four, hats in sixteenths, war drums into
+       each turn */
+    rit_perc(sc, O_HEART, "PUNCH KICK", 50);
+    sc->p[O_HEART][P_LEVEL] = 92;
+    rit_steps(sc, O_HEART, "x.......x.x.....x.....x...x.....x.......x.x.....x.....x.....x.x.", 60, 104, 96);
+    rit_perc(sc, O_BONE, "SNARE", 54);
+    sc->p[O_BONE][P_LEVEL] = 88;
+    rit_steps(sc, O_BONE, "....o.......o..g....o.......o.......o.......o..g....o.......o.gg", 60, 100, 96);
     rit_perc(sc, O_TEETH, "SIX HAT", 42);
-    sc->p[O_TEETH][P_LEVEL] = 52;
-    rit_steps(sc, O_TEETH, "x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.xxx.", 60, 58, 24);
-    sc->mix.lvl[CH_DRONE] = 40; sc->mix.lvl[CH_SPASM] = 72; sc->mix.lvl[CH_BASS] = 70; sc->mix.lvl[CH_VOICE] = 70;
-    sc->mix.lvl[CH_DRUM] = 74;
+    sc->p[O_TEETH][P_LEVEL] = 64;
+    rit_steps(sc, O_TEETH, "xgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxgxxxg", 60, 84, 24);
+    rit_perc(sc, O_CLAW, "WAR DRUM", 60);
+    sc->p[O_CLAW][P_LEVEL] = 78;
+    rit_tom(sc, O_CLAW, "............................h.m.............................hmml", 64, 68, 72, 92);
+    sc->mix.lvl[CH_DRONE] = 40; sc->mix.lvl[CH_SPASM] = 72; sc->mix.lvl[CH_BASS] = 70; sc->mix.lvl[CH_VOICE] = 80;
+    sc->mix.lvl[CH_DRUM] = 76;
     sc->mix.sb[CH_DRONE] = 80; sc->mix.sa[CH_SPASM] = 60; sc->mix.sb[CH_SPASM] = 50; sc->mix.sa[CH_VOICE] = 70;
     sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_DRUM] = 22;
     sc->fx.d_time = 5; sc->fx.d_fb = 55; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 55; sc->fx.d_tone = 40;

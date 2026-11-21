@@ -452,3 +452,20 @@ rough curve of finished mixes):
   was at 1 dB; SPLICE's strikes 2 dB softer, they still reached the knee).
 - Unchanged: the CPU (the knee is a compare a sample, rarely more), the dry renders' shape, RUST's balance (made against
   a reference, D20; it only stops clipping and is louder).
+
+**D42 (2026-11-21) Drums that are heard.** The user: none of these had drums; the balance between the drums and the
+rest was very skewed. Measured: in the four dungeon and sci-fi rituals the drums were 7 .. 15 dB under the whole, and
+their kicks were DEEP KICK and SUB KICK: a sine of 44 Hz under two low-pass poles near 150 Hz, its knock low-passed at
+900 Hz. A club's floor; on a laptop, a phone or headphones, nothing.
+- **The kick's click.** KNOCK now also brings the beater's click: noise of 1.8 .. 5 kHz for 2 ms, after the low-pass
+  (KNOCK squared: 25 a touch, 60 a beater). In the kick's first 25 ms, +7 .. 10 dB at 2 .. 4 kHz.
+- **Three sounds in the kit.** PUNCH KICK (62 Hz from three octaves up, driven, open, a beater: heard on any speaker),
+  WAR DRUM (a big tom, its skin and its stick, played on notes over C4: a semitone each) and SNARE (a wide crack, its
+  sizzle and a stick's click). DEEP, SUB and DUB KICK a beater's hint (KNOCK 32, 28, 36).
+- **Drum parts.** CRYPT a war march (the kick, the snare in half time with ghosts, war drums and a fill, a shaker),
+  CATACOMB a procession (the kick on one and three, war drums walking, the snare on four and a roll), STARGATE the four
+  on the floor (the snare on two and four, hats off the beat, a shaker in sixteenths), ORACLE a broken groove (16th hats,
+  war drums into each turn). `rit_tom` writes toms from a string (low, middle, high, accents, ghosts).
+- **The balance.** The drums about level with the melody (each alone -4 .. -4.6 dB against the whole), the pads, the
+  bass and the arpeggios under them. Their spectra nearer a finished mix's still (CRYPT -7.5 dB at 4 kHz, -13 at 8,
+  -23 at 16).
