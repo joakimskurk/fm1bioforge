@@ -965,7 +965,7 @@ static void rit_crypt(seq_scene_t *sc)
     rit_key(sc, 0, 3);
     sc->bpm10 = 660;
     for (k = 0; k < BIO_NORG; k++) sc->tr[k].len = 64;
-    rit_model(sc, O_DRONE, L_ORGAN, 60, 90, 30, 60);
+    rit_model(sc, O_DRONE, L_ORGAN, 76, 90, 30, 60);
     sc->p[O_DRONE][P_A] = 12; sc->p[O_DRONE][P_R] = 40; sc->p[O_DRONE][P_S] = 100;
     rit_arp(sc, O_DRONE, ARP_CHORD, 4, 1, 0, 6);   /* (the organ's chords: CHORD, a triad in the scale) */
     for (k = 0; k < 4u; k++) seq_put(sc, O_DRONE, k * 16u, 16 * 96 - 10, ROOT[k], 88, 0);
@@ -982,10 +982,10 @@ static void rit_crypt(seq_scene_t *sc)
     rit_perc(sc, O_HEART, "PUNCH KICK", 50);
     sc->p[O_HEART][P_LEVEL] = 92;
     rit_steps(sc, O_HEART, "x.....x...x.....x.....x...x.....x.....x...x.....x.....x...x..x.x", 60, 104, 96);
-    rit_perc(sc, O_BONE, "SNARE", 52);
+    rit_perc(sc, O_BONE, "CRUSH", 52);
     sc->p[O_BONE][P_LEVEL] = 90;
     rit_steps(sc, O_BONE, "........o......g........o......g........o......g........o..g.ggo", 60, 100, 96);
-    rit_perc(sc, O_TEETH, "TICK", 62);
+    rit_perc(sc, O_TEETH, "BIT HAT", 62);
     sc->p[O_TEETH][P_LEVEL] = 64;
     rit_steps(sc, O_TEETH, "x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.xggg", 60, 84, 24);
     rit_perc(sc, O_CLAW, "WAR DRUM", 40);
@@ -995,12 +995,15 @@ static void rit_crypt(seq_scene_t *sc)
     sc->p[O_NOISE][P_LEVEL] = 40;
     seq_put(sc, O_NOISE, 0, 64 * 96 - 8, 60, 70, 0);
     sc->mix.lvl[CH_DRONE] = 56; sc->mix.lvl[CH_VOICE] = 90; sc->mix.lvl[CH_SPASM] = 74; sc->mix.lvl[CH_BASS] = 54;
-    sc->mix.lvl[CH_DRUM] = 74; sc->mix.lvl[CH_NOISE] = 34;
+    sc->mix.lvl[CH_DRUM] = 70; sc->mix.lvl[CH_NOISE] = 34;
     sc->mix.sb[CH_DRONE] = 70; sc->mix.sb[CH_VOICE] = 80; sc->mix.sb[CH_SPASM] = 70; sc->mix.sa[CH_SPASM] = 50;
     sc->mix.sa[CH_VOICE] = 30; sc->mix.sb[CH_DRUM] = 38; sc->mix.sb[CH_NOISE] = 60;
     sc->fx.d_time = 5; sc->fx.d_fb = 45; sc->fx.d_mix = 30; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 30;
     sc->fx.r_space = 4; sc->fx.r_mix = 36; sc->fx.r_decay = 85; sc->fx.r_size = 95; sc->fx.r_damp = 68; sc->fx.c_mix = 0;
-    sc->mix.warp = 10; sc->mix.dark = 0; sc->mix.master = 84;
+    sc->mix.warp = 18; sc->mix.dark = 0;
+    sc->mix.sc[CH_DRUM] = 45; sc->mix.sc[CH_BASS] = 35; sc->mix.sc[CH_DRONE] = 22;   /* (D43: the grit on purpose, after the clean mix: in parallel through the crusher) */
+    sc->fx.c_mix = 30; sc->fx.c_drive = 65; sc->fx.c_rate = 15; sc->fx.c_bits = 35; sc->fx.c_fold = 35;
+    sc->tur.rattle = 25; sc->mix.master = 84;
     sc->tur.loop = 100; sc->tur.depth = 6;
 }
 /* RITUAL: STARGATE (D39). Sci-fi, Berlin school, 108 BPM, A AEOLIAN: a bass sequence in sixteenths, a brass lead that
@@ -1038,13 +1041,13 @@ static void rit_stargate(seq_scene_t *sc)
     rit_perc(sc, O_HEART, "PUNCH KICK", 50);
     sc->p[O_HEART][P_LEVEL] = 92;
     rit_steps(sc, O_HEART, "x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.x.", 60, 104, 96);
-    rit_perc(sc, O_BONE, "SNARE", 56);
+    rit_perc(sc, O_BONE, "CRUSH", 56);
     sc->p[O_BONE][P_LEVEL] = 88;
     rit_steps(sc, O_BONE, "....o.......o.......o.......o.......o.......o.......o.......o.gg", 60, 100, 96);
     rit_perc(sc, O_TEETH, "SIX HAT", 40);
     sc->p[O_TEETH][P_LEVEL] = 66;
     rit_steps(sc, O_TEETH, "..x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.xx.x", 60, 84, 24);
-    rit_perc(sc, O_CLAW, "TICK", 62);
+    rit_perc(sc, O_CLAW, "BIT HAT", 62);
     sc->p[O_CLAW][P_LEVEL] = 60;
     rit_steps(sc, O_CLAW, "xgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxgggxggg", 60, 80, 24);
     sc->mix.lvl[CH_VOICE] = 76; sc->mix.lvl[CH_DRONE] = 66; sc->mix.lvl[CH_SPASM] = 66; sc->mix.lvl[CH_BASS] = 74;
@@ -1052,10 +1055,12 @@ static void rit_stargate(seq_scene_t *sc)
     sc->mix.sa[CH_VOICE] = 50; sc->mix.sb[CH_VOICE] = 60; sc->mix.sb[CH_DRONE] = 80; sc->mix.sa[CH_SPASM] = 70;
     sc->mix.sb[CH_SPASM] = 60; sc->mix.sb[CH_DRUM] = 24;
     sc->fx.d_time = 4; sc->fx.d_fb = 50; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 50; sc->fx.d_tone = 40;
-    sc->fx.r_space = 0; sc->fx.r_mix = 30; sc->fx.r_decay = 70; sc->fx.r_size = 85; sc->fx.c_mix = 0;
+    sc->fx.r_space = 0; sc->fx.r_mix = 30; sc->fx.r_decay = 70; sc->fx.r_size = 85; sc->fx.c_mix = 28; sc->fx.c_drive = 60; sc->fx.c_rate = 15; sc->fx.c_bits = 35; sc->fx.c_fold = 30;
+    sc->mix.sc[CH_DRUM] = 40; sc->mix.sc[CH_BASS] = 40;   /* (D43: the grit on purpose, after the clean mix: in parallel through the crusher) */
     sc->fx.r_duck = 30;
     sc->mix.pump = 25; sc->mix.dark = 0; sc->mix.master = 82;
-    sc->tur.loop = 100; sc->tur.depth = 6;
+    sc->tur.loop = 100; sc->tur.depth = 6; sc->tur.rattle = 20;
+    sc->mix.warp = 12;
 }
 /* RITUAL: CATACOMB (D40). Dungeon synth, 60 BPM, E AEOLIAN, in a CATHEDRAL: a choir singing the chords (CHORD on
    CHOIR: e minor, C, G, D), a harpsichord strumming them on the beat and the off-beat, an organ's bourdon
@@ -1080,7 +1085,7 @@ static void rit_catacomb(seq_scene_t *sc)
     for (k = 0; k < 4u; k++)
         for (j = 0; j < 16u; j++)
             if (ST[j] == 'x') seq_put(sc, O_SPASM, k * 16u + j, 3 * 96, ROOT[k] + 12u, j ? 74 : 92, 0);
-    rit_model(sc, O_BASS, L_ORGAN, 35, 95, 20, 60);   /* (the bourdon: the 16' under a flute) */
+    rit_model(sc, O_BASS, L_ORGAN, 55, 95, 20, 60);   /* (the bourdon: the 16' under a flute) */
     sc->p[O_BASS][P_A] = 20; sc->p[O_BASS][P_S] = 90; sc->p[O_BASS][P_R] = 50;
     for (k = 0; k < 4u; k++) seq_put(sc, O_BASS, k * 16u, 16 * 96 - 12, ROOT[k] - 12u, 84, 0);
     /* (D42) a procession: the kick on one and three, war drums walking, the snare on four and a roll into the turn */
@@ -1090,23 +1095,24 @@ static void rit_catacomb(seq_scene_t *sc)
     rit_perc(sc, O_CLAW, "WAR DRUM", 60);
     sc->p[O_CLAW][P_LEVEL] = 82;
     rit_tom(sc, O_CLAW, "L...l...m...l.g.L...l...m...h.h.L...l...m...l.g.L...l...m.m.hhhh", 62, 65, 69, 92);
-    rit_perc(sc, O_BONE, "SNARE", 44);
+    rit_perc(sc, O_BONE, "CRUSH", 44);
     sc->p[O_BONE][P_LEVEL] = 86;
     rit_steps(sc, O_BONE, "............o...............o...............o...........RRRo", 60, 96, 96);
-    rit_perc(sc, O_TEETH, "TICK", 40);
+    rit_perc(sc, O_TEETH, "BIT HAT", 40);
     sc->p[O_TEETH][P_LEVEL] = 58;
     rit_steps(sc, O_TEETH, "g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.g.x.", 60, 80, 24);
     rit_perc(sc, O_NOISE, "WASH", 50);
     sc->p[O_NOISE][P_LEVEL] = 36;
     seq_put(sc, O_NOISE, 0, 64 * 96 - 8, 60, 70, 0);
-    sc->mix.lvl[CH_VOICE] = 64; sc->mix.lvl[CH_SPASM] = 82; sc->mix.lvl[CH_BASS] = 56; sc->mix.lvl[CH_DRUM] = 68;
+    sc->mix.lvl[CH_VOICE] = 64; sc->mix.lvl[CH_SPASM] = 82; sc->mix.lvl[CH_BASS] = 56; sc->mix.lvl[CH_DRUM] = 63;
     sc->mix.lvl[CH_NOISE] = 30;
     sc->mix.sb[CH_VOICE] = 85; sc->mix.sb[CH_SPASM] = 75; sc->mix.sa[CH_SPASM] = 40; sc->mix.sb[CH_BASS] = 40;
     sc->mix.sb[CH_DRUM] = 42; sc->mix.sb[CH_NOISE] = 70;
     sc->fx.d_time = 6; sc->fx.d_fb = 40; sc->fx.d_mix = 24; sc->fx.d_ping = 1; sc->fx.d_rev = 70; sc->fx.d_tone = 30;
-    sc->fx.r_space = 5; sc->fx.r_mix = 34; sc->fx.r_decay = 60; sc->fx.r_size = 90; sc->fx.r_damp = 66; sc->fx.c_mix = 0;
-    sc->mix.warp = 12; sc->mix.dark = 0; sc->mix.master = 92;
-    sc->tur.loop = 100; sc->tur.depth = 6;
+    sc->fx.r_space = 5; sc->fx.r_mix = 34; sc->fx.r_decay = 60; sc->fx.r_size = 90; sc->fx.r_damp = 66; sc->fx.c_mix = 28; sc->fx.c_drive = 60; sc->fx.c_rate = 15; sc->fx.c_bits = 35; sc->fx.c_fold = 35;
+    sc->mix.sc[CH_DRUM] = 45; sc->mix.sc[CH_BASS] = 30;   /* (D43: the grit on purpose, after the clean mix: in parallel through the crusher) */
+    sc->mix.warp = 20; sc->mix.dark = 0; sc->mix.master = 92;
+    sc->tur.loop = 100; sc->tur.depth = 6; sc->tur.rattle = 20;
 }
 /* RITUAL: ORACLE (D40). Sci-fi, 96 BPM, F# DORIAN: a choir pad holding the chords (CHORD 7TH, open), brass stabs of
    them off the beat (CHORD on BRASS), a bass arpeggio in sixteenths, a glass melody from the register, a kick, a
@@ -1134,7 +1140,7 @@ static void rit_oracle(seq_scene_t *sc)
     sc->p[O_BASS][P_D1] = 45; sc->p[O_BASS][P_D] = 35; sc->p[O_BASS][P_A] = 0;
     rit_arp(sc, O_BASS, ARP_UPDN, 2, 1, 0, 5);
     for (k = 0; k < 4u; k++) seq_put(sc, O_BASS, k * 16u, 16 * 96 - 6, ROOT[k] - 12u, 92, 0);
-    rit_model(sc, O_VOICE, L_GLASS, 45, 25, 12, 40);
+    rit_model(sc, O_VOICE, L_GLASS, 45, 25, 28, 40);
     sc->p[O_VOICE][P_PAN] = 35;
     sc->tr[O_VOICE].len = 16;
     rit_steps(sc, O_VOICE, "x.....x.....x...", 54, 70, 2 * 96);
@@ -1144,7 +1150,7 @@ static void rit_oracle(seq_scene_t *sc)
     rit_perc(sc, O_HEART, "PUNCH KICK", 50);
     sc->p[O_HEART][P_LEVEL] = 92;
     rit_steps(sc, O_HEART, "x.......x.x.....x.....x...x.....x.......x.x.....x.....x.....x.x.", 60, 104, 96);
-    rit_perc(sc, O_BONE, "SNARE", 54);
+    rit_perc(sc, O_BONE, "DIGI SNR", 54);
     sc->p[O_BONE][P_LEVEL] = 88;
     rit_steps(sc, O_BONE, "....o.......o..g....o.......o.......o.......o..g....o.......o.gg", 60, 100, 96);
     rit_perc(sc, O_TEETH, "SIX HAT", 42);
@@ -1158,10 +1164,12 @@ static void rit_oracle(seq_scene_t *sc)
     sc->mix.sb[CH_DRONE] = 80; sc->mix.sa[CH_SPASM] = 60; sc->mix.sb[CH_SPASM] = 50; sc->mix.sa[CH_VOICE] = 70;
     sc->mix.sb[CH_VOICE] = 70; sc->mix.sb[CH_DRUM] = 22;
     sc->fx.d_time = 5; sc->fx.d_fb = 55; sc->fx.d_mix = 34; sc->fx.d_ping = 1; sc->fx.d_rev = 55; sc->fx.d_tone = 40;
-    sc->fx.r_space = 0; sc->fx.r_mix = 30; sc->fx.r_decay = 65; sc->fx.r_size = 80; sc->fx.c_mix = 0;
+    sc->fx.r_space = 0; sc->fx.r_mix = 30; sc->fx.r_decay = 65; sc->fx.r_size = 80; sc->fx.c_mix = 28; sc->fx.c_drive = 60; sc->fx.c_rate = 20; sc->fx.c_bits = 40; sc->fx.c_fold = 30;
+    sc->mix.sc[CH_DRUM] = 40; sc->mix.sc[CH_BASS] = 35; sc->mix.sc[CH_SPASM] = 20;   /* (D43: the grit on purpose, after the clean mix: in parallel through the crusher) */
     sc->fx.r_duck = 30;
     sc->mix.pump = 20; sc->mix.dark = 0; sc->mix.master = 82;
-    sc->tur.loop = 92; sc->tur.depth = 8;
+    sc->tur.loop = 92; sc->tur.depth = 8; sc->tur.rattle = 25;
+    sc->mix.warp = 10;
 }
 static void rit_empty(seq_scene_t *sc) { seq_scene_blank(sc, 0x7E3u); rit_name(sc, "EMPTY BODY"); }
 /* (the first four are the scenes before anything is saved: the document's start, then rhythm made of noise, D20) */

@@ -469,3 +469,17 @@ their kicks were DEEP KICK and SUB KICK: a sine of 44 Hz under two low-pass pole
 - **The balance.** The drums about level with the melody (each alone -4 .. -4.6 dB against the whole), the pads, the
   bass and the arpeggios under them. Their spectra nearer a finished mix's still (CRYPT -7.5 dB at 4 kHz, -13 at 8,
   -23 at 16).
+
+**D43 (2026-11-21) The grit back, on purpose.** The user: it sits better now, but the alien industrial grit from before
+is missed; what exactly changed? Measured old against new at the same loudness: the older industrial rituals (RUST,
+ABYSS, FOUNDRY, INNARDS, VOID, GRINDER, SPINE) have the same spectrum and noisiness, only louder; what they lost is the
+hard clipping inside the voices (D41: small in RUST, 0.13 %; VOID 6.7 %, SPINE and INNARDS 2 .. 3 %). The four dungeon
+and sci-fi rituals lost more: their industrial drums (THUMP, a driven noise kick; DIGI SNR, a shift register's noise)
+for clean ones (D42), ORACLE's glass its modulation, the organ some drive, DARK and WARP. The clean mix stays, and the
+grit goes back as a choice, not as clipping (the user approved a draft of CRYPT):
+- the drums, the bass and (CRYPT) the organ or (ORACLE) the brass partly through MARROW CRUSH in parallel (its return
+  28 .. 30, drive 60 .. 65, bits 35 .. 40, a fold);
+- the CRUSH snare and BIT HAT for SNARE and TICK; ORACLE its DIGI SNR again and its glass half its dirt back (MOTION 28);
+- the organs more reed (BODY 76, 55), a little more tape (WARP 10 .. 20), the register's ghosts (RATTLE 20 .. 25);
+- the drums pulled back a little where the crusher lifted them: each still about level with the melody (-3.4 .. -4.6 dB
+  against the whole).
