@@ -1,5 +1,9 @@
 # D35: SHRINE (SEL held, PRESETS to 20): FX three times (SPACE, DUCK, WARP); MUT twice (WAIL, SCALE, RUPTURE); GLO
 # twice (E LYDIAN); ARP held, white key 9 (SCREW), then 10 (DROP)
+# (DEEP: SEL + EDIT, the pages of before)
+20 btndown 3
+40 btn 6
+70 btnup 3
 100 btndown 3
 200 enc 6 20
 300 btnup 3

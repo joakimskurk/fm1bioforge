@@ -39,7 +39,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 BLOCKS, BLK, KEEP = 20, 0x30, 0x2F
 APP = {"build/web/bioforge.wasm": "bioforge.wasm", "web/app/worklet.js": "worklet.js", "web/app/play.js": "play.js"}
-SCREENS = ("seq", "land", "mut")            # (a few: the page is the FM-1 itself)
+SCREENS = ("play", "sound", "hold")         # (a few: the page is the FM-1 itself)
 DEMOS = [   # build/audio/demos/N_name.wav, in order (tests/scripts/demo_N_name.txt plays each; tools/make_demos.sh
             # renders every script, the page carries these ten)
     ("30_crypt_suite", "THE CRYPT SUITE",

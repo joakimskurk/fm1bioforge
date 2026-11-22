@@ -21,10 +21,9 @@
 1900 btndown 3
 2000 enc 6 1
 2100 btnup 3
-# -- SONG (GLO three times): R03 4 bars then R00; R00 8 then R01; R01 8 then R02; R02 16 then R03
+# -- SONG (GLO twice: the chain): R03 4 bars then R00; R00 8 then R01; R01 8 then R02; R02 16 then R03
 2300 btn 7
 2400 btn 7
-2500 btn 7
 2700 enc 2 2
 2800 enc 2 1
 2900 enc 6 1
@@ -45,24 +44,24 @@
 4400 enc 6 1
 4500 shot
 4800 btn 12
-# -- CRYPT (bars 1 .. 8): the drums out for bar 7 (HOME held, the first white key), back for bar 8
+# -- CRYPT (bars 1 .. 8): the drums out for bar 7 (HOME held, the tenth white key: the drums), back for bar 8
 26500 btndown 8
-26600 keys 0x1
+26600 keys 0x10000
 26700 keys 0
 26800 btnup 8
 30150 btndown 8
-30250 keys 0x1
+30250 keys 0x10000
 30350 keys 0
 30450 btnup 8
-# -- CRYPT:IRON (bars 9 .. 16): the register let slip (LOOP down) from bar 11, locked again at bar 15; SCAR's REPEAT
+# -- CRYPT:IRON (bars 9 .. 16): the register let slip (MUTATE up) from bar 11, locked again at bar 15; SCAR's REPEAT
 #    1/16 over the last two beats
-41100 enc 1 -3
-41200 enc 1 -3
-41300 enc 1 -3
+41100 enc 1 3
+41200 enc 1 3
+41300 enc 1 3
 45000 shot
-55700 enc 1 3
-55800 enc 1 3
-55900 enc 1 3
+55700 enc 1 -3
+55800 enc 1 -3
+55900 enc 1 -3
 61000 btndown 10
 61164 keys 0x80
 62900 keys 0

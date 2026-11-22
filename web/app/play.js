@@ -166,7 +166,7 @@ if (fm1) {
       hook();
       midi.onstatechange = hook;
       $('midi').setAttribute('aria-pressed', 'true');
-      say(midi.inputs.size ? 'A MIDI keyboard plays BIOFORGE: channel 1 the focus, 2..10 HEART..NOISE; its start and stop run the transport.' : 'No MIDI keyboard found yet: plug one in.');
+      say(midi.inputs.size ? 'A MIDI keyboard plays BIOFORGE: channel 1 the track, 2..10 KICK..NOISE; its start and stop run the transport.' : 'No MIDI keyboard found yet: plug one in.');
     } catch (err) { say('MIDI was not allowed.'); }
   });
 
@@ -229,7 +229,7 @@ if (fm1) {
         if (m.type === 'frame') { if (m.lcd) draw(m.lcd); show(m.leds, m.glow); if (m.store) keepStore(m.store); }
         else if (m.type === 'ready') {
           $('start').hidden = true; fm1.classList.add('on'); fm1.classList.toggle('active', active);
-          say('Running: RITUAL 00, THE AWAKENING. Press PLAY (or Space). PRESETS turns the scene: RUST, ABYSS, ASH.');
+          say('Running: SCENE 00, ABYSS. Press PLAY (or Space). PRESETS turns the scene: RUST, THE AWAKENING, ASH.');
         } else if (m.type === 'error') say(`It did not start: ${m.message}`);
       };
       node.port.postMessage({ type: 'boot', wasm, store: loadStore() }, [wasm]);

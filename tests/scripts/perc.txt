@@ -1,6 +1,10 @@
 # Noise as percussion on the panel: SEL held and PRESETS turned to STATIC CULT (a factory ritual), PLAY; SELECT to BONE (a FLAM SNR of noise): SYN, its deep
 # page (SOURCE RESO MODE BURSTS), ENV and with SEL held its SOUND, turned to the next sound (CRUSH); TEETH turned back
 # to TISSUE; MIX's sends with SEL held: RIB and PUMP; SEL held and PRESETS turned on: VOID loaded.
+# (DEEP: SEL + EDIT, the pages of before)
+20 btndown 3
+40 btn 6
+70 btnup 3
 100 btndown 3
 150 enc 6 12
 190 btnup 3

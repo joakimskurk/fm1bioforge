@@ -1,8 +1,8 @@
 # Demo: FROM NOTHING TO A LOOP, the idea document's first workflow. EMPTY BODY (SEL held and PRESETS turned back: the
 # last factory ritual), PLAY, REC: the kit played in (HEART on the beats, BONE on two and four), then TEETH on the
-# off-beats; REC off: it loops. Then BONE is given the CLAP and TEETH the TICK (ENV, SEL held: SOUND): the same notes,
-# noise now. SELECT to BASS, REC, four notes over a bar; REC off. Then the nerve: LOOP down to 70 % and RATTLE up
-# (MUT), so the texture starts to move; LOOP back up: LOCK.
+# off-beats; REC off: it loops. Then SNARE (BONE) is given the CLAP and HAT (TEETH) the TICK (EDIT: K1, SOUND): the same notes,
+# noise now. SELECT to BASS, REC, four notes over a bar; REC off. Then the nerve in DEEP (SEL + EDIT): LOOP down and
+# RATTLE up (MUT), so the texture starts to move; LOOP back up: LOCK.
 100 btndown 3
 200 enc 6 -1
 300 btnup 3
@@ -26,18 +26,14 @@
 6120 keys 0
 6250 btn 13
 6500 enc 0 2
-6600 btn 4
-6700 btndown 3
+6600 btn 6
 6800 enc 2 1
 6900 enc 2 1
 7000 enc 2 1
 7100 enc 2 1
 7200 enc 2 1
-7300 btnup 3
 7400 enc 0 1
-7500 btndown 3
 7600 enc 2 1
-7700 btnup 3
 8000 enc 0 2
 10200 btn 13
 10300 keys 0x200
@@ -49,6 +45,9 @@
 12050 keys 0x80
 12280 keys 0
 12300 btn 13
+16100 btndown 3
+16150 btn 6
+16200 btnup 3
 16300 btn 5
 16400 enc 5 60
 16500 enc 1 -10

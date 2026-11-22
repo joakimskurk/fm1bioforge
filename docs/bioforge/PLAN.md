@@ -241,6 +241,12 @@ All in `firmware/src/bio_turing.h`.
 240 x 240, drawn on a background made by `tools/gen_art.py` (bone ribs, tubes, membranes; generated, not copied from
 anyone's art), only what changed redrawn.
 
+**Since D45** BIOFORGE starts in SIMPLE: the top holds the logo, the track and its sound, the transport, the scene and
+the tempo; the second line the tabs PLAY STEPS SOUND FX SONG (the page lit, two dots for its two pages); the middle the
+page, with one line under it (a hint, or what just happened); the four knobs at the bottom. Holding a button draws its
+keys as tiles or a card of what it does; a knob turned shows its name and value large. What follows is the first
+layout, which DEEP (SEL + EDIT) keeps for its pages, under the new top and tabs.
+
 - **Top (0–27):** BIOFORGE in bone, the page tabs MIX SEQ SYN MUT FX GLO (green the current one). SEQ is the first.
 - **Status (29–46):** the transport (▶ ■ ●), LIVE / STEP / REPL, the focus, the scene, BPM, SAVED or EDIT; for a
   moment LOOP's value and word, or a message (UNDO, P-LOCK, SAVED).

@@ -203,17 +203,17 @@ footer { margin: 60px 0 40px; padding-top: 18px; border-top: 1px solid var(--chr
 </header>
 
 <h2 id="play">Play it here</h2>
-<p>The firmware itself, the same C as on the FM-1, on a web FM-1. Press Start, then <b>PLAY</b>. <b>PRESETS</b> turns
-  between its four scenes; <b>SEL</b> held and PRESETS turned loads any of twenty-two factory rituals. <b>SELECT</b>
-  picks the focus (the kit, or one organ), <b>ALGO</b> the nervous system's LOOP; <b>REC</b> while it plays records the
-  keys.</p>
+<p>The firmware itself, the same C as on the FM-1, on a web FM-1. Press Start, then <b>PLAY</b>. <b>SELECT</b> picks
+  a track, <b>K1–K4</b> turn its four sounds; <b>ALGO</b> is MUTATE, how much the music changes by itself.
+  <b>PRESETS</b> turns between its four scenes; <b>SEL</b> held and PRESETS turned loads any of thirty factory scenes.
+  <b>REC</b> while it plays records the keys. Hold any button: the screen says what it does.</p>
 <div class="fm1" id="fm1">
   <div class="fm1-top">
     <div class="side fm1-left">
       <div class="knobs">
         <label class="knob"><span class="dial vol" id="vol" tabindex="0" role="slider" aria-label="MASTER, the volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="80"></span>MASTER</label>
-        <label class="knob"><span class="dial" data-enc="0" tabindex="0" role="slider" aria-label="SELECT: the focus"></span>SELECT</label>
-        <label class="knob"><span class="dial" data-enc="1" tabindex="0" role="slider" aria-label="ALGORITHM: the Turing's LOOP"></span>ALGO</label>
+        <label class="knob"><span class="dial" data-enc="0" tabindex="0" role="slider" aria-label="SELECT: the track"></span>SELECT</label>
+        <label class="knob"><span class="dial" data-enc="1" tabindex="0" role="slider" aria-label="ALGORITHM: MUTATE"></span>ALGO</label>
         <label class="knob"><span class="dial" data-enc="6" tabindex="0" role="slider" aria-label="PRESETS: the scene"></span>PRESETS</label>
       </div>
       <div class="oct"><button class="b" data-btn="0" type="button">OCT−</button><button class="b" data-btn="1" type="button">OCT+</button></div>
@@ -240,7 +240,7 @@ footer { margin: 60px 0 40px; padding-top: 18px; border-top: 1px solid var(--chr
   </div>
   <div class="fm1-keys" id="keys" aria-label="The keys, F3 to G5"></div>
   <div class="fm1-foot">
-    <span>HEART F3–B3 · BONE C4–F#4 · TEETH G4–C#5 · CLAW D5–G5</span>
+    <span>DRUMS: KICK F3–B3 · SNARE C4–F#4 · HAT G4–C#5 · PERC D5–G5</span>
     <span><button id="midi" type="button" aria-pressed="false">MIDI keyboard</button>
       <button id="pause" type="button">Pause</button>
       <button id="forget" type="button">Forget what it kept</button></span>
@@ -248,49 +248,51 @@ footer { margin: 60px 0 40px; padding-top: 18px; border-top: 1px solid var(--chr
 </div>
 <p id="appstatus" role="status">Press Start: the firmware loads when you do.</p>
 <div class="kmap">
+  <div><b>A groove in a minute:</b> press PLAY. Turn SELECT to a track, turn K1–K4: its four sounds, named. Play the
+    keys; REC and they go in. ALGORITHM is MUTATE: up, and the music changes by itself. PRESETS: the next scene.
+    <b>Hold any button</b> and the screen says what it does.</div>
   <div><b>The computer's keyboard</b>, once you have clicked the FM-1: white keys <kbd>Z</kbd>…<kbd>/</kbd> and
     <kbd>Q</kbd>…<kbd>Y</kbd>, black ones the row above. <kbd>Space</kbd> PLAY, <kbd>Enter</kbd> REC, <kbd>Esc</kbd>
-    HOME, <kbd>Shift</kbd> held is SEL (SHIFT).</div>
-  <div><b>The knobs:</b> drag up or down, scroll, or the arrow keys. <b>Hold</b> SEQ, LFO, ARP or HOME (press and keep
-    the mouse down) and the white keys become that page's buttons: the steps, the nerve's WRITE / RESET / FUSE, BURST,
-    the mutes.</div>
+    HOME, <kbd>Shift</kbd> held is SEL.</div>
+  <div><b>The knobs:</b> drag up or down, scroll, or the arrow keys. <b>Hold</b> a button (press and keep the mouse
+    down): HOME, ARP and LFO show their keys as tiles (the mutes, BREAK IT, the register's), the others a card.</div>
   <div><b>What it keeps</b> (its settings, the scenes you SAVE) stays in this browser. A <b>MIDI keyboard</b> plays
-    it: channel 1 the focus, 2–10 HEART … NOISE, recorded as the keys are.</div>
+    it: channel 1 the track, 2–10 KICK … NOISE, recorded as the keys are.</div>
 </div>
 <details class="all"><summary>All the controls</summary>
 <table class="controls">
-  <tr><td>SELECT</td><td>The focus: DRUM (the kit, four zones of keys), or one organ, HEART … NOISE. The keys play it; REC writes to it.</td></tr>
-  <tr><td>SEL</td><td>SHIFT while held (a tap keeps the knobs' second row).</td></tr>
-  <tr><td>ALGORITHM</td><td>The Turing register's LOOP, on every page: 100 % locked, 0 % double-locked (the pattern, then its inverse), between: it slips.</td></tr>
-  <tr><td>PRESETS</td><td>The scene: RITUAL 00 THE AWAKENING, 01 RUST, 02 ABYSS, 03 ASH (playing: on the next bar). SHIFT: one of twenty-two factory rituals into this scene (FROZEN, GRINDER, SPINE, TENDON, LAMENT, OSSUARY, SHRINE, MIRAGE, …).</td></tr>
-  <tr><td>K1–K4</td><td>The page's four (SHIFT: the second four).</td></tr>
-  <tr><td>HOME</td><td>MIX: the six channels; again: the focused channel's sends. Held: white keys 1–6 mute the channels.</td></tr>
-  <tr><td>SEQ</td><td>The grid. Held: the white keys are the focused track's 16 steps; tap to set or clear, hold one and turn a knob for a p-lock.</td></tr>
-  <tr><td>EDIT / ENV</td><td>SYN: BODY, TEXTURE, MOTION, DECAY (SHIFT: a noise organ's SCATTER, TONE, DRIFT; a synth's MODEL: HUM, STEEL, PISTON, GLASS, BELL, CHOIR, BLOOD, BUBBLE, SLIME, DUB, MASS, CLUSTER); again: the organ's own depth. ENV: its envelope; on a drum, SHIFT: its SOUND (a noise sound, a kick, or TISSUE).</td></tr>
-  <tr><td>LFO</td><td>MUT: the spine; again: WAIL, its range, RUPTURE (the register cutting into the music). Held: white keys WRITE 0, WRITE 1, RESET, FUSE, LOCK.</td></tr>
-  <tr><td>FX / GLO</td><td>Delay, reverb, crush (again: deeper; again: the reverb's SPACE, DUCK, WARP: a wavering tape). GLO: tempo, swing, quantise; SHIFT: OVERDUB or REPLACE, the step length. GLO again: KEY, SCALE (twelve), the focused synth's ARP.</td></tr>
-  <tr><td>ARP</td><td>Held: BURST on the white keys: STUTTER, INVERT, FREEZE, SPASM; keys 5 to 10 SCAR, the last 0.37 s played back: REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR, SCREW, DROP.</td></tr>
-  <tr><td>PLAY / REC</td><td>Start, stop (SHIFT: PANIC). REC: playing, LIVE REC; stopped, STEP REC (KNOB 1 the cursor); SHIFT + REC: OVERDUB / REPLACE.</td></tr>
-  <tr><td>OCT− / OCT+</td><td>The keys' octave. SHIFT: UNDO, REDO.</td></tr>
+  <tr><td>SELECT</td><td>The track: DRUMS (the kit, four zones of keys), KICK, SNARE, HAT, PERC, BASS, PAD, PLUCK, LEAD, NOISE. The keys play it; REC writes to it.</td></tr>
+  <tr><td>ALGORITHM</td><td>MUTATE: how much the music changes by itself, on every page (0: a locked loop).</td></tr>
+  <tr><td>PRESETS</td><td>The scene: R00 ABYSS, R01 RUST, R02 THE AWAKENING, R03 ASH (playing: on the one). SEL + PRESETS: one of thirty factory scenes into this one (CRYPT, STARGATE, CATACOMB, ORACLE, FROZEN, GRINDER, SHRINE, …).</td></tr>
+  <tr><td>K1–K4</td><td>The page's four, for the track.</td></tr>
+  <tr><td>HOME</td><td>PLAY: the nine tracks and their steps; K1–K4 the track's four, named as its sound has them (DRUMS: the four drums' levels). Again: MIX: LEVEL, PAN, PUMP, MASTER. Held: white keys 1–9 mute the tracks, 10 the drums.</td></tr>
+  <tr><td>SEQ</td><td>STEPS: STEP, LENGTH, VELOCITY, CHANCE; again: the track's length, REPEAT, NUDGE, NOTE. Held: the white keys are the track's 16 steps; tap to set or clear, hold one and turn a knob for a lock.</td></tr>
+  <tr><td>EDIT / ENV</td><td>SOUND: the sound (a list: ORGAN, STRINGS, BRASS, HARPSI, CHOIR, GLASS, BELL, DUB, …; TICK, CLAP, DEEP KICK, …), TUNE, ATTACK, RELEASE. Again: its ARP (a drum: what it is made of).</td></tr>
+  <tr><td>FX</td><td>The track into DELAY, REVERB, CRUSH; TAPE wavers it all. Again: the delay's TIME and FEEDBACK, the reverb's ROOM (down to a CATHEDRAL) and TAIL.</td></tr>
+  <tr><td>GLO</td><td>SONG: TEMPO, SWING, KEY, SCALE. Again: the chain: this scene's BARS, THEN which.</td></tr>
+  <tr><td>ARP</td><td>Tapped: the track's ARP. Held: break it on the white keys: STUTTER, INVERT, FREEZE, SPASM, REPEAT 1/16, REPEAT 1/8, REVERSE, SMEAR, SCREW, DROP.</td></tr>
+  <tr><td>LFO</td><td>Tapped: MUTATE and the register. Held: WRITE 0, WRITE 1, RESET, FUSE, LOCK.</td></tr>
+  <tr><td>PLAY / REC</td><td>Start, stop. REC: playing, record; stopped, STEP REC (K1 the step).</td></tr>
+  <tr><td>SEL +</td><td>OCT− UNDO, OCT+ REDO, PLAY PANIC, REC OVERDUB / REPLACE, SAVE every scene, EDIT: DEEP (every page of before, SHIFT and all; again: back).</td></tr>
   <tr><td>SAVE</td><td>The scene (here: into this browser; on the FM-1: into flash, two slots, when it is quiet).</td></tr>
 </table>
 </details>
 
 <h2 id="look">A look</h2>
 <div class="look">
-  <div class="card"><img src="screens/seq.png" width="480" height="480" alt="SEQ: nine tracks of steel rivets, HEART to NOISE, the lit ones pale green, the playhead a column">
-    <h3>The keys into the memory</h3>
-    <p>Nine tracks: four drums of pressure, fracture, friction and vents, four synths, a noise. LIVE REC while it plays,
-      STEP REC while it stands, p-locks, overdub, replace, undo.</p></div>
-  <div class="card"><img src="screens/land.png" width="480" height="480" alt="SYN on DRONE as GLASS: its scope, its envelope and note, the knob MODEL">
+  <div class="card"><img src="screens/play.png" width="480" height="480" alt="PLAY: the nine tracks KICK to NOISE, each its sound and its sixteen steps in pale green, LEAD lit; the knobs VOWEL, BREATH, SPREAD, DECAY">
+    <h3>Nine tracks, four knobs</h3>
+    <p>SELECT picks a track; K1–K4 are its four, named as its sound has them. Four drums of pressure, fracture, friction
+      and vents, four synths, a noise. The keys go into the memory: LIVE REC, STEP REC, locks, overdub, undo.</p></div>
+  <div class="card"><img src="screens/sound.png" width="480" height="480" alt="SOUND on LEAD: a list of sounds, CHOIR lit between BELL and BLOOD, THREE THROATS SINGING, its scope; the knobs SOUND, TUNE, ATTACK, RELEASE">
     <h3>Organs and landscapes</h3>
     <p>Each synth its own voice or a landscape: ORGAN, STRINGS, BRASS, HARPSI, CHOIR, GLASS, BELL, HUM, STEEL, PISTON,
       BLOOD, BUBBLE, SLIME, DUB, MASS, CLUSTER; the pads play whole chords in the scale. Noise as percussion, a deep kick,
       a delay, a reverb of six rooms down to a cathedral. Scenes chain into a song. Both of the FM-1's cores at work.</p></div>
-  <div class="card"><img src="screens/mut.png" width="480" height="480" alt="MUT: the Turing register as a spine of sixteen vertebrae, LOOP 100 % LOCK">
-    <h3>The nervous system</h3>
-    <p>A shift register after the Turing Machine, clocked by the transport: it locks and slips the noise, picks notes,
-      arps, and cuts into the music (RUPTURE), the same cuts each time round while it is locked.</p></div>
+  <div class="card"><img src="screens/hold.png" width="480" height="480" alt="ARP held: ten numbered tiles, STUTTER to DROP, one for each white key: BREAK IT">
+    <h3>Hold a button: it tells you</h3>
+    <p>ARP held breaks the music on the white keys: repeats, reverse, smear, a tape stopping. MUTATE lets a shift register
+      after the Turing Machine change the noise, the notes and the cuts by itself, as much as you let it.</p></div>
 </div>
 
 <h2 id="hear">Hear it</h2>

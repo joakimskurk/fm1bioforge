@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // BIOFORGE for the browser (web/app/: the firmware compiled to WebAssembly, web/app/build.sh) in Node, as the page's
-// worklet runs it: no imports; faster than real time; the grid on the screen at power-on; PLAY: the awakening sounds,
-// the playhead moves and PLAY's light is lit; a key plays the kit; HOME: MIX; STOP: the sound dies away; an edit and
+// worklet runs it: no imports; faster than real time; PLAY's page on the screen at power-on; PLAY: ABYSS sounds,
+// the playhead moves and PLAY's light is lit; a key plays the kit; HOME again: MIX; STOP: the sound dies away; an edit and
 // SAVE reach the store (the page keeps it); after a restart from that store the scene comes back.
 //
 //   node tests/web/app_test.mjs build/web/bioforge.wasm
@@ -46,16 +46,16 @@ const speed = 1000 / (performance.now() - t0);
 check(speed > 1.5, `1 s of BIOFORGE (stopped) in ${(1000 / speed).toFixed(0)} ms: ${speed.toFixed(1)} x real time`);
 check(Math.max(...quiet) < 200, `stopped at power-on: silent (its loudest ${Math.max(...quiet)})`);
 const grid = lcd(x);
-check(grid.filter((c) => c !== 0).length > 50000, 'the screen: the grid drawn at power-on');
-check((x.web_state() & 15) === 1, `the first page is SEQ (state ${x.web_state()})`);
+check(grid.filter((c) => c !== 0).length > 50000, 'the screen: the tracks drawn at power-on');
+check((x.web_state() & 15) === 0 && ((x.web_state() >> 6) & 1) === 0, `the first page is PLAY (state ${x.web_state()})`);
 
 x.web_btn(BTN.PLAY);
 const t1 = performance.now();
 const play = run(x, 4);
 const speed2 = 4000 / (performance.now() - t1);
-check(speed2 > 1.2, `4 s of the awakening in ${(4000 / speed2).toFixed(0)} ms: ${speed2.toFixed(1)} x real time`);
+check(speed2 > 1.2, `4 s of ABYSS in ${(4000 / speed2).toFixed(0)} ms: ${speed2.toFixed(1)} x real time`);
 const loud = play.filter((p) => p > 3000).length / play.length;
-check(loud > 0.3, `PLAY: the awakening sounds (${(100 * loud).toFixed(0)} % of it over -20 dBFS)`);
+check(loud > 0.3, `PLAY: ABYSS sounds (${(100 * loud).toFixed(0)} % of it over -20 dBFS)`);
 check(Math.max(...play) < 32767, `and does not clip (its loudest ${Math.max(...play)})`);
 check(((x.web_state() >> 4) & 1) === 1 && lit(x, BTN.PLAY), "playing: the state says so, PLAY's light is lit");
 const g1 = lcd(x);
@@ -64,7 +64,8 @@ check(differ(g1, lcd(x)) > 50, `the playhead moves (${differ(g1, lcd(x))} pixels
 
 x.web_btn(BTN.HOME);
 run(x, 0.3);
-check((x.web_state() & 15) === 0 && differ(grid, lcd(x)) > 10000, `HOME: MIX (${differ(grid, lcd(x))} pixels changed)`);
+check((x.web_state() & 15) === 0 && ((x.web_state() >> 6) & 1) === 1 && differ(grid, lcd(x)) > 5000,
+  `HOME again: MIX (${differ(grid, lcd(x))} pixels changed)`);
 
 x.web_btn(BTN.PLAY);                             // stop: the sound dies away (the delay and the reverb's tails)
 run(x, 6);
@@ -92,6 +93,6 @@ run(y, 0.5);
 const a = lcd(y);
 y.web_enc(2, -3);
 run(y, 0.5);
-check(differ(a, lcd(y)) > 0, 'restarted from the store: the scene is back (its tempo turned back down redraws GLO)');
+check(differ(a, lcd(y)) > 0, 'restarted from the store: the scene is back (its tempo turned back down redraws SONG)');
 console.log(fail ? 'app_test: FAILED' : 'app_test: all passed');
 process.exit(fail);

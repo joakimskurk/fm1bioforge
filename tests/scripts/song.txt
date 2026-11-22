@@ -1,8 +1,7 @@
-# SONG (D40): GLO three times, the SONG page; R00 (the awakening) set to 1 bar, then R01; R01 (RUST, PRESETS) to 1 bar,
+# SONG (D40): GLO twice: SONG's chain; R00 (ABYSS) set to 1 bar, then R01; R01 (RUST, PRESETS) to 1 bar,
 # then R00; back to R00, PLAY: R00, R01, R00 ... a bar each (the screen at each)
 100 btn 7
 200 btn 7
-300 btn 7
 500 enc 2 1
 700 enc 3 1
 900 enc 6 1

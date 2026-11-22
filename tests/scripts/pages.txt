@@ -1,20 +1,46 @@
-# BIOFORGE's pages: the awakening plays (PLAY), then MIX, SEQ, SYN on HEART, MUT (LOOP turned down to 80), FX, GLO
+# BIOFORGE's pages (SIMPLE, D45): ABYSS plays (PLAY); PLAY on the drums, then on LEAD (SELECT); HOME again: MIX; SEQ:
+# STEPS; EDIT: SOUND; again: its ARP; FX, again; GLO: SONG, again: the chain; ARP held: its tiles; FX held: its card;
+# a knob turned (VOWEL), ALGORITHM turned (MUTATE); HOME held: the mutes; SEL + EDIT: DEEP (MUT, its spine)
+100 shot
 300 btn 12
 1400 shot
-1500 btn 11
-2310 shot
-2400 btn 6
-2500 enc 0 1
-2930 shot
-3000 btn 5
-3200 enc 1 -20
-3500 shot
-3700 btn 2
+1500 enc 0 8
+1700 shot
+1800 btn 8
+2300 shot
+2400 btn 8
+2500 btn 11
+2900 shot
+3000 btn 6
+3400 shot
+3500 btn 6
 3900 shot
-4000 btn 7
-4200 shot
-4300 enc 0 4
-4400 btn 6
+4000 btn 2
+4300 shot
+4400 btn 2
 4700 shot
-5000 btn 12
-6500 end
+4800 btn 7
+5100 shot
+5200 btn 7
+5500 shot
+5600 btndown 10
+6000 shot
+6100 btnup 10
+6300 btndown 2
+7100 shot
+7200 btnup 2
+7400 btn 8
+7500 enc 2 2
+7700 shot
+7900 enc 1 2
+8100 shot
+8300 btndown 8
+8700 shot
+8800 btnup 8
+9000 btndown 3
+9100 btn 6
+9200 btnup 3
+9300 btn 5
+9700 shot
+10000 btn 12
+11000 end

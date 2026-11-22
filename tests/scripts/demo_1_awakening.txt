@@ -1,4 +1,5 @@
-# Demo: RITUAL 00, THE AWAKENING, sixteen bars from PLAY, as BIOFORGE starts
+# Demo: RITUAL 02, THE AWAKENING (PRESETS twice), sixteen bars from PLAY
+200 enc 6 2
 300 btn 12
 32500 btn 12
 36000 end

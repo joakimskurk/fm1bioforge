@@ -1,16 +1,28 @@
-# The README's screens: the awakening playing; SEQ, MIX, SYN on HEART (a hit in the scope), MUT, FX, SYN on VOICE
+# The README's screens (docs/screens: tools/readme_screens.sh): ABYSS playing; PLAY on LEAD (CHOIR), its four turned
+# a little; STEPS; SOUND; FX; MIX (HOME again); ARP held (its tiles); FX held (its card); SONG; DEEP's MUT
 300 btn 12
+400 enc 0 8
 2650 shot
-2700 btn 8
+2700 btn 11
 3080 shot
 3100 btn 6
-3200 enc 0 1
-3995 shot
-4100 btn 5
-4400 shot
-4500 btn 2
+3600 shot
+3700 btn 2
+4100 shot
+4200 btn 8
+4300 btn 8
 4700 shot
-4800 enc 0 7
-4900 btn 6
-5000 shot
-6000 end
+4800 btndown 10
+5200 shot
+5300 btnup 10
+5400 btndown 2
+6200 shot
+6300 btnup 2
+6400 btn 7
+6700 shot
+6800 btndown 3
+6900 btn 6
+7000 btnup 3
+7100 btn 5
+7500 shot
+8000 end

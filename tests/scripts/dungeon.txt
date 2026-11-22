@@ -1,4 +1,8 @@
 # The dungeon voices (D39): CRYPT loaded and playing, SYN on DRONE (ORGAN), on SPASM (HARPSI), on VOICE (STRINGS)
+# (DEEP: SEL + EDIT, the pages of before)
+20 btndown 3
+40 btn 6
+70 btnup 3
 100 btndown 3
 200 enc 6 22
 300 btnup 3

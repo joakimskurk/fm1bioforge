@@ -503,3 +503,40 @@ the machine and not the music: three factory rituals, each CRYPT itself with its
   it (its script kept), ten in all.
 - CPU on a computer: IRON 2 515 instructions a frame, STAR 2 685, NAVE 3 056 (three chords at once), under the worst
   case (3 469).
+
+**D45 (2026-11-22) BIOFORGE SIMPLE: five pages, plain names, hold for help; DEEP keeps the rest.** The user: still
+very hard to understand, though the sound is loved; look to their other apps and SLOOP's simplicity, keep the creepy
+look. Their apps share a grammar (a first-minute path, PLAY only transport, K1–K4 always musical and never navigation,
+a page button pressed again gives its second page and never deeper, one screen layout, hold for help, a turned knob
+shown large, plain words first; Orbitrix's SIMPLE with DEEP behind it), and SLOOP adds: every page four parameters, a
+fixed set of controls everywhere, sounds named by how they sound, one line for feedback, a 60-second recipe. BIOFORGE
+broke most of it: six pages, fourteen sub-pages, SHIFT on each (about 28 knob layouts), four held layers the screen did
+not show, invented words everywhere, ALGORITHM a register knob on every page. Approved: build all of it.
+- **The default scenes** (asked for at the same time): R00 ABYSS, R01 RUST, R02 THE AWAKENING, R03 ASH
+  (`DEFAULT_RITUAL`; the factory list is unchanged).
+- **Plain names first.** The tracks are KICK, SNARE, HAT, PERC, BASS, PAD, PLUCK, LEAD, NOISE (HEART .. NOISE stay as
+  the organs' names, in grey on SOUND); SPASM is PLUCK, not ARP as first proposed, so that it is not the ARP button.
+  The effects DELAY, REVERB, CRUSH, TAPE (BLOOD, BILE, MARROW, WARP under them); RITUAL is SCENE; the channels DRUMS,
+  BASS, PAD, PLUCK, LEAD, NOISE.
+- **SIMPLE, as it starts: five pages, one a button, each four knobs, the same button again its second page.** HOME
+  PLAY (the nine tracks and their steps; K1–K4 the track's four macros, named per sound: a CHOIR's VOWEL BREATH SPREAD
+  DECAY, STRINGS' BRIGHT OCTAVE SWAY DECAY, a kick's PITCH SWEEP FALL DECAY; the kit's four levels) / MIX (LEVEL, PAN,
+  PUMP, MASTER); SEQ STEPS / its length, REPEAT, NUDGE, NOTE; EDIT (and ENV) SOUND (one list of sounds by name, a line
+  on each; TUNE, ATTACK, RELEASE; a drum its LEVEL) / its ARP (a drum: what it is made of); FX the track's DELAY,
+  REVERB, CRUSH and the TAPE / TIME, FEEDBACK, ROOM, TAIL; GLO SONG (TEMPO, SWING, KEY, SCALE) / the chain. A second
+  page opens on a short tap let go, so a held button stays a layer. An effect that is off wakes when a track is sent to
+  it (SIMPLE only).
+- **Fixed roles.** SELECT the track, PRESETS the scene (SEL: a factory one), ALGORITHM **MUTATE**: how far the
+  register is from a locked loop either way (100 − |LOOP − 50| × 2; turned, LOOP moves from the side it is on), PLAY
+  transport, REC record, SEL + OCT− undo. ARP tapped: the track's ARP; LFO tapped: MUTATE and the register.
+- **One screen everywhere.** The top: the logo, the track and its sound, the transport, the scene, the tempo; the
+  tabs, the page lit with two dots for its two pages; the picture; one line under it, a hint or what just happened; the
+  four knobs. The relief, the font, the knobs and the colours are D26's.
+- **Hold a button and it says what it does**: HOME, ARP and LFO their keys as numbered tiles (the mutes: white keys 1-9
+  the tracks, 10 the drums; BREAK IT; the register's), the others a card (0.6 s held alone). A knob, MUTATE or the
+  scene turned shows its name and value large for 1.1 s.
+- **DEEP** (SEL + EDIT, kept in the settings): every page of before, SHIFT and all, ALGORITHM the LOOP again; the
+  new top, tabs and mutes. Nothing of the engine or the scenes changed: the demos are the same, bit for bit, but
+  FOUNDRY, ABYSS and SCAR, which start from ABYSS now (40 dB down, the life signals' first 200 ms).
+- The README opens with a groove in one minute, three ideas, a cheat sheet and "Where is …?"; its screens are the app
+  itself (`tools/readme_screens.sh`).
